@@ -10,6 +10,9 @@ test-distributor:
 test-indexer:
 	go test -v ./indexer/...
 
+build-common:
+	go build -o bin/common ./common/
+
 build-api:
 	go build -o bin/api ./api/
 
