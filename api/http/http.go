@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/daochanio/backend/api/settings"
+	"github.com/daochanio/backend/api/usecases"
 	"github.com/daochanio/backend/common"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -19,19 +21,36 @@ type IHttpServer interface {
 }
 
 type httpServer struct {
-	logger   common.ILogger
-	settings settings.ISettings
+	logger              common.ILogger
+	settings            settings.ISettings
+	createThreadUseCase *usecases.CreateThreadUseCase
+	getThreadUseCase    *usecases.GetThreadUseCase
+	getThreadsUseCase   *usecases.GetThreadsUseCase
+	deleteThreadUseCase *usecases.DeleteThreadUseCase
+	voteThreadUseCase   *usecases.VoteThreadUseCase
 }
 
-func NewHttpServer(logger common.ILogger, settings settings.ISettings) IHttpServer {
+func NewHttpServer(
+	logger common.ILogger,
+	settings settings.ISettings,
+	createThreadUseCase *usecases.CreateThreadUseCase,
+	getThreadUseCase *usecases.GetThreadUseCase,
+	getThreadsUseCase *usecases.GetThreadsUseCase,
+	deleteThreadUseCase *usecases.DeleteThreadUseCase,
+	voteThreadUseCase *usecases.VoteThreadUseCase) IHttpServer {
 	return &httpServer{
 		logger,
 		settings,
+		createThreadUseCase,
+		getThreadUseCase,
+		getThreadsUseCase,
+		deleteThreadUseCase,
+		voteThreadUseCase,
 	}
 }
 
-func (hc *httpServer) Start(ctx context.Context) error {
-	hc.logger.Info(ctx).Msg("starting http service")
+func (h *httpServer) Start(ctx context.Context) error {
+	h.logger.Info(ctx).Msg("starting http service")
 
 	r := chi.NewRouter()
 
@@ -43,23 +62,36 @@ func (hc *httpServer) Start(ctx context.Context) error {
 		MaxAge:           300,
 	}))
 	r.Use(middleware.NoCache)
-	r.Use(hc.timer)
-	r.Use(hc.realIP)
-	r.Use(hc.requestId)
-	r.Use(hc.recoverer)
-	r.Use(hc.timeout)
+	r.Use(h.timer)
+	r.Use(h.realIP)
+	r.Use(h.requestId)
+	r.Use(h.recoverer)
+	r.Use(h.timeout)
 
-	r.Get("/", hc.healthRoute)
+	r.Get("/", h.healthRoute)
 
-	port := hc.settings.Port()
+	r.Route("/threads", func(r chi.Router) {
+		r.Post("/", h.createThreadRoute)
+		r.Get("/", h.getThreadsRoute)
+		r.Get("/{id}", h.getThreadByIdRoute)
+		r.Delete("/{id}", h.deleteThreadRoute)
+		r.Put("/{id}/vote/{vote}", h.voteThreadRoute)
+	})
 
-	hc.logger.Info(ctx).Msgf("listening on port %v", port)
+	port := h.settings.Port()
+
+	h.logger.Info(ctx).Msgf("listening on port %v", port)
 
 	err := http.ListenAndServe(fmt.Sprintf(":%v", port), r)
 
-	hc.logger.Error(ctx).Err(err).Msg("error in http service")
+	h.logger.Error(ctx).Err(err).Msg("error in http service")
 
 	return err
+}
+
+func (h *httpServer) presentNotFound(w http.ResponseWriter, r *http.Request, err error) {
+	h.logger.Info(r.Context()).Err(err).Msg("not found")
+	h.presentJSON(w, r, http.StatusNotFound, toErrJson("not found"))
 }
 
 func (h *httpServer) presentBadRequest(w http.ResponseWriter, r *http.Request, err error) {
@@ -108,4 +140,26 @@ func toErrJson(msg string) *errJson {
 
 type errJson struct {
 	Message string `json:"message"`
+}
+
+func (h *httpServer) getPaginationParams(r *http.Request) (paginationParams, error) {
+	offset, err := strconv.ParseUint(r.URL.Query().Get("offset"), 10, 32)
+	if err != nil {
+		offset = 0
+	}
+
+	limit, err := strconv.ParseUint(r.URL.Query().Get("limit"), 10, 32)
+	if err != nil {
+		limit = 100
+	}
+
+	return paginationParams{
+		uint32(offset),
+		uint32(limit),
+	}, nil
+}
+
+type paginationParams struct {
+	Offset uint32
+	Limit  uint32
 }

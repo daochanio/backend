@@ -6,8 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/daochanio/backend/api/gateways/pg"
 	"github.com/daochanio/backend/api/http"
 	"github.com/daochanio/backend/api/settings"
+	"github.com/daochanio/backend/api/usecases"
 	"github.com/daochanio/backend/common"
 	"go.uber.org/dig"
 )
@@ -19,6 +21,12 @@ func main() {
 	container.Provide(common.NewCommonSettings)
 	container.Provide(common.NewLogger)
 	container.Provide(settings.NewSettings)
+	container.Provide(pg.NewPostgresGateway)
+	container.Provide(usecases.NewGetThreadUseCase)
+	container.Provide(usecases.NewGetThreadsUseCase)
+	container.Provide(usecases.NewCreateThreadUseCase)
+	container.Provide(usecases.NewDeleteThreadUseCase)
+	container.Provide(usecases.NewVoteThreadUseCase)
 	container.Provide(http.NewHttpServer)
 
 	// start the http controller inside a go routine

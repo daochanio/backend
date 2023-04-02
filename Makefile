@@ -31,6 +31,15 @@ run-distributor:
 run-indexer:
 	ENV=dev go run indexer/main.go
 
+db-migrate:
+	ENV=dev go run db/main.go
+
+db-add:
+	goose -dir db/migrations create $(name).sql
+
+db-bindings:
+	sqlc generate -f "db/sqlc.yml"
+
 docker-build-api:
 	docker build -f .docker/DockerfileApi  -t api .
 	
@@ -39,6 +48,9 @@ docker-build-distributor:
 
 docker-build-indexer:
 	docker build -f .docker/DockerfileIndexer  -t indexer .
+
+docker-build-db:
+	docker build -f .docker/DockerfileDb  -t db .
 
 docker-run-api:
 	docker rm -f api && docker run -d -p 8080:8080 --env-file .env/.env.api.docker --name api api
@@ -49,8 +61,11 @@ docker-run-distributor:
 docker-run-indexer:
 	docker rm -f indexer && docker run -d --env-file .env/.env.indexer.docker --name indexer indexer
 
+docker-run-db:
+	docker rm -f db && docker run -d --env-file .env/.env.db.docker --name db db
+
 docker-run-postgres:
-	docker rm -f postgres && docker run -e POSTGRES_PASSWORD=mysecretpassword -d --name postgres postgres
+	docker rm -f postgres && docker run -d  -p 5432:5432 --env-file .env/.env.postgres.docker --name postgres postgres
 
 docker-run-redis:
 	docker rm -f redis && docker run -d -p 6379:6379 --name redis redis
