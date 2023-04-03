@@ -11,16 +11,14 @@ import (
 	"github.com/daochanio/backend/db/bindings"
 )
 
-// path: api/repositories/repositories.go
-
-func (p *PostgresGateway) CreateThread(ctx context.Context, address string, content string) (int32, error) {
+func (p *PostgresGateway) CreateThread(ctx context.Context, address string, content string) (int64, error) {
 	return p.queries.CreateThread(ctx, bindings.CreateThreadParams{
 		Address: address,
 		Content: content,
 	})
 }
 
-func (p *PostgresGateway) GetThreads(ctx context.Context, offset uint32, limit uint32) ([]entities.Thread, error) {
+func (p *PostgresGateway) GetThreads(ctx context.Context, offset int64, limit int64) ([]entities.Thread, error) {
 	threads, err := p.queries.GetThreads(ctx, bindings.GetThreadsParams{
 		Offset: int32(offset),
 		Limit:  int32(limit),
@@ -51,7 +49,7 @@ func (p *PostgresGateway) GetThreads(ctx context.Context, offset uint32, limit u
 	return threadEnts, nil
 }
 
-func (p *PostgresGateway) GetThreadById(ctx context.Context, id int32) (entities.Thread, error) {
+func (p *PostgresGateway) GetThreadById(ctx context.Context, id int64) (entities.Thread, error) {
 	thread, err := p.queries.GetThread(ctx, id)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -79,7 +77,7 @@ func (p *PostgresGateway) GetThreadById(ctx context.Context, id int32) (entities
 	return entitie, nil
 }
 
-func (p *PostgresGateway) DeleteThread(ctx context.Context, id int32) error {
+func (p *PostgresGateway) DeleteThread(ctx context.Context, id int64) error {
 	_, err := p.queries.DeleteThread(ctx, id)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -89,21 +87,21 @@ func (p *PostgresGateway) DeleteThread(ctx context.Context, id int32) error {
 	return err
 }
 
-func (p *PostgresGateway) UpVoteThread(ctx context.Context, id int32, address string) error {
+func (p *PostgresGateway) UpVoteThread(ctx context.Context, id int64, address string) error {
 	return p.queries.CreateThreadUpVote(ctx, bindings.CreateThreadUpVoteParams{
 		ThreadID: id,
 		Address:  address,
 	})
 }
 
-func (p *PostgresGateway) DownVoteThread(ctx context.Context, id int32, address string) error {
+func (p *PostgresGateway) DownVoteThread(ctx context.Context, id int64, address string) error {
 	return p.queries.CreateThreadDownVote(ctx, bindings.CreateThreadDownVoteParams{
 		ThreadID: id,
 		Address:  address,
 	})
 }
 
-func (p *PostgresGateway) UnVoteThread(ctx context.Context, id int32, address string) error {
+func (p *PostgresGateway) UnVoteThread(ctx context.Context, id int64, address string) error {
 	return p.queries.CreateThreadUnVote(ctx, bindings.CreateThreadUnVoteParams{
 		ThreadID: id,
 		Address:  address,

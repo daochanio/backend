@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -21,13 +22,17 @@ type IHttpServer interface {
 }
 
 type httpServer struct {
-	logger              common.ILogger
-	settings            settings.ISettings
-	createThreadUseCase *usecases.CreateThreadUseCase
-	getThreadUseCase    *usecases.GetThreadUseCase
-	getThreadsUseCase   *usecases.GetThreadsUseCase
-	deleteThreadUseCase *usecases.DeleteThreadUseCase
-	voteThreadUseCase   *usecases.VoteThreadUseCase
+	logger                   common.ILogger
+	settings                 settings.ISettings
+	createThreadUseCase      *usecases.CreateThreadUseCase
+	getThreadUseCase         *usecases.GetThreadUseCase
+	getThreadsUseCase        *usecases.GetThreadsUseCase
+	deleteThreadUseCase      *usecases.DeleteThreadUseCase
+	createThreadVoteUseCase  *usecases.CreateThreadVoteUseCase
+	createCommentUseCase     *usecases.CreateCommentUseCase
+	getCommentsUseCase       *usecases.GetCommentsUseCase
+	deleteCommentUseCase     *usecases.DeleteCommentUseCase
+	createCommentVoteUseCase *usecases.CreateCommentVoteUseCase
 }
 
 func NewHttpServer(
@@ -37,7 +42,11 @@ func NewHttpServer(
 	getThreadUseCase *usecases.GetThreadUseCase,
 	getThreadsUseCase *usecases.GetThreadsUseCase,
 	deleteThreadUseCase *usecases.DeleteThreadUseCase,
-	voteThreadUseCase *usecases.VoteThreadUseCase) IHttpServer {
+	createThreadVoteUseCase *usecases.CreateThreadVoteUseCase,
+	createCommentUseCase *usecases.CreateCommentUseCase,
+	getCommentsUseCase *usecases.GetCommentsUseCase,
+	deleteCommentUseCase *usecases.DeleteCommentUseCase,
+	createCommentVoteUseCase *usecases.CreateCommentVoteUseCase) IHttpServer {
 	return &httpServer{
 		logger,
 		settings,
@@ -45,7 +54,11 @@ func NewHttpServer(
 		getThreadUseCase,
 		getThreadsUseCase,
 		deleteThreadUseCase,
-		voteThreadUseCase,
+		createThreadVoteUseCase,
+		createCommentUseCase,
+		getCommentsUseCase,
+		deleteCommentUseCase,
+		createCommentVoteUseCase,
 	}
 }
 
@@ -73,9 +86,16 @@ func (h *httpServer) Start(ctx context.Context) error {
 	r.Route("/threads", func(r chi.Router) {
 		r.Post("/", h.createThreadRoute)
 		r.Get("/", h.getThreadsRoute)
-		r.Get("/{id}", h.getThreadByIdRoute)
-		r.Delete("/{id}", h.deleteThreadRoute)
-		r.Put("/{id}/vote/{vote}", h.voteThreadRoute)
+		r.Get("/{threadId}", h.getThreadByIdRoute)
+		r.Delete("/{threadId}", h.deleteThreadRoute)
+		r.Put("/{threadId}/vote/{vote}", h.createThreadVoteRoute)
+
+		r.Route("/{threadId}/comments", func(r chi.Router) {
+			r.Post("/", h.createCommentRoute)
+			r.Get("/", h.getCommentsRoute)
+			r.Delete("/{commentId}", h.deleteCommentRoute)
+			r.Put("/{commentId}/vote/{vote}", h.createCommentVoteRoute)
+		})
 	})
 
 	port := h.settings.Port()
@@ -143,23 +163,27 @@ type errJson struct {
 }
 
 func (h *httpServer) getPaginationParams(r *http.Request) (paginationParams, error) {
-	offset, err := strconv.ParseUint(r.URL.Query().Get("offset"), 10, 32)
-	if err != nil {
-		offset = 0
+	offset, err := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 64)
+	if err != nil || offset < 0 {
+		return paginationParams{}, errors.New("invalid offset")
 	}
 
-	limit, err := strconv.ParseUint(r.URL.Query().Get("limit"), 10, 32)
-	if err != nil {
-		limit = 100
+	limit, err := strconv.ParseInt(r.URL.Query().Get("limit"), 10, 64)
+	if err != nil || limit < 0 {
+		return paginationParams{}, errors.New("invalid limit")
+	}
+
+	if limit < offset {
+		return paginationParams{}, errors.New("limit must be greater than offset")
 	}
 
 	return paginationParams{
-		uint32(offset),
-		uint32(limit),
+		offset,
+		limit,
 	}, nil
 }
 
 type paginationParams struct {
-	Offset uint32
-	Limit  uint32
+	Offset int64
+	Limit  int64
 }

@@ -14,14 +14,14 @@ import (
 )
 
 func (h *httpServer) getThreadByIdRoute(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 32)
+	id, err := strconv.ParseInt(chi.URLParam(r, "threadId"), 10, 64)
 
 	if err != nil {
 		h.presentBadRequest(w, r, err)
 	}
 
 	thread, err := h.getThreadUseCase.Execute(r.Context(), usecases.GetThreadInput{
-		ThreadId: int32(id),
+		ThreadId: id,
 	})
 
 	if errors.Is(err, common.ErrNotFound) {
@@ -39,6 +39,7 @@ func (h *httpServer) getThreadByIdRoute(w http.ResponseWriter, r *http.Request) 
 
 func (h *httpServer) getThreadsRoute(w http.ResponseWriter, r *http.Request) {
 	paginationParams, err := h.getPaginationParams(r)
+
 	if err != nil {
 		h.presentBadRequest(w, r, err)
 		return
@@ -58,16 +59,17 @@ func (h *httpServer) getThreadsRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
-	var input usecases.CreateThreadInput
-	err := json.NewDecoder(r.Body).Decode(&input)
+	var body threadJson
+	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		h.presentBadRequest(w, r, err)
 		return
 	}
 
-	input.Address = "0xd0147bf60c64b88f3a85425012c129ffdc3e6883" // TODO: get address from auth
-
-	id, err := h.createThreadUseCase.Execute(r.Context(), input)
+	id, err := h.createThreadUseCase.Execute(r.Context(), usecases.CreateThreadInput{
+		Address: "0xd0147bf60c64b88f3a85425012c129ffdc3e6883", // TODO: get address from auth
+		Content: body.Content,
+	})
 
 	if err != nil {
 		h.presentBadRequest(w, r, err)
@@ -75,21 +77,21 @@ func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.presentJSON(w, r, http.StatusCreated, struct {
-		Id int32 `json:"id"`
+		Id int64 `json:"id"`
 	}{
 		Id: id,
 	})
 }
 
 func (h *httpServer) deleteThreadRoute(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 32)
+	id, err := strconv.ParseInt(chi.URLParam(r, "threadId"), 10, 64)
 
 	if err != nil {
 		h.presentBadRequest(w, r, err)
 	}
 
 	err = h.deleteThreadUseCase.Execute(r.Context(), usecases.DeleteThreadInput{
-		ThreadId:       int32(id),
+		ThreadId:       id,
 		DeleterAddress: "0xd0147bf60c64b88f3a85425012c129ffdc3e6883", // TODO: get address from auth
 	})
 
@@ -106,19 +108,18 @@ func (h *httpServer) deleteThreadRoute(w http.ResponseWriter, r *http.Request) {
 	h.presentStatus(w, r, http.StatusOK)
 }
 
-func (h *httpServer) voteThreadRoute(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 32)
-
+func (h *httpServer) createThreadVoteRoute(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "threadId"), 10, 64)
 	vote := chi.URLParam(r, "vote")
 
 	if err != nil {
 		h.presentBadRequest(w, r, err)
 	}
 
-	err = h.voteThreadUseCase.Execute(r.Context(), usecases.VoteThreadInput{
-		ThreadId: int32(id),
+	err = h.createThreadVoteUseCase.Execute(r.Context(), usecases.CreateThreadVoteInput{
+		ThreadId: id,
 		Address:  "0xd0147bf60c64b88f3a85425012c129ffdc3e6883", // TODO: get address from auth
-		Vote:     usecases.VoteType(vote),
+		Vote:     common.VoteType(vote),
 	})
 
 	if err != nil {
@@ -130,7 +131,7 @@ func (h *httpServer) voteThreadRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 type threadJson struct {
-	Id        int32      `json:"id"`
+	Id        int64      `json:"id"`
 	Address   string     `json:"address"`
 	Content   string     `json:"content"`
 	IsDeleted bool       `json:"isDeleted"`

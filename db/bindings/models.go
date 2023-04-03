@@ -10,8 +10,8 @@ import (
 )
 
 type Comment struct {
-	ID        int32
-	ThreadID  int32
+	ID        int64
+	ThreadID  int64
 	Address   string
 	Content   string
 	IsDeleted bool
@@ -20,21 +20,22 @@ type Comment struct {
 }
 
 type CommentClosure struct {
-	ParentID int32
-	ChildID  int32
+	ThreadID int64
+	ParentID int64
+	ChildID  int64
 	Depth    int32
 }
 
 type CommentVote struct {
 	Address   string
-	CommentID int32
+	CommentID int64
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Vote      int32
+	Vote      int16
 }
 
 type Thread struct {
-	ID        int32
+	ID        int64
 	Address   string
 	Content   string
 	IsDeleted bool
@@ -44,10 +45,10 @@ type Thread struct {
 
 type ThreadVote struct {
 	Address   string
-	ThreadID  int32
+	ThreadID  int64
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Vote      int32
+	Vote      int16
 }
 
 type User struct {

@@ -26,7 +26,11 @@ func main() {
 	container.Provide(usecases.NewGetThreadsUseCase)
 	container.Provide(usecases.NewCreateThreadUseCase)
 	container.Provide(usecases.NewDeleteThreadUseCase)
-	container.Provide(usecases.NewVoteThreadUseCase)
+	container.Provide(usecases.NewCreateThreadVoteUseCase)
+	container.Provide(usecases.NewGetCommentsUseCase)
+	container.Provide(usecases.NewCreateCommentUseCase)
+	container.Provide(usecases.NewDeleteCommentUseCase)
+	container.Provide(usecases.NewCreateCommentVoteUseCase)
 	container.Provide(http.NewHttpServer)
 
 	// start the http controller inside a go routine

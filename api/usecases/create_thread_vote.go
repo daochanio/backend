@@ -8,41 +8,33 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-type VoteThreadUseCase struct {
+type CreateThreadVoteUseCase struct {
 	dbGateway gateways.IDatabaseGateway
 }
 
-func NewVoteThreadUseCase(dbGateway gateways.IDatabaseGateway) *VoteThreadUseCase {
-	return &VoteThreadUseCase{
+func NewCreateThreadVoteUseCase(dbGateway gateways.IDatabaseGateway) *CreateThreadVoteUseCase {
+	return &CreateThreadVoteUseCase{
 		dbGateway,
 	}
 }
 
-type VoteType string
-
-const (
-	UpVote   VoteType = "up"
-	DownVote VoteType = "down"
-	UnVote   VoteType = "undo"
-)
-
-type VoteThreadInput struct {
-	ThreadId int32
-	Address  string   `validate:"eth_addr"`
-	Vote     VoteType `validate:"oneof=up down undo"`
+type CreateThreadVoteInput struct {
+	ThreadId int64           `validate:"gt=0"`
+	Address  string          `validate:"eth_addr"`
+	Vote     common.VoteType `validate:"oneof=up down undo"`
 }
 
-func (u *VoteThreadUseCase) Execute(ctx context.Context, input VoteThreadInput) error {
+func (u *CreateThreadVoteUseCase) Execute(ctx context.Context, input CreateThreadVoteInput) error {
 	if err := common.ValidateStruct(input); err != nil {
 		return err
 	}
 
 	switch input.Vote {
-	case UpVote:
+	case common.UpVote:
 		return u.dbGateway.UpVoteThread(ctx, input.ThreadId, input.Address)
-	case DownVote:
+	case common.DownVote:
 		return u.dbGateway.DownVoteThread(ctx, input.ThreadId, input.Address)
-	case UnVote:
+	case common.UnVote:
 		return u.dbGateway.UnVoteThread(ctx, input.ThreadId, input.Address)
 	default:
 		return fmt.Errorf("invalid vote type: %v", input.Vote)
