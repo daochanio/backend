@@ -84,10 +84,11 @@ func (q *Queries) CreateCommentUpVote(ctx context.Context, arg CreateCommentUpVo
 	return err
 }
 
-const createOrUpdateUser = `-- name: CreateOrUpdateUser :exec
+const createOrUpdateUser = `-- name: CreateOrUpdateUser :one
 INSERT INTO users (address, ens_name)
 VALUES ($1, $2)
 ON CONFLICT (address) DO UPDATE SET ens_name = $2, updated_at = NOW()
+RETURNING address, ens_name, created_at, updated_at
 `
 
 type CreateOrUpdateUserParams struct {
@@ -96,9 +97,16 @@ type CreateOrUpdateUserParams struct {
 }
 
 // create/update user every time the sign-in
-func (q *Queries) CreateOrUpdateUser(ctx context.Context, arg CreateOrUpdateUserParams) error {
-	_, err := q.db.ExecContext(ctx, createOrUpdateUser, arg.Address, arg.EnsName)
-	return err
+func (q *Queries) CreateOrUpdateUser(ctx context.Context, arg CreateOrUpdateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, createOrUpdateUser, arg.Address, arg.EnsName)
+	var i User
+	err := row.Scan(
+		&i.Address,
+		&i.EnsName,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const createThread = `-- name: CreateThread :one
@@ -191,6 +199,44 @@ func (q *Queries) DeleteThread(ctx context.Context, id int64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, deleteThread, id)
 	err := row.Scan(&id)
 	return id, err
+}
+
+const getComment = `-- name: GetComment :one
+SELECT
+	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.is_deleted, c.created_at, c.deleted_at,
+	SUM(COALESCE(cv.vote, 0)) as votes
+FROM comments c
+LEFT JOIN comment_votes cv on c.id = cv.comment_id
+WHERE c.id = $1
+`
+
+type GetCommentRow struct {
+	ID                 int64
+	ThreadID           int64
+	RepliedToCommentID sql.NullInt64
+	Address            string
+	Content            string
+	IsDeleted          bool
+	CreatedAt          time.Time
+	DeletedAt          sql.NullTime
+	Votes              int64
+}
+
+func (q *Queries) GetComment(ctx context.Context, id int64) (GetCommentRow, error) {
+	row := q.db.QueryRowContext(ctx, getComment, id)
+	var i GetCommentRow
+	err := row.Scan(
+		&i.ID,
+		&i.ThreadID,
+		&i.RepliedToCommentID,
+		&i.Address,
+		&i.Content,
+		&i.IsDeleted,
+		&i.CreatedAt,
+		&i.DeletedAt,
+		&i.Votes,
+	)
+	return i, err
 }
 
 const getComments = `-- name: GetComments :many

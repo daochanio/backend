@@ -59,6 +59,7 @@ func (h *httpServer) getThreadsRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	var body createThreadJson
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
@@ -66,8 +67,8 @@ func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.createThreadUseCase.Execute(r.Context(), usecases.CreateThreadInput{
-		Address: "0xd0147bf60c64b88f3a85425012c129ffdc3e6883", // TODO: get address from auth
+	id, err := h.createThreadUseCase.Execute(ctx, usecases.CreateThreadInput{
+		Address: ctx.Value(common.ContextKeyAddress).(string),
 		Content: body.Content,
 	})
 
@@ -84,15 +85,16 @@ func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpServer) deleteThreadRoute(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	id, err := strconv.ParseInt(chi.URLParam(r, "threadId"), 10, 64)
 
 	if err != nil {
 		h.presentBadRequest(w, r, err)
 	}
 
-	err = h.deleteThreadUseCase.Execute(r.Context(), usecases.DeleteThreadInput{
+	err = h.deleteThreadUseCase.Execute(ctx, usecases.DeleteThreadInput{
 		ThreadId:       id,
-		DeleterAddress: "0xd0147bf60c64b88f3a85425012c129ffdc3e6883", // TODO: get address from auth
+		DeleterAddress: ctx.Value(common.ContextKeyAddress).(string),
 	})
 
 	if errors.Is(err, common.ErrNotFound) {
@@ -109,6 +111,7 @@ func (h *httpServer) deleteThreadRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpServer) createThreadVoteRoute(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	id, err := strconv.ParseInt(chi.URLParam(r, "threadId"), 10, 64)
 	vote := chi.URLParam(r, "vote")
 
@@ -116,9 +119,9 @@ func (h *httpServer) createThreadVoteRoute(w http.ResponseWriter, r *http.Reques
 		h.presentBadRequest(w, r, err)
 	}
 
-	err = h.createThreadVoteUseCase.Execute(r.Context(), usecases.CreateThreadVoteInput{
+	err = h.createThreadVoteUseCase.Execute(ctx, usecases.CreateThreadVoteInput{
 		ThreadId: id,
-		Address:  "0xd0147bf60c64b88f3a85425012c129ffdc3e6883", // TODO: get address from auth
+		Address:  ctx.Value(common.ContextKeyAddress).(string),
 		Vote:     common.VoteType(vote),
 	})
 

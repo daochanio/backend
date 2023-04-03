@@ -9,7 +9,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type PostgresGateway struct {
+type postgresGateway struct {
 	settings settings.ISettings
 	db       *sql.DB
 	queries  *bindings.Queries
@@ -23,7 +23,7 @@ func NewPostgresGateway(settings settings.ISettings) gateways.IDatabaseGateway {
 
 	queries := bindings.New(db)
 
-	return &PostgresGateway{
+	return &postgresGateway{
 		settings,
 		db,
 		queries,

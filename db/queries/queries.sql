@@ -1,8 +1,9 @@
 -- create/update user every time the sign-in
--- name: CreateOrUpdateUser :exec
+-- name: CreateOrUpdateUser :one
 INSERT INTO users (address, ens_name)
 VALUES ($1, $2)
-ON CONFLICT (address) DO UPDATE SET ens_name = $2, updated_at = NOW();
+ON CONFLICT (address) DO UPDATE SET ens_name = $2, updated_at = NOW()
+RETURNING *;
 
 -- name: CreateThread :one
 INSERT INTO threads (address, content)
@@ -37,17 +38,6 @@ WHERE threads.id = $1
 AND threads.is_deleted = FALSE
 GROUP BY threads.id;
 
-CREATE TABLE comments (
-	id BIGSERIAL PRIMARY KEY,
-	thread_id BIGINT NOT NULL REFERENCES threads(id),
-	reply_comment_id BIGINT NULL REFERENCES comments(id),
-	address VARCHAR(42) NOT NULL REFERENCES users(address),
-	content TEXT NOT NULL,
-	is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	deleted_at TIMESTAMP NULL DEFAULT NULL
-);
-
 -- name: GetComments :many
 SELECT
 	c.*,
@@ -66,6 +56,14 @@ GROUP BY c.id, r.id
 ORDER BY c.created_at DESC
 OFFSET $2
 LIMIT $3;
+
+-- name: GetComment :one
+SELECT
+	c.*,
+	SUM(COALESCE(cv.vote, 0)) as votes
+FROM comments c
+LEFT JOIN comment_votes cv on c.id = cv.comment_id
+WHERE c.id = $1;
 
 -- name: DeleteThread :one
 UPDATE threads

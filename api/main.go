@@ -6,7 +6,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/daochanio/backend/api/gateways/ethereum"
 	"github.com/daochanio/backend/api/gateways/pg"
+	"github.com/daochanio/backend/api/gateways/redis"
 	"github.com/daochanio/backend/api/http"
 	"github.com/daochanio/backend/api/settings"
 	"github.com/daochanio/backend/api/usecases"
@@ -22,6 +24,12 @@ func main() {
 	container.Provide(common.NewLogger)
 	container.Provide(settings.NewSettings)
 	container.Provide(pg.NewPostgresGateway)
+	container.Provide(redis.NewRedisGateway)
+	container.Provide(ethereum.NewEthereumGateway)
+	container.Provide(usecases.NewCreateUserUseCase)
+	container.Provide(usecases.NewVerifyRateLimitUseCase)
+	container.Provide(usecases.NewVerifyChallengeUseCase)
+	container.Provide(usecases.NewGetChallengeUseCase)
 	container.Provide(usecases.NewGetThreadUseCase)
 	container.Provide(usecases.NewGetThreadsUseCase)
 	container.Provide(usecases.NewCreateThreadUseCase)

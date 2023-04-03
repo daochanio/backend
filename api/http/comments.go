@@ -43,6 +43,8 @@ func (h *httpServer) getCommentsRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpServer) createCommentRoute(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var body createCommentJson
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
@@ -50,10 +52,10 @@ func (h *httpServer) createCommentRoute(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	id, err := h.createCommentUseCase.Execute(r.Context(), usecases.CreateCommentInput{
+	id, err := h.createCommentUseCase.Execute(ctx, usecases.CreateCommentInput{
 		RepliedToCommentId: body.RepliedToCommentId,
 		ThreadId:           body.ThreadId,
-		Address:            "0xd0147bf60c64b88f3a85425012c129ffdc3e6883", // TODO: get address from auth
+		Address:            ctx.Value(common.ContextKeyAddress).(string),
 		Content:            body.Content,
 	})
 
@@ -70,15 +72,17 @@ func (h *httpServer) createCommentRoute(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *httpServer) deleteCommentRoute(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	id, err := strconv.ParseInt(chi.URLParam(r, "commentId"), 10, 64)
 
 	if err != nil {
 		h.presentBadRequest(w, r, err)
 	}
 
-	err = h.deleteCommentUseCase.Execute(r.Context(), usecases.DeleteCommentInput{
+	err = h.deleteCommentUseCase.Execute(ctx, usecases.DeleteCommentInput{
 		Id:             id,
-		DeleterAddress: "0xd0147bf60c64b88f3a85425012c129ffdc3e6883", // TODO: get address from auth
+		DeleterAddress: ctx.Value(common.ContextKeyAddress).(string),
 	})
 
 	if errors.Is(err, common.ErrNotFound) {
@@ -95,6 +99,8 @@ func (h *httpServer) deleteCommentRoute(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *httpServer) createCommentVoteRoute(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	id, err := strconv.ParseInt(chi.URLParam(r, "commentId"), 10, 64)
 	vote := chi.URLParam(r, "vote")
 
@@ -102,9 +108,9 @@ func (h *httpServer) createCommentVoteRoute(w http.ResponseWriter, r *http.Reque
 		h.presentBadRequest(w, r, err)
 	}
 
-	err = h.createCommentVoteUseCase.Execute(r.Context(), usecases.CreateCommentVoteInput{
+	err = h.createCommentVoteUseCase.Execute(ctx, usecases.CreateCommentVoteInput{
 		CommentId: id,
-		Address:   "0xd0147bf60c64b88f3a85425012c129ffdc3e6883", // TODO: get address from auth
+		Address:   ctx.Value(common.ContextKeyAddress).(string),
 		Vote:      common.VoteType(vote),
 	})
 

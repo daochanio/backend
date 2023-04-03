@@ -11,7 +11,7 @@ import (
 	"github.com/daochanio/backend/db/bindings"
 )
 
-func (p *PostgresGateway) CreateComment(ctx context.Context, threadId int64, address string, repliedToCommentId *int64, content string) (int64, error) {
+func (p *postgresGateway) CreateComment(ctx context.Context, threadId int64, address string, repliedToCommentId *int64, content string) (int64, error) {
 	rep := sql.NullInt64{
 		Valid: repliedToCommentId != nil,
 	}
@@ -28,7 +28,7 @@ func (p *PostgresGateway) CreateComment(ctx context.Context, threadId int64, add
 	})
 }
 
-func (p *PostgresGateway) GetComments(ctx context.Context, threadId int64, offset int32, limit int32) ([]entities.Comment, error) {
+func (p *postgresGateway) GetComments(ctx context.Context, threadId int64, offset int32, limit int32) ([]entities.Comment, error) {
 	comments, err := p.queries.GetComments(ctx, bindings.GetCommentsParams{
 		ThreadID: threadId,
 		Offset:   offset,
@@ -81,7 +81,38 @@ func (p *PostgresGateway) GetComments(ctx context.Context, threadId int64, offse
 	return commentEnts, nil
 }
 
-func (p *PostgresGateway) DeleteComment(ctx context.Context, id int64) error {
+// does not return with the hydrated replied to comment
+func (p *postgresGateway) GetCommentById(ctx context.Context, id int64) (entities.Comment, error) {
+	comment, err := p.queries.GetComment(ctx, id)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return entities.Comment{}, common.ErrNotFound
+	}
+
+	if err != nil {
+		return entities.Comment{}, err
+	}
+
+	var deletedAt *time.Time
+	if comment.DeletedAt.Valid {
+		deletedAt = &comment.DeletedAt.Time
+	}
+
+	entitie := entities.NewComment(entities.CommentParams{
+		Id:        comment.ID,
+		ThreadId:  comment.ThreadID,
+		Address:   comment.Address,
+		Content:   comment.Content,
+		IsDeleted: comment.IsDeleted,
+		CreatedAt: comment.CreatedAt,
+		DeletedAt: deletedAt,
+		Votes:     comment.Votes,
+	})
+
+	return entitie, nil
+}
+
+func (p *postgresGateway) DeleteComment(ctx context.Context, id int64) error {
 	_, err := p.queries.DeleteComment(ctx, id)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -91,21 +122,21 @@ func (p *PostgresGateway) DeleteComment(ctx context.Context, id int64) error {
 	return err
 }
 
-func (p *PostgresGateway) UpVoteComment(ctx context.Context, id int64, address string) error {
+func (p *postgresGateway) UpVoteComment(ctx context.Context, id int64, address string) error {
 	return p.queries.CreateCommentUpVote(ctx, bindings.CreateCommentUpVoteParams{
 		CommentID: id,
 		Address:   address,
 	})
 }
 
-func (p *PostgresGateway) DownVoteComment(ctx context.Context, id int64, address string) error {
+func (p *postgresGateway) DownVoteComment(ctx context.Context, id int64, address string) error {
 	return p.queries.CreateCommentDownVote(ctx, bindings.CreateCommentDownVoteParams{
 		CommentID: id,
 		Address:   address,
 	})
 }
 
-func (p *PostgresGateway) UnVoteComment(ctx context.Context, id int64, address string) error {
+func (p *postgresGateway) UnVoteComment(ctx context.Context, id int64, address string) error {
 	return p.queries.CreateCommentUnVote(ctx, bindings.CreateCommentUnVoteParams{
 		CommentID: id,
 		Address:   address,

@@ -2,8 +2,10 @@ package usecases
 
 import (
 	"context"
+	"errors"
 
 	"github.com/daochanio/backend/api/gateways"
+	"github.com/daochanio/backend/common"
 )
 
 type DeleteThreadUseCase struct {
@@ -21,7 +23,20 @@ type DeleteThreadInput struct {
 	DeleterAddress string `validate:"eth_addr"`
 }
 
-// TODO: only allow the thread creator (or in the future moderators) to delete the thread
 func (u *DeleteThreadUseCase) Execute(ctx context.Context, input DeleteThreadInput) error {
+	if err := common.ValidateStruct(input); err != nil {
+		return err
+	}
+
+	thread, err := u.dbGateway.GetThreadById(ctx, input.ThreadId)
+
+	if err != nil {
+		return err
+	}
+
+	if thread.Address() != input.DeleterAddress {
+		return errors.New("thread does not belong to the user")
+	}
+
 	return u.dbGateway.DeleteThread(ctx, input.ThreadId)
 }

@@ -24,6 +24,10 @@ type IHttpServer interface {
 type httpServer struct {
 	logger                   common.ILogger
 	settings                 settings.ISettings
+	getChallengeUseCase      *usecases.GetChallengeUseCase
+	verifyChallengeUseCase   *usecases.VerifyChallengeUseCase
+	verifyRateLimitUseCase   *usecases.VerifyRateLimitUseCase
+	createUserUseCase        *usecases.CreateUserUseCase
 	createThreadUseCase      *usecases.CreateThreadUseCase
 	getThreadUseCase         *usecases.GetThreadUseCase
 	getThreadsUseCase        *usecases.GetThreadsUseCase
@@ -38,6 +42,10 @@ type httpServer struct {
 func NewHttpServer(
 	logger common.ILogger,
 	settings settings.ISettings,
+	getChallengeUseCase *usecases.GetChallengeUseCase,
+	verifyChallengeUseCase *usecases.VerifyChallengeUseCase,
+	verifyRateLimitUseCase *usecases.VerifyRateLimitUseCase,
+	createUserUseCase *usecases.CreateUserUseCase,
 	createThreadUseCase *usecases.CreateThreadUseCase,
 	getThreadUseCase *usecases.GetThreadUseCase,
 	getThreadsUseCase *usecases.GetThreadsUseCase,
@@ -50,6 +58,10 @@ func NewHttpServer(
 	return &httpServer{
 		logger,
 		settings,
+		getChallengeUseCase,
+		verifyChallengeUseCase,
+		verifyRateLimitUseCase,
+		createUserUseCase,
 		createThreadUseCase,
 		getThreadUseCase,
 		getThreadsUseCase,
@@ -70,7 +82,7 @@ func (h *httpServer) Start(ctx context.Context) error {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://daochan.io", "http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Address"},
 		AllowCredentials: false,
 		MaxAge:           300,
 	}))
@@ -80,21 +92,26 @@ func (h *httpServer) Start(ctx context.Context) error {
 	r.Use(h.requestId)
 	r.Use(h.recoverer)
 	r.Use(h.timeout)
+	r.Use(h.rateLimit)
 
 	r.Get("/", h.healthRoute)
 
+	r.Put("/challenge", h.getChallengeRoute)
+
 	r.Route("/threads", func(r chi.Router) {
-		r.Post("/", h.createThreadRoute)
 		r.Get("/", h.getThreadsRoute)
 		r.Get("/{threadId}", h.getThreadByIdRoute)
-		r.Delete("/{threadId}", h.deleteThreadRoute)
-		r.Put("/{threadId}/vote/{vote}", h.createThreadVoteRoute)
+
+		r.With(h.authenticate).Post("/", h.createThreadRoute)
+		r.With(h.authenticate).Delete("/{threadId}", h.deleteThreadRoute)
+		r.With(h.authenticate).Put("/{threadId}/vote/{vote}", h.createThreadVoteRoute)
 
 		r.Route("/{threadId}/comments", func(r chi.Router) {
-			r.Post("/", h.createCommentRoute)
 			r.Get("/", h.getCommentsRoute)
-			r.Delete("/{commentId}", h.deleteCommentRoute)
-			r.Put("/{commentId}/vote/{vote}", h.createCommentVoteRoute)
+
+			r.With(h.authenticate).Post("/", h.createCommentRoute)
+			r.With(h.authenticate).Delete("/{commentId}", h.deleteCommentRoute)
+			r.With(h.authenticate).Put("/{commentId}/vote/{vote}", h.createCommentVoteRoute)
 		})
 	})
 
@@ -117,6 +134,16 @@ func (h *httpServer) presentNotFound(w http.ResponseWriter, r *http.Request, err
 func (h *httpServer) presentBadRequest(w http.ResponseWriter, r *http.Request, err error) {
 	h.logger.Info(r.Context()).Err(err).Msg("bad request")
 	h.presentJSON(w, r, http.StatusBadRequest, toErrJson("bad request"))
+}
+
+func (h *httpServer) presentUnathorized(w http.ResponseWriter, r *http.Request, err error) {
+	h.logger.Info(r.Context()).Err(err).Msg("unauthorized")
+	h.presentJSON(w, r, http.StatusUnauthorized, toErrJson("unathorized"))
+}
+
+func (h *httpServer) presentTooManyRequests(w http.ResponseWriter, r *http.Request, err error) {
+	h.logger.Warn(r.Context()).Err(err).Msg("too many requests")
+	h.presentJSON(w, r, http.StatusTooManyRequests, toErrJson("too many requests"))
 }
 
 func (h *httpServer) presentJSON(w http.ResponseWriter, r *http.Request, statusCode int, body interface{}) {
