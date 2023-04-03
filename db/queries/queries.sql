@@ -15,15 +15,17 @@ VALUES ($1, $2, $3)
 RETURNING id;
 
 -- name: CreateSelfClosure :exec
-INSERT INTO comment_closures (parent_id, child_id, depth)
-VALUES ($1, $1, 0);
+INSERT INTO comment_closures (thread_id, parent_id, child_id, depth)
+VALUES ($1, $2, $2, 0);
 
 -- name: CreateParentClosures :exec
 -- only do if not root comment (i.e parent_id != child_id)
-INSERT into comment_closures (parent_id, child_id, depth)
-SELECT p.parent_id, c.child_id, p.depth + c.depth+1
+INSERT into comment_closures (thread_id, parent_id, child_id, depth)
+SELECT p.thread_id, p.parent_id, c.child_id, p.depth + c.depth+1
 FROM comment_closures p, comment_closures c
-WHERE p.child_id = $1 and c.parent_id = $2;
+WHERE p.child_id = $1 AND c.parent_id = $2
+AND p.thread_id = $3
+AND c.thread_id = $3;
 
 -- name: GetThreads :many
 -- TODO: We can order by random in the future

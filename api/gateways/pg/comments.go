@@ -11,7 +11,7 @@ import (
 	"github.com/daochanio/backend/db/bindings"
 )
 
-func (p *PostgresGateway) CreateComment(ctx context.Context, threadId int32, address string, parentCommentId *int32, content string) (int32, error) {
+func (p *PostgresGateway) CreateComment(ctx context.Context, threadId int64, address string, parentCommentId *int64, content string) (int64, error) {
 	// begin tx
 	tx, err := p.db.Begin()
 	if err != nil {
@@ -22,7 +22,7 @@ func (p *PostgresGateway) CreateComment(ctx context.Context, threadId int32, add
 
 	qtx := p.queries.WithTx(tx)
 
-	id, err := p.queries.CreateComment(ctx, bindings.CreateCommentParams{
+	id, err := qtx.CreateComment(ctx, bindings.CreateCommentParams{
 		ThreadID: threadId,
 		Address:  address,
 		Content:  content,
@@ -32,15 +32,22 @@ func (p *PostgresGateway) CreateComment(ctx context.Context, threadId int32, add
 		return 0, err
 	}
 
-	if err := qtx.CreateSelfClosure(ctx, id); err != nil {
+	if err := qtx.CreateSelfClosure(ctx, bindings.CreateSelfClosureParams{
+		ThreadID: threadId,
+		ParentID: id,
+	}); err != nil {
 		return 0, err
 	}
 
 	// only create parent closures if comment is responding to another comment
 	if parentCommentId != nil {
 		if err := qtx.CreateParentClosures(ctx, bindings.CreateParentClosuresParams{
-			ChildID:  id,
-			ParentID: *parentCommentId,
+			ThreadID: threadId,
+			// these two look reversed because of the way sqlc infers names from the query
+			// the ordering is correct
+			// We want p.child_id = PARENT_ID and c.parent_id = CHILD_ID
+			ChildID:  *parentCommentId,
+			ParentID: id,
 		}); err != nil {
 			return 0, err
 		}
@@ -49,7 +56,7 @@ func (p *PostgresGateway) CreateComment(ctx context.Context, threadId int32, add
 	return id, tx.Commit()
 }
 
-func (p *PostgresGateway) GetComments(ctx context.Context, threadId int32) ([]entities.Comment, error) {
+func (p *PostgresGateway) GetComments(ctx context.Context, threadId int64) ([]entities.Comment, error) {
 	comments, err := p.queries.GetRootAndFirstDepthComments(ctx, threadId)
 
 	if err != nil {
@@ -78,7 +85,7 @@ func (p *PostgresGateway) GetComments(ctx context.Context, threadId int32) ([]en
 	return commentEnts, nil
 }
 
-func (p *PostgresGateway) DeleteComment(ctx context.Context, id int32) error {
+func (p *PostgresGateway) DeleteComment(ctx context.Context, id int64) error {
 	_, err := p.queries.DeleteComment(ctx, id)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -88,21 +95,21 @@ func (p *PostgresGateway) DeleteComment(ctx context.Context, id int32) error {
 	return err
 }
 
-func (p *PostgresGateway) UpVoteComment(ctx context.Context, id int32, address string) error {
+func (p *PostgresGateway) UpVoteComment(ctx context.Context, id int64, address string) error {
 	return p.queries.CreateCommentUpVote(ctx, bindings.CreateCommentUpVoteParams{
 		CommentID: id,
 		Address:   address,
 	})
 }
 
-func (p *PostgresGateway) DownVoteComment(ctx context.Context, id int32, address string) error {
+func (p *PostgresGateway) DownVoteComment(ctx context.Context, id int64, address string) error {
 	return p.queries.CreateCommentDownVote(ctx, bindings.CreateCommentDownVoteParams{
 		CommentID: id,
 		Address:   address,
 	})
 }
 
-func (p *PostgresGateway) UnVoteComment(ctx context.Context, id int32, address string) error {
+func (p *PostgresGateway) UnVoteComment(ctx context.Context, id int64, address string) error {
 	return p.queries.CreateCommentUnVote(ctx, bindings.CreateCommentUnVoteParams{
 		CommentID: id,
 		Address:   address,

@@ -18,11 +18,11 @@ func NewCreateThreadUseCase(dbGateway gateways.IDatabaseGateway) *CreateThreadUs
 }
 
 type CreateThreadInput struct {
-	Address string `json:"-" validate:"required,eth_addr"`
-	Content string `json:"content" validate:"required,max=1000"`
+	Address string `validate:"eth_addr"`
+	Content string `validate:"max=1000"`
 }
 
-func (u *CreateThreadUseCase) Execute(ctx context.Context, input CreateThreadInput) (int32, error) {
+func (u *CreateThreadUseCase) Execute(ctx context.Context, input CreateThreadInput) (int64, error) {
 	if err := common.ValidateStruct(input); err != nil {
 		return 0, err
 	}

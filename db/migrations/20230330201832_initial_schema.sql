@@ -9,7 +9,7 @@ CREATE TABLE users (
 );
 
 CREATE TABLE threads (
-	id SERIAL PRIMARY KEY,
+	id BIGSERIAL PRIMARY KEY,
 	address VARCHAR(42) NOT NULL REFERENCES users(address),
 	content TEXT NOT NULL,
 	is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
@@ -19,16 +19,16 @@ CREATE TABLE threads (
 
 CREATE TABLE thread_votes (
 	address VARCHAR(42) NOT NULL REFERENCES users(address),
-	thread_id INTEGER NOT NULL REFERENCES threads(id),
+	thread_id BIGINT NOT NULL REFERENCES threads(id),
 	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	vote INTEGER NOT NULL,
+	vote SMALLINT NOT NULL,
 	PRIMARY KEY (address, thread_id)
 );
 
 CREATE TABLE comments (
-	id SERIAL PRIMARY KEY,
-	thread_id INTEGER NOT NULL REFERENCES threads(id),
+	id BIGSERIAL PRIMARY KEY,
+	thread_id BIGINT NOT NULL REFERENCES threads(id),
 	address VARCHAR(42) NOT NULL REFERENCES users(address),
 	content TEXT NOT NULL,
 	is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
@@ -37,18 +37,19 @@ CREATE TABLE comments (
 );
 
 CREATE TABLE comment_closures (
-	parent_id INTEGER NOT NULL REFERENCES comments(id),
-	child_id INTEGER NOT NULL REFERENCES comments(id),
+	thread_id BIGINT NOT NULL REFERENCES threads(id),
+	parent_id BIGINT NOT NULL REFERENCES comments(id),
+	child_id BIGINT NOT NULL REFERENCES comments(id),
 	depth INTEGER NOT NULL,
   PRIMARY KEY (parent_id, child_id)
 );
 
 CREATE TABLE comment_votes (
 	address VARCHAR(42) NOT NULL REFERENCES users(address),
-	comment_id INTEGER NOT NULL REFERENCES comments(id),
+	comment_id BIGINT NOT NULL REFERENCES comments(id),
 	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-	vote INTEGER NOT NULL,
+	vote SMALLINT NOT NULL,
 	PRIMARY KEY (address, comment_id)
 );
 

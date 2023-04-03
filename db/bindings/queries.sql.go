@@ -19,13 +19,13 @@ RETURNING id
 
 type CreateCommentParams struct {
 	Address  string
-	ThreadID int32
+	ThreadID int64
 	Content  string
 }
 
-func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (int32, error) {
+func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createComment, arg.Address, arg.ThreadID, arg.Content)
-	var id int32
+	var id int64
 	err := row.Scan(&id)
 	return id, err
 }
@@ -38,7 +38,7 @@ ON CONFLICT (address, comment_id) DO UPDATE SET vote = -1, updated_at = NOW()
 
 type CreateCommentDownVoteParams struct {
 	Address   string
-	CommentID int32
+	CommentID int64
 }
 
 func (q *Queries) CreateCommentDownVote(ctx context.Context, arg CreateCommentDownVoteParams) error {
@@ -54,7 +54,7 @@ ON CONFLICT (address, comment_id) DO UPDATE SET vote = 0, updated_at = NOW()
 
 type CreateCommentUnVoteParams struct {
 	Address   string
-	CommentID int32
+	CommentID int64
 }
 
 func (q *Queries) CreateCommentUnVote(ctx context.Context, arg CreateCommentUnVoteParams) error {
@@ -70,7 +70,7 @@ ON CONFLICT (address, comment_id) DO UPDATE SET vote = 1, updated_at = NOW()
 
 type CreateCommentUpVoteParams struct {
 	Address   string
-	CommentID int32
+	CommentID int64
 }
 
 func (q *Queries) CreateCommentUpVote(ctx context.Context, arg CreateCommentUpVoteParams) error {
@@ -96,30 +96,38 @@ func (q *Queries) CreateOrUpdateUser(ctx context.Context, arg CreateOrUpdateUser
 }
 
 const createParentClosures = `-- name: CreateParentClosures :exec
-INSERT into comment_closures (parent_id, child_id, depth)
-SELECT p.parent_id, c.child_id, p.depth + c.depth+1
+INSERT into comment_closures (thread_id, parent_id, child_id, depth)
+SELECT p.thread_id, p.parent_id, c.child_id, p.depth + c.depth+1
 FROM comment_closures p, comment_closures c
-WHERE p.child_id = $1 and c.parent_id = $2
+WHERE p.child_id = $1 AND c.parent_id = $2
+AND p.thread_id = $3
+AND c.thread_id = $3
 `
 
 type CreateParentClosuresParams struct {
-	ChildID  int32
-	ParentID int32
+	ChildID  int64
+	ParentID int64
+	ThreadID int64
 }
 
 // only do if not root comment (i.e parent_id != child_id)
 func (q *Queries) CreateParentClosures(ctx context.Context, arg CreateParentClosuresParams) error {
-	_, err := q.db.ExecContext(ctx, createParentClosures, arg.ChildID, arg.ParentID)
+	_, err := q.db.ExecContext(ctx, createParentClosures, arg.ChildID, arg.ParentID, arg.ThreadID)
 	return err
 }
 
 const createSelfClosure = `-- name: CreateSelfClosure :exec
-INSERT INTO comment_closures (parent_id, child_id, depth)
-VALUES ($1, $1, 0)
+INSERT INTO comment_closures (thread_id, parent_id, child_id, depth)
+VALUES ($1, $2, $2, 0)
 `
 
-func (q *Queries) CreateSelfClosure(ctx context.Context, parentID int32) error {
-	_, err := q.db.ExecContext(ctx, createSelfClosure, parentID)
+type CreateSelfClosureParams struct {
+	ThreadID int64
+	ParentID int64
+}
+
+func (q *Queries) CreateSelfClosure(ctx context.Context, arg CreateSelfClosureParams) error {
+	_, err := q.db.ExecContext(ctx, createSelfClosure, arg.ThreadID, arg.ParentID)
 	return err
 }
 
@@ -134,9 +142,9 @@ type CreateThreadParams struct {
 	Content string
 }
 
-func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (int32, error) {
+func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createThread, arg.Address, arg.Content)
-	var id int32
+	var id int64
 	err := row.Scan(&id)
 	return id, err
 }
@@ -149,7 +157,7 @@ ON CONFLICT (address, thread_id) DO UPDATE SET vote = -1, updated_at = NOW()
 
 type CreateThreadDownVoteParams struct {
 	Address  string
-	ThreadID int32
+	ThreadID int64
 }
 
 func (q *Queries) CreateThreadDownVote(ctx context.Context, arg CreateThreadDownVoteParams) error {
@@ -165,7 +173,7 @@ ON CONFLICT (address, thread_id) DO UPDATE SET vote = 0, updated_at = NOW()
 
 type CreateThreadUnVoteParams struct {
 	Address  string
-	ThreadID int32
+	ThreadID int64
 }
 
 func (q *Queries) CreateThreadUnVote(ctx context.Context, arg CreateThreadUnVoteParams) error {
@@ -181,7 +189,7 @@ ON CONFLICT (address, thread_id) DO UPDATE SET vote = 1, updated_at = NOW()
 
 type CreateThreadUpVoteParams struct {
 	Address  string
-	ThreadID int32
+	ThreadID int64
 }
 
 func (q *Queries) CreateThreadUpVote(ctx context.Context, arg CreateThreadUpVoteParams) error {
@@ -196,7 +204,7 @@ WHERE id = $1
 RETURNING id
 `
 
-func (q *Queries) DeleteComment(ctx context.Context, id int32) (int32, error) {
+func (q *Queries) DeleteComment(ctx context.Context, id int64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, deleteComment, id)
 	err := row.Scan(&id)
 	return id, err
@@ -209,7 +217,7 @@ WHERE id = $1
 RETURNING id
 `
 
-func (q *Queries) DeleteThread(ctx context.Context, id int32) (int32, error) {
+func (q *Queries) DeleteThread(ctx context.Context, id int64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, deleteThread, id)
 	err := row.Scan(&id)
 	return id, err
@@ -230,8 +238,8 @@ ORDER BY comments.created_at ASC
 `
 
 type GetRootAndFirstDepthCommentsRow struct {
-	ID        int32
-	ThreadID  int32
+	ID        int64
+	ThreadID  int64
 	Address   string
 	Content   string
 	IsDeleted bool
@@ -245,7 +253,7 @@ type GetRootAndFirstDepthCommentsRow struct {
 // coalesce as well for no vote comments
 // TODO: This kind of works but we need to paginate this query
 // But I think we need to paginate the root comments without the children, as including the children will throw of the pagination count
-func (q *Queries) GetRootAndFirstDepthComments(ctx context.Context, threadID int32) ([]GetRootAndFirstDepthCommentsRow, error) {
+func (q *Queries) GetRootAndFirstDepthComments(ctx context.Context, threadID int64) ([]GetRootAndFirstDepthCommentsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getRootAndFirstDepthComments, threadID)
 	if err != nil {
 		return nil, err
@@ -289,7 +297,7 @@ GROUP BY threads.id
 `
 
 type GetThreadRow struct {
-	ID        int32
+	ID        int64
 	Address   string
 	Content   string
 	IsDeleted bool
@@ -298,7 +306,7 @@ type GetThreadRow struct {
 	Votes     int64
 }
 
-func (q *Queries) GetThread(ctx context.Context, id int32) (GetThreadRow, error) {
+func (q *Queries) GetThread(ctx context.Context, id int64) (GetThreadRow, error) {
 	row := q.db.QueryRowContext(ctx, getThread, id)
 	var i GetThreadRow
 	err := row.Scan(
@@ -332,7 +340,7 @@ type GetThreadsParams struct {
 }
 
 type GetThreadsRow struct {
-	ID        int32
+	ID        int64
 	Address   string
 	Content   string
 	IsDeleted bool

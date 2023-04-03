@@ -5,82 +5,82 @@ import (
 )
 
 type Thread struct {
-	ID        int32
-	Address   string
-	Content   string
-	IsDeleted bool
-	CreatedAt time.Time
-	DeletedAt *time.Time
-	Votes     int64
+	id        int64
+	address   string
+	content   string
+	isDeleted bool
+	createdAt time.Time
+	deletedAt *time.Time
+	votes     int64
 }
 
 func NewThread() Thread {
 	return Thread{}
 }
 
-func (t Thread) SetId(id int32) Thread {
-	t.ID = id
+func (t Thread) SetId(id int64) Thread {
+	t.id = id
 	return t
 }
 
 func (t Thread) SetAddress(address string) Thread {
-	t.Address = address
+	t.address = address
 	return t
 }
 
 func (t Thread) SetContent(content string) Thread {
-	t.Content = content
+	t.content = content
 	return t
 }
 
 func (t Thread) SetIsDeleted(isDeleted bool) Thread {
-	t.IsDeleted = isDeleted
+	t.isDeleted = isDeleted
 	return t
 }
 
 func (t Thread) SetCreatedAt(createdAt time.Time) Thread {
-	t.CreatedAt = createdAt
+	t.createdAt = createdAt
 	return t
 }
 
 func (t Thread) SetDeletedAt(deletedAt *time.Time) Thread {
-	t.DeletedAt = deletedAt
+	t.deletedAt = deletedAt
 	return t
 }
 
 func (t Thread) SetVotes(votes int64) Thread {
-	t.Votes = votes
+	t.votes = votes
 	return t
 }
 
-func (t Thread) GetId() int32 {
-	return t.ID
+func (t Thread) GetId() int64 {
+	return t.id
 }
 
 func (t Thread) GetAddress() string {
-	return t.Address
+	return t.address
 }
 
 func (t Thread) GetContent() string {
-	if t.IsDeleted {
+	if t.isDeleted {
 		return "This thread has been deleted."
 	}
 
-	return t.Content
+	return t.content
 }
 
 func (t Thread) GetIsDeleted() bool {
-	return t.IsDeleted
+	return t.isDeleted
 }
 
 func (t Thread) GetCreatedAt() time.Time {
-	return t.CreatedAt
+	return t.createdAt
 }
 
 func (t Thread) GetDeletedAt() *time.Time {
-	return t.DeletedAt
+	return t.deletedAt
 }
 
 func (t Thread) GetVotes() int64 {
-	return t.Votes
+	return t.votes
 }

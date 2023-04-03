@@ -3,10 +3,10 @@ package entities
 import "time"
 
 type User struct {
-	Address   string
-	EnsName   string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	address   string
+	ensName   string
+	createdAt time.Time
+	updatedAt time.Time
 }
 
 func NewUser() User {
@@ -14,37 +14,37 @@ func NewUser() User {
 }
 
 func (u User) SetAddress(address string) User {
-	u.Address = address
+	u.address = address
 	return u
 }
 
 func (u User) SetEnsName(ensName string) User {
-	u.EnsName = ensName
+	u.ensName = ensName
 	return u
 }
 
 func (u User) SetCreatedAt(createdAt time.Time) User {
-	u.CreatedAt = createdAt
+	u.createdAt = createdAt
 	return u
 }
 
 func (u User) SetUpdatedAt(updatedAt time.Time) User {
-	u.UpdatedAt = updatedAt
+	u.updatedAt = updatedAt
 	return u
 }
 
 func (u User) GetAddress() string {
-	return u.Address
+	return u.address
 }
 
 func (u User) GetEnsName() string {
-	return u.EnsName
+	return u.ensName
 }
 
 func (u User) GetCreatedAt() time.Time {
-	return u.CreatedAt
+	return u.createdAt
 }
 
 func (u User) GetUpdatedAt() time.Time {
-	return u.UpdatedAt
+	return u.updatedAt
 }

@@ -17,7 +17,7 @@ func NewDeleteThreadUseCase(dbGateway gateways.IDatabaseGateway) *DeleteThreadUs
 }
 
 type DeleteThreadInput struct {
-	ThreadId       int32
+	ThreadId       int64  `validate:"gt=0"`
 	DeleterAddress string `validate:"eth_addr"`
 }
 

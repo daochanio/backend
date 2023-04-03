@@ -19,7 +19,7 @@ func NewGetThreadUseCase(dbGateway gateways.IDatabaseGateway) *GetThreadUseCase 
 
 // get thread input
 type GetThreadInput struct {
-	ThreadId int32
+	ThreadId int64 `validate:"gt=0"`
 }
 
 func (u *GetThreadUseCase) Execute(ctx context.Context, input GetThreadInput) (entities.Thread, error) {
