@@ -146,24 +146,24 @@ func toCommentsJson(comments []entities.Comment) []getCommentJson {
 
 func toCommentJson(comment entities.Comment) getCommentJson {
 	commentJson := getCommentJson{
-		Id:        comment.GetId(),
-		ThreadId:  comment.GetThreadId(),
-		Address:   comment.GetAddress(),
-		Content:   comment.GetContent(),
-		IsDeleted: comment.GetIsDeleted(),
-		CreatedAt: comment.GetCreatedAt(),
-		DeletedAt: comment.GetDeletedAt(),
-		Votes:     comment.GetVotes(),
+		Id:        comment.Id(),
+		ThreadId:  comment.ThreadId(),
+		Address:   comment.Address(),
+		Content:   comment.Content(),
+		IsDeleted: comment.IsDeleted(),
+		CreatedAt: comment.CreatedAt(),
+		DeletedAt: comment.DeletedAt(),
+		Votes:     comment.Votes(),
 	}
 
-	if repliedToComment := comment.GetRepliedToComment(); repliedToComment != nil {
+	if repliedToComment := comment.RepliedToComment(); repliedToComment != nil {
 		repliedToCommentJson := getCommentJson{
-			Id:        repliedToComment.GetId(),
-			Address:   repliedToComment.GetAddress(),
-			Content:   repliedToComment.GetContent(),
-			IsDeleted: repliedToComment.GetIsDeleted(),
-			CreatedAt: repliedToComment.GetCreatedAt(),
-			DeletedAt: repliedToComment.GetDeletedAt(),
+			Id:        repliedToComment.Id(),
+			Address:   repliedToComment.Address(),
+			Content:   repliedToComment.Content(),
+			IsDeleted: repliedToComment.IsDeleted(),
+			CreatedAt: repliedToComment.CreatedAt(),
+			DeletedAt: repliedToComment.DeletedAt(),
 		}
 		commentJson.RepliedToComment = &repliedToCommentJson
 	}

@@ -208,7 +208,7 @@ LEFT JOIN comment_votes cv on c.id = cv.comment_id
 LEFT JOIN comments r on c.replied_to_comment_id = r.id
 WHERE c.thread_id = $1
 GROUP BY c.id, r.id
-ORDER BY c.created_at ASC
+ORDER BY c.created_at DESC
 OFFSET $2
 LIMIT $3
 `

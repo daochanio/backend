@@ -14,54 +14,37 @@ type Thread struct {
 	votes     int64
 }
 
-func NewThread() Thread {
-	return Thread{}
+type ThreadParams struct {
+	Id        int64
+	Address   string
+	Content   string
+	IsDeleted bool
+	CreatedAt time.Time
+	DeletedAt *time.Time
+	Votes     int64
 }
 
-func (t Thread) SetId(id int64) Thread {
-	t.id = id
-	return t
+func NewThread(params ThreadParams) Thread {
+	return Thread{
+		id:        params.Id,
+		address:   params.Address,
+		content:   params.Content,
+		isDeleted: params.IsDeleted,
+		createdAt: params.CreatedAt,
+		deletedAt: params.DeletedAt,
+		votes:     params.Votes,
+	}
 }
 
-func (t Thread) SetAddress(address string) Thread {
-	t.address = address
-	return t
-}
-
-func (t Thread) SetContent(content string) Thread {
-	t.content = content
-	return t
-}
-
-func (t Thread) SetIsDeleted(isDeleted bool) Thread {
-	t.isDeleted = isDeleted
-	return t
-}
-
-func (t Thread) SetCreatedAt(createdAt time.Time) Thread {
-	t.createdAt = createdAt
-	return t
-}
-
-func (t Thread) SetDeletedAt(deletedAt *time.Time) Thread {
-	t.deletedAt = deletedAt
-	return t
-}
-
-func (t Thread) SetVotes(votes int64) Thread {
-	t.votes = votes
-	return t
-}
-
-func (t Thread) GetId() int64 {
+func (t *Thread) Id() int64 {
 	return t.id
 }
 
-func (t Thread) GetAddress() string {
+func (t *Thread) Address() string {
 	return t.address
 }
 
-func (t Thread) GetContent() string {
+func (t *Thread) Content() string {
 	if t.isDeleted {
 		return "This thread has been deleted."
 	}
@@ -69,18 +52,18 @@ func (t Thread) GetContent() string {
 	return t.content
 }
 
-func (t Thread) GetIsDeleted() bool {
+func (t *Thread) IsDeleted() bool {
 	return t.isDeleted
 }
 
-func (t Thread) GetCreatedAt() time.Time {
+func (t *Thread) CreatedAt() time.Time {
 	return t.createdAt
 }
 
-func (t Thread) GetDeletedAt() *time.Time {
+func (t *Thread) DeletedAt() *time.Time {
 	return t.deletedAt
 }
 
-func (t Thread) GetVotes() int64 {
+func (t *Thread) Votes() int64 {
 	return t.votes
 }

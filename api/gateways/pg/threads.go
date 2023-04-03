@@ -35,15 +35,15 @@ func (p *PostgresGateway) GetThreads(ctx context.Context, offset int32, limit in
 			deletedAt = &thread.DeletedAt.Time
 		}
 
-		entitie := entities.
-			NewThread().
-			SetId(thread.ID).
-			SetAddress(thread.Address).
-			SetContent(thread.Content).
-			SetVotes(thread.Votes).
-			SetCreatedAt(thread.CreatedAt).
-			SetDeletedAt(deletedAt).
-			SetIsDeleted(thread.IsDeleted)
+		entitie := entities.NewThread(entities.ThreadParams{
+			Id:        thread.ID,
+			Address:   thread.Address,
+			Content:   thread.Content,
+			Votes:     thread.Votes,
+			CreatedAt: thread.CreatedAt,
+			IsDeleted: thread.IsDeleted,
+			DeletedAt: deletedAt,
+		})
 		threadEnts = append(threadEnts, entitie)
 	}
 	return threadEnts, nil
@@ -65,15 +65,15 @@ func (p *PostgresGateway) GetThreadById(ctx context.Context, id int64) (entities
 		deletedAt = &thread.DeletedAt.Time
 	}
 
-	entitie := entities.
-		NewThread().
-		SetId(thread.ID).
-		SetAddress(thread.Address).
-		SetContent(thread.Content).
-		SetVotes(thread.Votes).
-		SetCreatedAt(thread.CreatedAt).
-		SetDeletedAt(deletedAt).
-		SetIsDeleted(thread.IsDeleted)
+	entitie := entities.NewThread(entities.ThreadParams{
+		Id:        thread.ID,
+		Address:   thread.Address,
+		Content:   thread.Content,
+		Votes:     thread.Votes,
+		CreatedAt: thread.CreatedAt,
+		IsDeleted: thread.IsDeleted,
+		DeletedAt: deletedAt,
+	})
 	return entitie, nil
 }
 

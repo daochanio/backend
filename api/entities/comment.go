@@ -16,91 +16,67 @@ type Comment struct {
 	votes            int64
 }
 
-func NewComment() Comment {
-	return Comment{}
+type CommentParams struct {
+	Id               int64
+	RepliedToComment *Comment
+	ThreadId         int64
+	Address          string
+	Content          string
+	IsDeleted        bool
+	CreatedAt        time.Time
+	DeletedAt        *time.Time
+	Votes            int64
 }
 
-func (c Comment) SetId(id int64) Comment {
-	c.id = id
-	return c
+func NewComment(params CommentParams) Comment {
+	return Comment{
+		id:               params.Id,
+		repliedToComment: params.RepliedToComment,
+		threadId:         params.ThreadId,
+		address:          params.Address,
+		content:          params.Content,
+		isDeleted:        params.IsDeleted,
+		createdAt:        params.CreatedAt,
+		deletedAt:        params.DeletedAt,
+		votes:            params.Votes,
+	}
 }
 
-func (c Comment) SetRepliedToComment(replyingComment *Comment) Comment {
-	c.repliedToComment = replyingComment
-	return c
-}
-
-func (c Comment) SetThreadId(threadId int64) Comment {
-	c.threadId = threadId
-	return c
-}
-
-func (c Comment) SetAddress(address string) Comment {
-	c.address = address
-	return c
-}
-
-func (c Comment) SetContent(content string) Comment {
-	c.content = content
-	return c
-}
-
-func (c Comment) SetIsDeleted(isDeleted bool) Comment {
-	c.isDeleted = isDeleted
-	return c
-}
-
-func (c Comment) SetCreatedAt(createdAt time.Time) Comment {
-	c.createdAt = createdAt
-	return c
-}
-
-func (c Comment) SetDeletedAt(deletedAt *time.Time) Comment {
-	c.deletedAt = deletedAt
-	return c
-}
-
-func (c Comment) SetVotes(votes int64) Comment {
-	c.votes = votes
-	return c
-}
-
-func (c Comment) GetId() int64 {
+func (c *Comment) Id() int64 {
 	return c.id
 }
 
-func (c Comment) GetRepliedToComment() *Comment {
+func (c *Comment) RepliedToComment() *Comment {
 	return c.repliedToComment
 }
 
-func (c Comment) GetThreadId() int64 {
+func (c *Comment) ThreadId() int64 {
 	return c.threadId
 }
 
-func (c Comment) GetAddress() string {
+func (c *Comment) Address() string {
 	return c.address
 }
 
-func (c Comment) GetContent() string {
+func (c *Comment) Content() string {
 	if c.isDeleted {
 		return "This comment has been deleted."
 	}
-
 	return c.content
 }
 
-func (c Comment) GetIsDeleted() bool {
+func (c *Comment) IsDeleted() bool {
 	return c.isDeleted
 }
 
-func (c Comment) GetCreatedAt() time.Time {
+func (c *Comment) CreatedAt() time.Time {
 	return c.createdAt
 }
 
-func (c Comment) GetDeletedAt() *time.Time {
+func (c *Comment) DeletedAt() *time.Time {
 	return c.deletedAt
 }
 
-func (c Comment) GetVotes() int64 {
+func (c *Comment) Votes() int64 {
 	return c.votes
 }

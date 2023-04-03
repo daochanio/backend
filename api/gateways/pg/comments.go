@@ -46,31 +46,35 @@ func (p *PostgresGateway) GetComments(ctx context.Context, threadId int64, offse
 			deletedAt = &comment.DeletedAt.Time
 		}
 
-		entitie := entities.
-			NewComment().
-			SetId(comment.ID).
-			SetThreadId(comment.ThreadID).
-			SetAddress(comment.Address).
-			SetContent(comment.Content).
-			SetVotes(comment.Votes).
-			SetCreatedAt(comment.CreatedAt).
-			SetDeletedAt(deletedAt).
-			SetIsDeleted(comment.IsDeleted)
-
 		// set replying comment if exists
+		var repliedToComment *entities.Comment
 		if comment.RID.Valid {
-			repliedToComment := entities.
-				NewComment().
-				SetId(comment.RID.Int64).
-				SetAddress(comment.RAddress.String).
-				SetContent(comment.RContent.String).
-				SetCreatedAt(comment.RCreatedAt.Time).
-				SetIsDeleted(comment.RIsDeleted.Bool)
+			var deletedAt *time.Time
 			if comment.RDeletedAt.Valid {
-				repliedToComment.SetDeletedAt(&comment.RDeletedAt.Time)
+				deletedAt = &comment.RDeletedAt.Time
 			}
-			entitie = entitie.SetRepliedToComment(&repliedToComment)
+			comment := entities.NewComment(entities.CommentParams{
+				Id:        comment.RID.Int64,
+				Address:   comment.RAddress.String,
+				Content:   comment.RContent.String,
+				IsDeleted: comment.RIsDeleted.Bool,
+				CreatedAt: comment.RCreatedAt.Time,
+				DeletedAt: deletedAt,
+			})
+			repliedToComment = &comment
 		}
+
+		entitie := entities.NewComment(entities.CommentParams{
+			Id:               comment.ID,
+			ThreadId:         comment.ThreadID,
+			Address:          comment.Address,
+			Content:          comment.Content,
+			RepliedToComment: repliedToComment,
+			IsDeleted:        comment.IsDeleted,
+			CreatedAt:        comment.CreatedAt,
+			DeletedAt:        deletedAt,
+			Votes:            comment.Votes,
+		})
 
 		commentEnts = append(commentEnts, entitie)
 	}

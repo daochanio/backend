@@ -9,42 +9,34 @@ type User struct {
 	updatedAt time.Time
 }
 
-func NewUser() User {
-	return User{}
+type UserParams struct {
+	Address   string
+	EnsName   string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
-func (u User) SetAddress(address string) User {
-	u.address = address
-	return u
+func NewUser(params UserParams) User {
+	return User{
+		address:   params.Address,
+		ensName:   params.EnsName,
+		createdAt: params.CreatedAt,
+		updatedAt: params.UpdatedAt,
+	}
 }
 
-func (u User) SetEnsName(ensName string) User {
-	u.ensName = ensName
-	return u
-}
-
-func (u User) SetCreatedAt(createdAt time.Time) User {
-	u.createdAt = createdAt
-	return u
-}
-
-func (u User) SetUpdatedAt(updatedAt time.Time) User {
-	u.updatedAt = updatedAt
-	return u
-}
-
-func (u User) GetAddress() string {
+func (u *User) Address() string {
 	return u.address
 }
 
-func (u User) GetEnsName() string {
+func (u *User) EnsName() string {
 	return u.ensName
 }
 
-func (u User) GetCreatedAt() time.Time {
+func (u *User) CreatedAt() time.Time {
 	return u.createdAt
 }
 
-func (u User) GetUpdatedAt() time.Time {
+func (u *User) UpdatedAt() time.Time {
 	return u.updatedAt
 }

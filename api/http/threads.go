@@ -146,13 +146,13 @@ type getThreadJson struct {
 
 func toThreadJson(thread entities.Thread) getThreadJson {
 	return getThreadJson{
-		Id:        thread.GetId(),
-		Address:   thread.GetAddress(),
-		Content:   thread.GetContent(),
-		IsDeleted: thread.GetIsDeleted(),
-		CreatedAt: thread.GetCreatedAt(),
-		DeletedAt: thread.GetDeletedAt(),
-		Votes:     thread.GetVotes(),
+		Id:        thread.Id(),
+		Address:   thread.Address(),
+		Content:   thread.Content(),
+		IsDeleted: thread.IsDeleted(),
+		CreatedAt: thread.CreatedAt(),
+		DeletedAt: thread.DeletedAt(),
+		Votes:     thread.Votes(),
 	}
 }
 
