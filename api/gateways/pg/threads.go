@@ -18,10 +18,10 @@ func (p *PostgresGateway) CreateThread(ctx context.Context, address string, cont
 	})
 }
 
-func (p *PostgresGateway) GetThreads(ctx context.Context, offset int64, limit int64) ([]entities.Thread, error) {
+func (p *PostgresGateway) GetThreads(ctx context.Context, offset int32, limit int32) ([]entities.Thread, error) {
 	threads, err := p.queries.GetThreads(ctx, bindings.GetThreadsParams{
-		Offset: int32(offset),
-		Limit:  int32(limit),
+		Offset: offset,
+		Limit:  limit,
 	})
 
 	if err != nil {

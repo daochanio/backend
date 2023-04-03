@@ -10,25 +10,12 @@ VALUES ($1, $2)
 RETURNING id;
 
 -- name: CreateComment :one
-INSERT INTO comments (address, thread_id, content)
-VALUES ($1, $2, $3)
+INSERT INTO comments (address, thread_id, replied_to_comment_id, content)
+VALUES ($1, $2, $3, $4)
 RETURNING id;
 
--- name: CreateSelfClosure :exec
-INSERT INTO comment_closures (thread_id, parent_id, child_id, depth)
-VALUES ($1, $2, $2, 0);
-
--- name: CreateParentClosures :exec
--- only do if not root comment (i.e parent_id != child_id)
-INSERT into comment_closures (thread_id, parent_id, child_id, depth)
-SELECT p.thread_id, p.parent_id, c.child_id, p.depth + c.depth+1
-FROM comment_closures p, comment_closures c
-WHERE p.child_id = $1 AND c.parent_id = $2
-AND p.thread_id = $3
-AND c.thread_id = $3;
-
 -- name: GetThreads :many
--- TODO: We can order by random in the future
+-- TODO: We can order by random in the future and introduce a shuffle button on the home page
 SELECT
   threads.*,
   SUM(COALESCE(thread_votes.vote, 0)) as votes
@@ -50,23 +37,35 @@ WHERE threads.id = $1
 AND threads.is_deleted = FALSE
 GROUP BY threads.id;
 
--- name: GetRootAndFirstDepthComments :many
--- select root and first depth comments
--- left join incase there are comments with no votes
--- coalesce as well for no vote comments
--- TODO: This kind of works but we need to paginate this query 
--- But I think we need to paginate the root comments without the children, as including the children will throw of the pagination count
-SELECT comments.*, SUM(COALESCE(comment_votes.vote, 0)) as votes
-FROM comments
-LEFT JOIN comment_votes on comments.id = comment_votes.comment_id
-WHERE comments.id NOT IN (
-	SELECT child_id
-	FROM comment_closures
-	where depth > 1
-)
-AND comments.thread_id = $1
-GROUP BY comments.id
-ORDER BY comments.created_at ASC;
+CREATE TABLE comments (
+	id BIGSERIAL PRIMARY KEY,
+	thread_id BIGINT NOT NULL REFERENCES threads(id),
+	reply_comment_id BIGINT NULL REFERENCES comments(id),
+	address VARCHAR(42) NOT NULL REFERENCES users(address),
+	content TEXT NOT NULL,
+	is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+	deleted_at TIMESTAMP NULL DEFAULT NULL
+);
+
+-- name: GetComments :many
+SELECT
+	c.*,
+	SUM(COALESCE(cv.vote, 0)) as votes,
+	r.id as r_id,
+	r.address as r_address,
+	r.content as r_content,
+	r.is_deleted as r_is_deleted,
+	r.created_at as r_created_at,
+	r.deleted_at as r_deleted_at
+FROM comments c
+LEFT JOIN comment_votes cv on c.id = cv.comment_id
+LEFT JOIN comments r on c.replied_to_comment_id = r.id
+WHERE c.thread_id = $1
+GROUP BY c.id, r.id
+ORDER BY c.created_at ASC
+OFFSET $2
+LIMIT $3;
 
 -- name: DeleteThread :one
 UPDATE threads

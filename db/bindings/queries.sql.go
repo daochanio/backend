@@ -12,19 +12,25 @@ import (
 )
 
 const createComment = `-- name: CreateComment :one
-INSERT INTO comments (address, thread_id, content)
-VALUES ($1, $2, $3)
+INSERT INTO comments (address, thread_id, replied_to_comment_id, content)
+VALUES ($1, $2, $3, $4)
 RETURNING id
 `
 
 type CreateCommentParams struct {
-	Address  string
-	ThreadID int64
-	Content  string
+	Address            string
+	ThreadID           int64
+	RepliedToCommentID sql.NullInt64
+	Content            string
 }
 
 func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, createComment, arg.Address, arg.ThreadID, arg.Content)
+	row := q.db.QueryRowContext(ctx, createComment,
+		arg.Address,
+		arg.ThreadID,
+		arg.RepliedToCommentID,
+		arg.Content,
+	)
 	var id int64
 	err := row.Scan(&id)
 	return id, err
@@ -92,42 +98,6 @@ type CreateOrUpdateUserParams struct {
 // create/update user every time the sign-in
 func (q *Queries) CreateOrUpdateUser(ctx context.Context, arg CreateOrUpdateUserParams) error {
 	_, err := q.db.ExecContext(ctx, createOrUpdateUser, arg.Address, arg.EnsName)
-	return err
-}
-
-const createParentClosures = `-- name: CreateParentClosures :exec
-INSERT into comment_closures (thread_id, parent_id, child_id, depth)
-SELECT p.thread_id, p.parent_id, c.child_id, p.depth + c.depth+1
-FROM comment_closures p, comment_closures c
-WHERE p.child_id = $1 AND c.parent_id = $2
-AND p.thread_id = $3
-AND c.thread_id = $3
-`
-
-type CreateParentClosuresParams struct {
-	ChildID  int64
-	ParentID int64
-	ThreadID int64
-}
-
-// only do if not root comment (i.e parent_id != child_id)
-func (q *Queries) CreateParentClosures(ctx context.Context, arg CreateParentClosuresParams) error {
-	_, err := q.db.ExecContext(ctx, createParentClosures, arg.ChildID, arg.ParentID, arg.ThreadID)
-	return err
-}
-
-const createSelfClosure = `-- name: CreateSelfClosure :exec
-INSERT INTO comment_closures (thread_id, parent_id, child_id, depth)
-VALUES ($1, $2, $2, 0)
-`
-
-type CreateSelfClosureParams struct {
-	ThreadID int64
-	ParentID int64
-}
-
-func (q *Queries) CreateSelfClosure(ctx context.Context, arg CreateSelfClosureParams) error {
-	_, err := q.db.ExecContext(ctx, createSelfClosure, arg.ThreadID, arg.ParentID)
 	return err
 }
 
@@ -223,54 +193,75 @@ func (q *Queries) DeleteThread(ctx context.Context, id int64) (int64, error) {
 	return id, err
 }
 
-const getRootAndFirstDepthComments = `-- name: GetRootAndFirstDepthComments :many
-SELECT comments.id, comments.thread_id, comments.address, comments.content, comments.is_deleted, comments.created_at, comments.deleted_at, SUM(COALESCE(comment_votes.vote, 0)) as votes
-FROM comments
-LEFT JOIN comment_votes on comments.id = comment_votes.comment_id
-WHERE comments.id NOT IN (
-	SELECT child_id
-	FROM comment_closures
-	where depth > 1
-)
-AND comments.thread_id = $1
-GROUP BY comments.id
-ORDER BY comments.created_at ASC
+const getComments = `-- name: GetComments :many
+SELECT
+	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.is_deleted, c.created_at, c.deleted_at,
+	SUM(COALESCE(cv.vote, 0)) as votes,
+	r.id as r_id,
+	r.address as r_address,
+	r.content as r_content,
+	r.is_deleted as r_is_deleted,
+	r.created_at as r_created_at,
+	r.deleted_at as r_deleted_at
+FROM comments c
+LEFT JOIN comment_votes cv on c.id = cv.comment_id
+LEFT JOIN comments r on c.replied_to_comment_id = r.id
+WHERE c.thread_id = $1
+GROUP BY c.id, r.id
+ORDER BY c.created_at ASC
+OFFSET $2
+LIMIT $3
 `
 
-type GetRootAndFirstDepthCommentsRow struct {
-	ID        int64
-	ThreadID  int64
-	Address   string
-	Content   string
-	IsDeleted bool
-	CreatedAt time.Time
-	DeletedAt sql.NullTime
-	Votes     int64
+type GetCommentsParams struct {
+	ThreadID int64
+	Offset   int32
+	Limit    int32
 }
 
-// select root and first depth comments
-// left join incase there are comments with no votes
-// coalesce as well for no vote comments
-// TODO: This kind of works but we need to paginate this query
-// But I think we need to paginate the root comments without the children, as including the children will throw of the pagination count
-func (q *Queries) GetRootAndFirstDepthComments(ctx context.Context, threadID int64) ([]GetRootAndFirstDepthCommentsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getRootAndFirstDepthComments, threadID)
+type GetCommentsRow struct {
+	ID                 int64
+	ThreadID           int64
+	RepliedToCommentID sql.NullInt64
+	Address            string
+	Content            string
+	IsDeleted          bool
+	CreatedAt          time.Time
+	DeletedAt          sql.NullTime
+	Votes              int64
+	RID                sql.NullInt64
+	RAddress           sql.NullString
+	RContent           sql.NullString
+	RIsDeleted         sql.NullBool
+	RCreatedAt         sql.NullTime
+	RDeletedAt         sql.NullTime
+}
+
+func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]GetCommentsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getComments, arg.ThreadID, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetRootAndFirstDepthCommentsRow
+	var items []GetCommentsRow
 	for rows.Next() {
-		var i GetRootAndFirstDepthCommentsRow
+		var i GetCommentsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ThreadID,
+			&i.RepliedToCommentID,
 			&i.Address,
 			&i.Content,
 			&i.IsDeleted,
 			&i.CreatedAt,
 			&i.DeletedAt,
 			&i.Votes,
+			&i.RID,
+			&i.RAddress,
+			&i.RContent,
+			&i.RIsDeleted,
+			&i.RCreatedAt,
+			&i.RDeletedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -349,7 +340,7 @@ type GetThreadsRow struct {
 	Votes     int64
 }
 
-// TODO: We can order by random in the future
+// TODO: We can order by random in the future and introduce a shuffle button on the home page
 func (q *Queries) GetThreads(ctx context.Context, arg GetThreadsParams) ([]GetThreadsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getThreads, arg.Offset, arg.Limit)
 	if err != nil {

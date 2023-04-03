@@ -18,10 +18,10 @@ func NewCreateCommentUseCase(dbGateway gateways.IDatabaseGateway) *CreateComment
 }
 
 type CreateCommentInput struct {
-	ThreadId        int64  `validate:"gt=0"`
-	ParentCommentId *int64 `validate:"omitempty,gt=0"`
-	Address         string `validate:"eth_addr"`
-	Content         string `validate:"max=1000"`
+	ThreadId           int64  `validate:"gt=0"`
+	RepliedToCommentId *int64 `validate:"omitempty,gt=0"`
+	Address            string `validate:"eth_addr"`
+	Content            string `validate:"max=1000"`
 }
 
 func (u *CreateCommentUseCase) Execute(ctx context.Context, input CreateCommentInput) (int64, error) {
@@ -29,5 +29,5 @@ func (u *CreateCommentUseCase) Execute(ctx context.Context, input CreateCommentI
 		return 0, err
 	}
 
-	return u.dbGateway.CreateComment(ctx, input.ThreadId, input.Address, input.ParentCommentId, input.Content)
+	return u.dbGateway.CreateComment(ctx, input.ThreadId, input.Address, input.RepliedToCommentId, input.Content)
 }

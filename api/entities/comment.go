@@ -5,15 +5,15 @@ import (
 )
 
 type Comment struct {
-	id              int64
-	parentCommentId *int64
-	threadId        int64
-	address         string
-	content         string
-	isDeleted       bool
-	createdAt       time.Time
-	deletedAt       *time.Time
-	votes           int64
+	id               int64
+	repliedToComment *Comment
+	threadId         int64
+	address          string
+	content          string
+	isDeleted        bool
+	createdAt        time.Time
+	deletedAt        *time.Time
+	votes            int64
 }
 
 func NewComment() Comment {
@@ -25,8 +25,8 @@ func (c Comment) SetId(id int64) Comment {
 	return c
 }
 
-func (c Comment) SetParentCommentId(parentCommentId int64) Comment {
-	c.parentCommentId = &parentCommentId
+func (c Comment) SetRepliedToComment(replyingComment *Comment) Comment {
+	c.repliedToComment = replyingComment
 	return c
 }
 
@@ -69,8 +69,8 @@ func (c Comment) GetId() int64 {
 	return c.id
 }
 
-func (c Comment) GetParentCommentId() *int64 {
-	return c.parentCommentId
+func (c Comment) GetRepliedToComment() *Comment {
+	return c.repliedToComment
 }
 
 func (c Comment) GetThreadId() int64 {

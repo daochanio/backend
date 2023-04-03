@@ -11,53 +11,29 @@ import (
 	"github.com/daochanio/backend/db/bindings"
 )
 
-func (p *PostgresGateway) CreateComment(ctx context.Context, threadId int64, address string, parentCommentId *int64, content string) (int64, error) {
-	// begin tx
-	tx, err := p.db.Begin()
-	if err != nil {
-		return 0, err
+func (p *PostgresGateway) CreateComment(ctx context.Context, threadId int64, address string, repliedToCommentId *int64, content string) (int64, error) {
+	rep := sql.NullInt64{
+		Valid: repliedToCommentId != nil,
 	}
 
-	defer tx.Rollback()
+	if rep.Valid {
+		rep.Int64 = *repliedToCommentId
+	}
 
-	qtx := p.queries.WithTx(tx)
-
-	id, err := qtx.CreateComment(ctx, bindings.CreateCommentParams{
-		ThreadID: threadId,
-		Address:  address,
-		Content:  content,
+	return p.queries.CreateComment(ctx, bindings.CreateCommentParams{
+		ThreadID:           threadId,
+		Address:            address,
+		RepliedToCommentID: rep,
+		Content:            content,
 	})
-
-	if err != nil {
-		return 0, err
-	}
-
-	if err := qtx.CreateSelfClosure(ctx, bindings.CreateSelfClosureParams{
-		ThreadID: threadId,
-		ParentID: id,
-	}); err != nil {
-		return 0, err
-	}
-
-	// only create parent closures if comment is responding to another comment
-	if parentCommentId != nil {
-		if err := qtx.CreateParentClosures(ctx, bindings.CreateParentClosuresParams{
-			ThreadID: threadId,
-			// these two look reversed because of the way sqlc infers names from the query
-			// the ordering is correct
-			// We want p.child_id = PARENT_ID and c.parent_id = CHILD_ID
-			ChildID:  *parentCommentId,
-			ParentID: id,
-		}); err != nil {
-			return 0, err
-		}
-	}
-
-	return id, tx.Commit()
 }
 
-func (p *PostgresGateway) GetComments(ctx context.Context, threadId int64) ([]entities.Comment, error) {
-	comments, err := p.queries.GetRootAndFirstDepthComments(ctx, threadId)
+func (p *PostgresGateway) GetComments(ctx context.Context, threadId int64, offset int32, limit int32) ([]entities.Comment, error) {
+	comments, err := p.queries.GetComments(ctx, bindings.GetCommentsParams{
+		ThreadID: threadId,
+		Offset:   offset,
+		Limit:    limit,
+	})
 
 	if err != nil {
 		return nil, err
@@ -80,6 +56,22 @@ func (p *PostgresGateway) GetComments(ctx context.Context, threadId int64) ([]en
 			SetCreatedAt(comment.CreatedAt).
 			SetDeletedAt(deletedAt).
 			SetIsDeleted(comment.IsDeleted)
+
+		// set replying comment if exists
+		if comment.RID.Valid {
+			repliedToComment := entities.
+				NewComment().
+				SetId(comment.RID.Int64).
+				SetAddress(comment.RAddress.String).
+				SetContent(comment.RContent.String).
+				SetCreatedAt(comment.RCreatedAt.Time).
+				SetIsDeleted(comment.RIsDeleted.Bool)
+			if comment.RDeletedAt.Valid {
+				repliedToComment.SetDeletedAt(&comment.RDeletedAt.Time)
+			}
+			entitie = entitie.SetRepliedToComment(&repliedToComment)
+		}
+
 		commentEnts = append(commentEnts, entitie)
 	}
 	return commentEnts, nil

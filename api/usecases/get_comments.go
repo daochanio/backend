@@ -20,6 +20,8 @@ func NewGetCommentsUseCase(dbGateway gateways.IDatabaseGateway) *GetCommentsUseC
 
 type GetCommentsInput struct {
 	ThreadId int64 `validate:"gt=0"`
+	Offset   int32 `validate:"gte=0"`
+	Limit    int32 `validate:"gte=0"`
 }
 
 func (u *GetCommentsUseCase) Execute(ctx context.Context, input GetCommentsInput) ([]entities.Comment, error) {
@@ -27,5 +29,5 @@ func (u *GetCommentsUseCase) Execute(ctx context.Context, input GetCommentsInput
 		return nil, err
 	}
 
-	return u.dbGateway.GetComments(ctx, input.ThreadId)
+	return u.dbGateway.GetComments(ctx, input.ThreadId, input.Offset, input.Limit)
 }

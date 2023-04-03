@@ -10,20 +10,14 @@ import (
 )
 
 type Comment struct {
-	ID        int64
-	ThreadID  int64
-	Address   string
-	Content   string
-	IsDeleted bool
-	CreatedAt time.Time
-	DeletedAt sql.NullTime
-}
-
-type CommentClosure struct {
-	ThreadID int64
-	ParentID int64
-	ChildID  int64
-	Depth    int32
+	ID                 int64
+	ThreadID           int64
+	RepliedToCommentID sql.NullInt64
+	Address            string
+	Content            string
+	IsDeleted          bool
+	CreatedAt          time.Time
+	DeletedAt          sql.NullTime
 }
 
 type CommentVote struct {

@@ -59,7 +59,7 @@ func (h *httpServer) getThreadsRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
-	var body threadJson
+	var body createThreadJson
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		h.presentBadRequest(w, r, err)
@@ -130,7 +130,11 @@ func (h *httpServer) createThreadVoteRoute(w http.ResponseWriter, r *http.Reques
 	h.presentStatus(w, r, http.StatusCreated)
 }
 
-type threadJson struct {
+type createThreadJson struct {
+	Content string `json:"content"`
+}
+
+type getThreadJson struct {
 	Id        int64      `json:"id"`
 	Address   string     `json:"address"`
 	Content   string     `json:"content"`
@@ -140,8 +144,8 @@ type threadJson struct {
 	Votes     int64      `json:"votes"`
 }
 
-func toThreadJson(thread entities.Thread) threadJson {
-	return threadJson{
+func toThreadJson(thread entities.Thread) getThreadJson {
+	return getThreadJson{
 		Id:        thread.GetId(),
 		Address:   thread.GetAddress(),
 		Content:   thread.GetContent(),
@@ -152,8 +156,8 @@ func toThreadJson(thread entities.Thread) threadJson {
 	}
 }
 
-func toThreadsJson(threads []entities.Thread) []threadJson {
-	threadsJson := []threadJson{}
+func toThreadsJson(threads []entities.Thread) []getThreadJson {
+	threadsJson := []getThreadJson{}
 	for _, thread := range threads {
 		threadsJson = append(threadsJson, toThreadJson(thread))
 	}

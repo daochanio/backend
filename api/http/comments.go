@@ -21,8 +21,17 @@ func (h *httpServer) getCommentsRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	paginationParams, err := h.getPaginationParams(r)
+
+	if err != nil {
+		h.presentBadRequest(w, r, err)
+		return
+	}
+
 	comments, err := h.getCommentsUseCase.Execute(r.Context(), usecases.GetCommentsInput{
 		ThreadId: threadId,
+		Offset:   paginationParams.Offset,
+		Limit:    paginationParams.Limit,
 	})
 
 	if err != nil {
@@ -34,7 +43,7 @@ func (h *httpServer) getCommentsRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpServer) createCommentRoute(w http.ResponseWriter, r *http.Request) {
-	var body commentJson
+	var body createCommentJson
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		h.presentBadRequest(w, r, err)
@@ -42,10 +51,10 @@ func (h *httpServer) createCommentRoute(w http.ResponseWriter, r *http.Request) 
 	}
 
 	id, err := h.createCommentUseCase.Execute(r.Context(), usecases.CreateCommentInput{
-		ParentCommentId: body.ParentCommentId,
-		ThreadId:        body.ThreadId,
-		Address:         "0xd0147bf60c64b88f3a85425012c129ffdc3e6883", // TODO: get address from auth
-		Content:         body.Content,
+		RepliedToCommentId: body.RepliedToCommentId,
+		ThreadId:           body.ThreadId,
+		Address:            "0xd0147bf60c64b88f3a85425012c129ffdc3e6883", // TODO: get address from auth
+		Content:            body.Content,
 	})
 
 	if err != nil {
@@ -107,38 +116,57 @@ func (h *httpServer) createCommentVoteRoute(w http.ResponseWriter, r *http.Reque
 	h.presentStatus(w, r, http.StatusCreated)
 }
 
-type commentJson struct {
-	Id              int64      `json:"id"`
-	ParentCommentId *int64     `json:"parentCommentId"`
-	ThreadId        int64      `json:"threadId"`
-	Address         string     `json:"address"`
-	Content         string     `json:"content"`
-	IsDeleted       bool       `json:"isDeleted"`
-	CreatedAt       time.Time  `json:"createdAt"`
-	DeletedAt       *time.Time `json:"deletedAt"`
-	Votes           int64      `json:"votes"`
+type createCommentJson struct {
+	RepliedToCommentId *int64 `json:"repliedToCommentId,omitempty"`
+	ThreadId           int64  `json:"threadId"`
+	Content            string `json:"content"`
 }
 
-func toCommentJson(comment entities.Comment) commentJson {
-	return commentJson{
-		Id:              comment.GetId(),
-		ParentCommentId: comment.GetParentCommentId(),
-		ThreadId:        comment.GetThreadId(),
-		Address:         comment.GetAddress(),
-		Content:         comment.GetContent(),
-		IsDeleted:       comment.GetIsDeleted(),
-		CreatedAt:       comment.GetCreatedAt(),
-		DeletedAt:       comment.GetDeletedAt(),
-		Votes:           comment.GetVotes(),
-	}
+type getCommentJson struct {
+	Id               int64           `json:"id"`
+	RepliedToComment *getCommentJson `json:"repliedToComment,omitempty"`
+	ThreadId         int64           `json:"threadId,omitempty"` // empty if reply
+	Address          string          `json:"address"`
+	Content          string          `json:"content"`
+	IsDeleted        bool            `json:"isDeleted"`
+	CreatedAt        time.Time       `json:"createdAt"`
+	DeletedAt        *time.Time      `json:"deletedAt"`
+	Votes            int64           `json:"votes,omitempty"` // empty if reply
 }
 
-func toCommentsJson(comments []entities.Comment) []commentJson {
-	commentsJson := make([]commentJson, len(comments))
+func toCommentsJson(comments []entities.Comment) []getCommentJson {
+	commentsJson := make([]getCommentJson, len(comments))
 
 	for i, comment := range comments {
 		commentsJson[i] = toCommentJson(comment)
 	}
 
 	return commentsJson
+}
+
+func toCommentJson(comment entities.Comment) getCommentJson {
+	commentJson := getCommentJson{
+		Id:        comment.GetId(),
+		ThreadId:  comment.GetThreadId(),
+		Address:   comment.GetAddress(),
+		Content:   comment.GetContent(),
+		IsDeleted: comment.GetIsDeleted(),
+		CreatedAt: comment.GetCreatedAt(),
+		DeletedAt: comment.GetDeletedAt(),
+		Votes:     comment.GetVotes(),
+	}
+
+	if repliedToComment := comment.GetRepliedToComment(); repliedToComment != nil {
+		repliedToCommentJson := getCommentJson{
+			Id:        repliedToComment.GetId(),
+			Address:   repliedToComment.GetAddress(),
+			Content:   repliedToComment.GetContent(),
+			IsDeleted: repliedToComment.GetIsDeleted(),
+			CreatedAt: repliedToComment.GetCreatedAt(),
+			DeletedAt: repliedToComment.GetDeletedAt(),
+		}
+		commentJson.RepliedToComment = &repliedToCommentJson
+	}
+
+	return commentJson
 }

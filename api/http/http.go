@@ -163,12 +163,12 @@ type errJson struct {
 }
 
 func (h *httpServer) getPaginationParams(r *http.Request) (paginationParams, error) {
-	offset, err := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 64)
+	offset, err := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 32)
 	if err != nil || offset < 0 {
 		return paginationParams{}, errors.New("invalid offset")
 	}
 
-	limit, err := strconv.ParseInt(r.URL.Query().Get("limit"), 10, 64)
+	limit, err := strconv.ParseInt(r.URL.Query().Get("limit"), 10, 32)
 	if err != nil || limit < 0 {
 		return paginationParams{}, errors.New("invalid limit")
 	}
@@ -178,12 +178,12 @@ func (h *httpServer) getPaginationParams(r *http.Request) (paginationParams, err
 	}
 
 	return paginationParams{
-		offset,
-		limit,
+		int32(offset),
+		int32(limit),
 	}, nil
 }
 
 type paginationParams struct {
-	Offset int64
-	Limit  int64
+	Offset int32
+	Limit  int32
 }
