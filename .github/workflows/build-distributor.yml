@@ -2,7 +2,7 @@ name: build-distributor
 
 on:
   push:
-    branches: [master]
+    branches: [main]
 
 jobs:
   build:
