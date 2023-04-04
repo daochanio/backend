@@ -1,0 +1,44 @@
+name: pr-check-db
+
+on:
+  push:
+    branches:
+      - "*"
+      - "!master"
+  pull_request:
+    branches:
+      - "*"
+      - "!master"
+
+jobs:
+  pr-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.20.x
+
+      - name: Go fmt
+        run: if [ "$(gofmt -s -l ./db | wc -l)" -gt 0 ]; then exit 1; fi
+
+      - name: Go vet
+        run: go vet ./db/...
+
+      - name: Go build
+        run: go build -v ./db/...
+
+      - name: Go test
+        run: go test -v ./db/...
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Docker build
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./.docker/DockerfileDb
+          push: false

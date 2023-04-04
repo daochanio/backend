@@ -24,7 +24,7 @@ FROM threads
 LEFT JOIN thread_votes ON thread_votes.thread_id = threads.id
 WHERE threads.is_deleted = FALSE
 GROUP BY threads.id
-ORDER BY threads.created_at ASC
+ORDER BY threads.created_at DESC
 OFFSET $1
 LIMIT $2;
 
