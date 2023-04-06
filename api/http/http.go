@@ -92,26 +92,27 @@ func (h *httpServer) Start(ctx context.Context) error {
 	r.Use(h.requestId)
 	r.Use(h.recoverer)
 	r.Use(h.timeout)
-	r.Use(h.rateLimit)
 
 	r.Get("/", h.healthRoute)
 
-	r.Put("/challenge", h.getChallengeRoute)
+	r.With(h.rateLimit).Route("/v1", func(r chi.Router) {
+		r.Put("/challenge", h.getChallengeRoute)
 
-	r.Route("/threads", func(r chi.Router) {
-		r.Get("/", h.getThreadsRoute)
-		r.Get("/{threadId}", h.getThreadByIdRoute)
+		r.Route("/threads", func(r chi.Router) {
+			r.Get("/", h.getThreadsRoute)
+			r.Get("/{threadId}", h.getThreadByIdRoute)
 
-		r.With(h.authenticate).Post("/", h.createThreadRoute)
-		r.With(h.authenticate).Delete("/{threadId}", h.deleteThreadRoute)
-		r.With(h.authenticate).Put("/{threadId}/vote/{vote}", h.createThreadVoteRoute)
+			r.With(h.authenticate).Post("/", h.createThreadRoute)
+			r.With(h.authenticate).Delete("/{threadId}", h.deleteThreadRoute)
+			r.With(h.authenticate).Put("/{threadId}/vote/{vote}", h.createThreadVoteRoute)
 
-		r.Route("/{threadId}/comments", func(r chi.Router) {
-			r.Get("/", h.getCommentsRoute)
+			r.Route("/{threadId}/comments", func(r chi.Router) {
+				r.Get("/", h.getCommentsRoute)
 
-			r.With(h.authenticate).Post("/", h.createCommentRoute)
-			r.With(h.authenticate).Delete("/{commentId}", h.deleteCommentRoute)
-			r.With(h.authenticate).Put("/{commentId}/vote/{vote}", h.createCommentVoteRoute)
+				r.With(h.authenticate).Post("/", h.createCommentRoute)
+				r.With(h.authenticate).Delete("/{commentId}", h.deleteCommentRoute)
+				r.With(h.authenticate).Put("/{commentId}/vote/{vote}", h.createCommentVoteRoute)
+			})
 		})
 	})
 
