@@ -185,7 +185,7 @@ func (h *httpServer) logEvent(w http.ResponseWriter, r *http.Request, statusCode
 		{Key: "resptime", Value: time.Since(t1).String()},
 		{Key: "statuscode", Value: fmt.Sprint(statusCode)},
 		{Key: "remoteaddr", Value: r.RemoteAddr},
-	}).Msgf("http %d %v", statusCode, r.URL.Path)
+	}).Msgf("http %d %v %v", statusCode, r.Method, r.URL.Path)
 }
 
 func toErrJson(msg string) *errJson {
