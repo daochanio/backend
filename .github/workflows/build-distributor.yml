@@ -26,4 +26,4 @@ jobs:
           context: .
           file: ./.docker/DockerfileDistributor
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/daochan-distributor:${{ github.run_number }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/daochan-distributor:${{ github.run_number }},${{ secrets.DOCKER_USERNAME }}/daochan-distributor:latest
