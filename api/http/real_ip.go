@@ -7,10 +7,18 @@ import (
 )
 
 var xForwardedFor = http.CanonicalHeaderKey("X-Forwarded-For")
+var xRealIP = http.CanonicalHeaderKey("X-Real-IP")
+var trueClientIP = http.CanonicalHeaderKey("True-Client-IP")
 
 // See https://github.com/go-chi/chi/blob/master/middleware/realip.go
 func (h *httpServer) realIP(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		h.logger.Debug(r.Context()).Msgf("radr %v", r.Header.Get(r.RemoteAddr))
+		h.logger.Debug(r.Context()).Msgf("xff %v", r.Header.Get(xForwardedFor))
+		h.logger.Debug(r.Context()).Msgf("rip %v", r.Header.Get(xRealIP))
+		h.logger.Debug(r.Context()).Msgf("tcip %v", r.Header.Get(trueClientIP))
+
 		if ip := getIP(r); ip != "" {
 			r.RemoteAddr = ip
 		}

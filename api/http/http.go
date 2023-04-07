@@ -89,7 +89,7 @@ func (h *httpServer) Start(ctx context.Context) error {
 	r.Use(middleware.NoCache)
 	r.Use(h.timer)
 	r.Use(h.realIP)
-	r.Use(h.requestId)
+	r.Use(h.traceID)
 	r.Use(h.recoverer)
 	r.Use(h.timeout)
 

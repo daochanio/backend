@@ -72,9 +72,9 @@ func (l *logger) newEvent(ctx context.Context, event *zerolog.Event) ILogEvent {
 	event.Str("hostname", l.appSettings.Hostname())
 	event.Str("appname", l.appSettings.Appname())
 
-	requestId := ctx.Value(ContextKeyRequestId)
-	if requestId != nil {
-		event.Str("requestid", requestId.(string))
+	traceID := ctx.Value(ContextKeyTraceID)
+	if traceID != nil {
+		event.Str("traceid", traceID.(string))
 	}
 
 	return &logEvent{

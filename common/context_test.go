@@ -6,7 +6,7 @@ import (
 )
 
 func TestString(t *testing.T) {
-	if !strings.Contains(ContextKeyRequestId.String(), contextKeyPrefix) {
+	if !strings.Contains(ContextKeyTraceID.String(), contextKeyPrefix) {
 		t.Errorf("ContextKeyRequestId expect to contain %v", contextKeyPrefix)
 	}
 }
