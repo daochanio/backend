@@ -11,5 +11,6 @@ func (c ContextKey) String() string {
 var (
 	ContextKeyTraceID          = ContextKey("request id")
 	ContextKeyRequestStartTime = ContextKey("request start time")
+	ContextKeyRemoteAddress    = ContextKey("request remote address")
 	ContextKeyAddress          = ContextKey("address")
 )

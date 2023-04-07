@@ -77,6 +77,11 @@ func (l *logger) newEvent(ctx context.Context, event *zerolog.Event) ILogEvent {
 		event.Str("traceid", traceID.(string))
 	}
 
+	remoteAddr := ctx.Value(ContextKeyRemoteAddress)
+	if remoteAddr != nil && remoteAddr.(string) != "" {
+		event.Str("remoteaddr", remoteAddr.(string))
+	}
+
 	return &logEvent{
 		event,
 	}

@@ -1,9 +1,12 @@
 package http
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/daochanio/backend/common"
 )
 
 var xForwardedFor = http.CanonicalHeaderKey("X-Forwarded-For")
@@ -14,10 +17,10 @@ var trueClientIP = http.CanonicalHeaderKey("True-Client-IP")
 func (h *httpServer) realIP(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		h.logger.Debug(r.Context()).Msgf("radr %v", r.Header.Get(r.RemoteAddr))
-		h.logger.Debug(r.Context()).Msgf("xff %v", r.Header.Get(xForwardedFor))
-		h.logger.Debug(r.Context()).Msgf("rip %v", r.Header.Get(xRealIP))
-		h.logger.Debug(r.Context()).Msgf("tcip %v", r.Header.Get(trueClientIP))
+		h.logger.Info(r.Context()).Msgf("radr %v", r.RemoteAddr)
+		h.logger.Info(r.Context()).Msgf("xff %v", r.Header.Get(xForwardedFor))
+		h.logger.Info(r.Context()).Msgf("rip %v", r.Header.Get(xRealIP))
+		h.logger.Info(r.Context()).Msgf("tcip %v", r.Header.Get(trueClientIP))
 
 		if ip := getIP(r); ip != "" {
 			r.RemoteAddr = ip
@@ -27,7 +30,9 @@ func (h *httpServer) realIP(next http.Handler) http.Handler {
 			r.RemoteAddr = host
 		}
 
-		next.ServeHTTP(w, r)
+		ctx := context.WithValue(r.Context(), common.ContextKeyRemoteAddress, r.RemoteAddr)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
