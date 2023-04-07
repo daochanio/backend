@@ -128,17 +128,17 @@ func (h *httpServer) Start(ctx context.Context) error {
 }
 
 func (h *httpServer) presentNotFound(w http.ResponseWriter, r *http.Request, err error) {
-	h.logger.Info(r.Context()).Err(err).Msg("not found")
+	h.logger.Warn(r.Context()).Err(err).Msg("not found")
 	h.presentJSON(w, r, http.StatusNotFound, toErrJson("not found"))
 }
 
 func (h *httpServer) presentBadRequest(w http.ResponseWriter, r *http.Request, err error) {
-	h.logger.Info(r.Context()).Err(err).Msg("bad request")
+	h.logger.Warn(r.Context()).Err(err).Msg("bad request")
 	h.presentJSON(w, r, http.StatusBadRequest, toErrJson("bad request"))
 }
 
 func (h *httpServer) presentUnathorized(w http.ResponseWriter, r *http.Request, err error) {
-	h.logger.Info(r.Context()).Err(err).Msg("unauthorized")
+	h.logger.Warn(r.Context()).Err(err).Msg("unauthorized")
 	h.presentJSON(w, r, http.StatusUnauthorized, toErrJson("unathorized"))
 }
 
@@ -168,7 +168,15 @@ func (h *httpServer) presentStatus(w http.ResponseWriter, r *http.Request, statu
 func (h *httpServer) logEvent(w http.ResponseWriter, r *http.Request, statusCode int) {
 	ctx := r.Context()
 	t1 := ctx.Value(common.ContextKeyRequestStartTime).(time.Time)
-	h.logger.Info(ctx).Strs([]struct {
+	var event common.ILogEvent
+	if statusCode >= 500 {
+		event = h.logger.Error(ctx)
+	} else if statusCode >= 400 {
+		event = h.logger.Warn(ctx)
+	} else {
+		event = h.logger.Info(ctx)
+	}
+	event.Strs([]struct {
 		Key   string
 		Value string
 	}{
@@ -177,7 +185,7 @@ func (h *httpServer) logEvent(w http.ResponseWriter, r *http.Request, statusCode
 		{Key: "resptime", Value: time.Since(t1).String()},
 		{Key: "statuscode", Value: fmt.Sprint(statusCode)},
 		{Key: "remoteaddr", Value: r.RemoteAddr},
-	}).Msg("http event")
+	}).Msgf("http %d %v", statusCode, r.URL.Path)
 }
 
 func toErrJson(msg string) *errJson {
