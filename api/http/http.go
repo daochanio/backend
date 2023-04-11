@@ -95,7 +95,8 @@ func (h *httpServer) Start(ctx context.Context) error {
 
 	r.Get("/", h.healthRoute)
 
-	r.With(h.rateLimit).Route("/v1", func(r chi.Router) {
+	// .With(h.rateLimit) disabled while investigating support for replicate_commands in our redis provider
+	r.Route("/v1", func(r chi.Router) {
 		r.Put("/challenge", h.getChallengeRoute)
 
 		r.Route("/threads", func(r chi.Router) {

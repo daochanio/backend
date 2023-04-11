@@ -8,15 +8,9 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-var xForwardedFor = http.CanonicalHeaderKey("X-Forwarded-For")
-
 // See https://github.com/go-chi/chi/blob/master/middleware/realip.go
 func (h *httpServer) realIP(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		h.logger.Info(r.Context()).Msgf("radr %v", r.RemoteAddr)
-		h.logger.Info(r.Context()).Msgf("xff %v", r.Header.Get(xForwardedFor))
-		h.logger.Info(r.Context()).Msgf("rip %v", r.Header.Get(h.settings.RealIPHeader()))
 
 		if ip := r.Header.Get(h.settings.RealIPHeader()); ip != "" {
 			r.RemoteAddr = ip
