@@ -1,40 +1,32 @@
 package settings
 
 import (
-	"fmt"
 	"os"
-	"strconv"
 )
 
 type ISettings interface {
 	Port() string
 	DbConnectionString() string
-	CacheAddress() string
-	CachePassword() string
-	CacheDb() int
-	CacheUseTLS() bool
+	CacheConnectionString() string
 	BlockchainURI() string
+	RealIPHeader() string
 }
 
 type settings struct {
-	port               string
-	pgConnectionString string
-	redisAddr          string
-	redisDB            string
-	redisPassword      string
-	redisUseTLS        string
-	blockchainURI      string
+	port                  string
+	pgConnectionString    string
+	redisConnectionString string
+	blockchainURI         string
+	realIPHeader          string
 }
 
 func NewSettings() ISettings {
 	return &settings{
-		port:               os.Getenv("PORT"),
-		pgConnectionString: os.Getenv("PG_CONNECTION_STRING"),
-		redisAddr:          os.Getenv("REDIS_ADDRESS"),
-		redisPassword:      os.Getenv("REDIS_PASSWORD"),
-		redisDB:            os.Getenv("REDIS_DB"),
-		redisUseTLS:        os.Getenv("REDIS_USE_TLS"),
-		blockchainURI:      os.Getenv("BLOCKCHAIN_URI"),
+		port:                  os.Getenv("PORT"),
+		pgConnectionString:    os.Getenv("PG_CONNECTION_STRING"),
+		redisConnectionString: os.Getenv("REDIS_CONNECTION_STRING"),
+		blockchainURI:         os.Getenv("BLOCKCHAIN_URI"),
+		realIPHeader:          os.Getenv("REAL_IP_HEADER"),
 	}
 }
 
@@ -46,34 +38,14 @@ func (s *settings) DbConnectionString() string {
 	return s.pgConnectionString
 }
 
-func (s *settings) CacheAddress() string {
-	return s.redisAddr
-}
-
-func (s *settings) CacheDb() int {
-	redisDB, err := strconv.Atoi(s.redisDB)
-
-	if err != nil {
-		panic(fmt.Errorf("invalid redis db value %v %w", s.redisDB, err))
-	}
-
-	return redisDB
-}
-
-func (s *settings) CachePassword() string {
-	return s.redisPassword
-}
-
-func (s *settings) CacheUseTLS() bool {
-	useTLS, err := strconv.ParseBool(s.redisUseTLS)
-
-	if err != nil {
-		panic(fmt.Errorf("invalid redis use tls value %v %w", s.redisUseTLS, err))
-	}
-
-	return useTLS
+func (s *settings) CacheConnectionString() string {
+	return s.redisConnectionString
 }
 
 func (s *settings) BlockchainURI() string {
 	return s.blockchainURI
+}
+
+func (s *settings) RealIPHeader() string {
+	return s.realIPHeader
 }

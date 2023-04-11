@@ -1,8 +1,6 @@
 package redis
 
 import (
-	"crypto/tls"
-
 	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/api/settings"
 	"github.com/daochanio/backend/common"
@@ -18,15 +16,10 @@ type redisGateway struct {
 }
 
 func NewRedisGateway(settings settings.ISettings, logger common.ILogger) gateways.ICacheGateway {
-	opt := &redis.Options{
-		Addr:      settings.CacheAddress(),
-		Password:  settings.CachePassword(),
-		DB:        settings.CacheDb(),
-		TLSConfig: nil,
-	}
+	opt, err := redis.ParseURL(settings.CacheConnectionString())
 
-	if settings.CacheUseTLS() {
-		opt.TLSConfig = &tls.Config{}
+	if err != nil {
+		panic(err)
 	}
 
 	client := redis.NewClient(opt)
