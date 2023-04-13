@@ -38,16 +38,9 @@ func (h *httpServer) getThreadByIdRoute(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *httpServer) getThreadsRoute(w http.ResponseWriter, r *http.Request) {
-	paginationParams, err := h.getPaginationParams(r)
-
-	if err != nil {
-		h.presentBadRequest(w, r, err)
-		return
-	}
 
 	threads, err := h.getThreadsUseCase.Execute(r.Context(), usecases.GetThreadsInput{
-		Offset: paginationParams.Offset,
-		Limit:  paginationParams.Limit,
+		Limit: 10,
 	})
 
 	if err != nil {

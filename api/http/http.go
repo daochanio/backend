@@ -200,12 +200,20 @@ type errJson struct {
 }
 
 func (h *httpServer) getPaginationParams(r *http.Request) (paginationParams, error) {
-	offset, err := strconv.ParseInt(r.URL.Query().Get("offset"), 10, 32)
+	offsetStr := r.URL.Query().Get("offset")
+	if offsetStr == "" {
+		offsetStr = "0"
+	}
+	offset, err := strconv.ParseInt(offsetStr, 10, 32)
 	if err != nil || offset < 0 {
 		return paginationParams{}, errors.New("invalid offset")
 	}
 
-	limit, err := strconv.ParseInt(r.URL.Query().Get("limit"), 10, 32)
+	limitStr := r.URL.Query().Get("limit")
+	if limitStr == "" {
+		limitStr = "100"
+	}
+	limit, err := strconv.ParseInt(limitStr, 10, 32)
 	if err != nil || limit < 0 {
 		return paginationParams{}, errors.New("invalid limit")
 	}

@@ -10,7 +10,7 @@ type IDatabaseGateway interface {
 	CreateOrUpdateUser(ctx context.Context, address string, ensName *string) (entities.User, error)
 
 	CreateThread(ctx context.Context, address string, content string) (int64, error)
-	GetThreads(ctx context.Context, offset int32, limit int32) ([]entities.Thread, error)
+	GetThreads(ctx context.Context, limit int32) ([]entities.Thread, error)
 	GetThreadById(ctx context.Context, id int64) (entities.Thread, error)
 	DeleteThread(ctx context.Context, id int64) error
 	UpVoteThread(ctx context.Context, id int64, address string) error

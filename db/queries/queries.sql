@@ -15,8 +15,11 @@ INSERT INTO comments (address, thread_id, replied_to_comment_id, content)
 VALUES ($1, $2, $3, $4)
 RETURNING id;
 
+-- Order by random is not performant as we need to do a full table scan.
+-- Move to TABLESAMPLE SYSTEM_ROWS(N) when performance becomes an issue.
+-- Table sample is not random enough until the table gets big.
+-- https://www.postgresql.org/docs/current/tsm-system-rows.html
 -- name: GetThreads :many
--- TODO: We can order by random in the future and introduce a shuffle button on the home page
 SELECT
   threads.*,
   SUM(COALESCE(thread_votes.vote, 0)) as votes
@@ -24,9 +27,8 @@ FROM threads
 LEFT JOIN thread_votes ON thread_votes.thread_id = threads.id
 WHERE threads.is_deleted = FALSE
 GROUP BY threads.id
-ORDER BY threads.created_at DESC
-OFFSET $1
-LIMIT $2;
+ORDER BY RANDOM()
+LIMIT $1;
 
 -- name: GetThread :one
 SELECT

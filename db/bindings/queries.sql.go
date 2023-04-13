@@ -366,15 +366,9 @@ FROM threads
 LEFT JOIN thread_votes ON thread_votes.thread_id = threads.id
 WHERE threads.is_deleted = FALSE
 GROUP BY threads.id
-ORDER BY threads.created_at DESC
-OFFSET $1
-LIMIT $2
+ORDER BY RANDOM()
+LIMIT $1
 `
-
-type GetThreadsParams struct {
-	Offset int32
-	Limit  int32
-}
 
 type GetThreadsRow struct {
 	ID        int64
@@ -386,9 +380,11 @@ type GetThreadsRow struct {
 	Votes     int64
 }
 
-// TODO: We can order by random in the future and introduce a shuffle button on the home page
-func (q *Queries) GetThreads(ctx context.Context, arg GetThreadsParams) ([]GetThreadsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getThreads, arg.Offset, arg.Limit)
+// order by random is not performant as we need to do a full table scan.
+// move to TABLESAMPLE SYSTEM_ROWS(N) when performance becomes an issue.
+// table sample is not random enough until the table gets big.
+func (q *Queries) GetThreads(ctx context.Context, limit int32) ([]GetThreadsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getThreads, limit)
 	if err != nil {
 		return nil, err
 	}

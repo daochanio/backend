@@ -9,12 +9,21 @@ import (
 )
 
 func (p *postgresGateway) CreateOrUpdateUser(ctx context.Context, address string, ensName *string) (entities.User, error) {
+	var sqlEnsName sql.NullString
+	if ensName != nil {
+		sqlEnsName = sql.NullString{
+			String: *ensName,
+			Valid:  true,
+		}
+	} else {
+		sqlEnsName = sql.NullString{
+			String: "",
+			Valid:  false,
+		}
+	}
 	params := bindings.CreateOrUpdateUserParams{
 		Address: address,
-		EnsName: sql.NullString{
-			String: *ensName,
-			Valid:  ensName != nil,
-		},
+		EnsName: sqlEnsName,
 	}
 	user, err := p.queries.CreateOrUpdateUser(ctx, params)
 

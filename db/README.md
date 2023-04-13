@@ -1,3 +1,5 @@
-This package uses goose for managing the database schema through migrations.
+This package functions as both a library and an executable.
 
-This package also uses sqlc for generating type safe go bindings off of the queries
+goose is used for managing the database schema through migrations as an executable.
+
+sqlc is used for generating type safe go bindings from the queries as a library
