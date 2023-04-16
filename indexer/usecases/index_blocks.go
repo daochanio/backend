@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"errors"
 	"math/big"
 
 	"github.com/daochanio/backend/common"
@@ -33,23 +34,27 @@ func NewIndexBlocksUseCase(
 }
 
 // Execute checks the last block indexed (minus an offset) and the latest block produced and indexes all blocks in between.
-// We do not return an error here because we want to keep checking for the next blocks forever.
+// Executre returns an error if it failed to fully index the blocks.
 // We want to make indexing idempotent and be resilient to re-orgs so we:
 //   - keep track of last block indexed
 //   - read events from last block indexed - n to lastest block
 //   - always delete events that already exist for the same block being inserted (in single tx)
-func (u *IndexBlocksUseCase) Execute(ctx context.Context) {
+func (u *IndexBlocksUseCase) Execute(ctx context.Context) error {
 	lastBlockNumber, err := u.databaseGateway.GetLastIndexedBlock(ctx)
 	if err != nil {
 		u.logger.Warn(ctx).Err(err).Msg("failed to get last indexed block")
-		return
+		return err
 	}
-	fromBlock := lastBlockNumber.Sub(lastBlockNumber, big.NewInt(u.settings.ReorgOffset()))
+	fromBlock := big.NewInt(0).Sub(lastBlockNumber, big.NewInt(u.settings.ReorgOffset()))
 
 	toBlock, err := u.blockchainGateway.GetLatestBlockNumber(ctx)
 	if err != nil {
 		u.logger.Warn(ctx).Err(err).Msg("failed to get latest block")
-		return
+		return err
+	}
+
+	if lastBlockNumber.Cmp(toBlock) == 0 {
+		return errors.New("no new blocks")
 	}
 
 	// TODO: call indexer usecases here
@@ -58,8 +63,10 @@ func (u *IndexBlocksUseCase) Execute(ctx context.Context) {
 
 	if err != nil {
 		u.logger.Warn(ctx).Err(err).Msg("failed to update last indexed block")
-		return
+		return err
 	}
 
 	u.logger.Info(ctx).Msgf("indexed block %d to block %d", fromBlock, toBlock)
+
+	return nil
 }

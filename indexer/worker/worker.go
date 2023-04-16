@@ -26,11 +26,11 @@ func NewWorker(logger common.ILogger, settings settings.ISettings, indexBlocksUs
 func (w *Worker) Start(ctx context.Context) error {
 	w.logger.Info(ctx).Msg("starting worker")
 	for {
-		// TODO: If this takes longer than the sleep time, we are at risk of falling behind the latest state
-		// We should probably alert if we notice this happening
-		w.indexBlocksUseCase.Execute(ctx)
+		err := w.indexBlocksUseCase.Execute(ctx)
 
-		// TODO: Make this configurable
-		time.Sleep(time.Duration(w.settings.IntervalSeconds()) * time.Second)
+		// sleep a bit if we didn't index anything to avoid spamming the blockchain or to recover from transient errors
+		if err != nil {
+			time.Sleep(time.Duration(w.settings.IntervalSeconds()) * time.Second)
+		}
 	}
 }
