@@ -7,7 +7,10 @@ import (
 	"syscall"
 
 	"github.com/daochanio/backend/common"
+	"github.com/daochanio/backend/indexer/gateways/ethereum"
+	"github.com/daochanio/backend/indexer/gateways/postgres"
 	"github.com/daochanio/backend/indexer/settings"
+	"github.com/daochanio/backend/indexer/usecases"
 	"github.com/daochanio/backend/indexer/worker"
 	"go.uber.org/dig"
 )
@@ -19,6 +22,10 @@ func main() {
 	container.Provide(common.NewCommonSettings)
 	container.Provide(common.NewLogger)
 	container.Provide(settings.NewSettings)
+	container.Provide(postgres.NewPostgresGateway)
+	container.Provide(ethereum.NewEthereumGateway)
+	container.Provide(usecases.NewIndexBlocksUseCase)
+	container.Provide(usecases.NewIndexTokenUseCase)
 	container.Provide(worker.NewWorker)
 
 	// start the app in a go routine
