@@ -26,9 +26,11 @@ func NewWorker(logger common.ILogger, settings settings.ISettings, indexBlocksUs
 func (w *Worker) Start(ctx context.Context) error {
 	w.logger.Info(ctx).Msg("starting worker")
 	for {
-		// TODO: If this takes longer than a minute we are at risk of falling behind the latest state
+		// TODO: If this takes longer than the sleep time, we are at risk of falling behind the latest state
 		// We should probably alert if we notice this happening
 		w.indexBlocksUseCase.Execute(ctx)
-		time.Sleep(1 * time.Minute)
+
+		// TODO: Make this configurable
+		time.Sleep(time.Duration(w.settings.IntervalSeconds()) * time.Second)
 	}
 }

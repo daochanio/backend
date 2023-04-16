@@ -12,6 +12,7 @@ type ISettings interface {
 	GovernorAddress() string
 	ControllerAddress() string
 	ReorgOffset() int64
+	IntervalSeconds() int64
 }
 
 type settings struct {
@@ -21,10 +22,16 @@ type settings struct {
 	governorAddress    string
 	controllerAddress  string
 	reorgOffset        int64
+	intervalSeconds    int64
 }
 
 func NewSettings() ISettings {
 	reorgOffset, err := strconv.Atoi(os.Getenv("REORG_OFFSET"))
+	if err != nil {
+		panic(err)
+	}
+
+	intervalSeconds, err := strconv.Atoi(os.Getenv("INTERVAL_SECONDS"))
 	if err != nil {
 		panic(err)
 	}
@@ -36,6 +43,7 @@ func NewSettings() ISettings {
 		governorAddress:    os.Getenv("GOVERNOR_ADDRESS"),
 		controllerAddress:  os.Getenv("CONTROLLER_ADDRESS"),
 		reorgOffset:        int64(reorgOffset),
+		intervalSeconds:    int64(intervalSeconds),
 	}
 }
 
@@ -62,4 +70,8 @@ func (s *settings) ControllerAddress() string {
 // the number of blocks to offset by to be resilient to reorgs
 func (s *settings) ReorgOffset() int64 {
 	return s.reorgOffset
+}
+
+func (s *settings) IntervalSeconds() int64 {
+	return s.intervalSeconds
 }
