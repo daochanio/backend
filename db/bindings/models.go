@@ -28,6 +28,12 @@ type CommentVote struct {
 	Vote      int16
 }
 
+type IndexerProgress struct {
+	Version          string
+	LastIndexedBlock string
+	IndexedOn        time.Time
+}
+
 type Thread struct {
 	ID        int64
 	Address   string
