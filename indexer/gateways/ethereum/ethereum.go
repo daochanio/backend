@@ -32,18 +32,13 @@ func NewEthereumGateway(logger com.ILogger, settings settings.ISettings) gateway
 	}
 }
 
-func (g *ethereumGateway) DoesBlockExist(ctx context.Context, blockNumber *big.Int) bool {
-	_, err := g.ethClient.HeaderByNumber(ctx, blockNumber)
+func (g *ethereumGateway) GetLatestBlockNumber(ctx context.Context) (*big.Int, error) {
+	header, err := g.ethClient.HeaderByNumber(ctx, nil)
 	if err == ethereum.NotFound {
-		return false
-	}
-	if err != nil {
-		// only make noise if it's not a not-found error
-		g.logger.Warn(ctx).Err(err).Msg("failed checking block header with non not-found error")
-		return false
+		return nil, err
 	}
 
-	return true
+	return header.Number, nil
 }
 
 func (g *ethereumGateway) GetTokenEvents(ctx context.Context, fromBlock *big.Int, toBlock *big.Int) ([]entities.TokenEvent, error) {

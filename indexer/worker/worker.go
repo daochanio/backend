@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"time"
 
 	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/indexer/settings"
@@ -9,20 +10,25 @@ import (
 )
 
 type Worker struct {
-	logger           common.ILogger
-	settings         settings.ISettings
-	subscribeUseCase *usecases.IndexBlocksUseCase
+	logger             common.ILogger
+	settings           settings.ISettings
+	indexBlocksUseCase *usecases.IndexBlocksUseCase
 }
 
-func NewWorker(logger common.ILogger, settings settings.ISettings, subscribeUseCase *usecases.IndexBlocksUseCase) *Worker {
+func NewWorker(logger common.ILogger, settings settings.ISettings, indexBlocksUseCase *usecases.IndexBlocksUseCase) *Worker {
 	return &Worker{
 		logger,
 		settings,
-		subscribeUseCase,
+		indexBlocksUseCase,
 	}
 }
 
 func (w *Worker) Start(ctx context.Context) error {
 	w.logger.Info(ctx).Msg("starting worker")
-	return w.subscribeUseCase.Execute(ctx)
+	for {
+		// TODO: If this takes longer than a minute we are at risk of falling behind the latest state
+		// We should probably alert if we notice this happening
+		w.indexBlocksUseCase.Execute(ctx)
+		time.Sleep(1 * time.Minute)
+	}
 }

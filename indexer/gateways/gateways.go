@@ -13,6 +13,6 @@ type IDatabaseGateway interface {
 }
 
 type IBlockchainGateway interface {
-	DoesBlockExist(ctx context.Context, blockNumber *big.Int) bool
+	GetLatestBlockNumber(ctx context.Context) (*big.Int, error)
 	GetTokenEvents(context.Context, *big.Int, *big.Int) ([]entities.TokenEvent, error)
 }
