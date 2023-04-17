@@ -8,10 +8,10 @@ import (
 )
 
 type GetThreadUseCase struct {
-	dbGateway gateways.IDatabaseGateway
+	dbGateway gateways.DatabaseGateway
 }
 
-func NewGetThreadUseCase(dbGateway gateways.IDatabaseGateway) *GetThreadUseCase {
+func NewGetThreadUseCase(dbGateway gateways.DatabaseGateway) *GetThreadUseCase {
 	return &GetThreadUseCase{
 		dbGateway,
 	}

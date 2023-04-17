@@ -9,13 +9,13 @@ import (
 )
 
 type redisGateway struct {
-	settings settings.ISettings
-	logger   common.ILogger
+	settings settings.Settings
+	logger   common.Logger
 	client   *redis.Client
 	limiter  *redis_rate.Limiter
 }
 
-func NewRedisGateway(settings settings.ISettings, logger common.ILogger) gateways.ICacheGateway {
+func NewRedisGateway(settings settings.Settings, logger common.Logger) gateways.CacheGateway {
 	opt, err := redis.ParseURL(settings.CacheConnectionString())
 
 	if err != nil {

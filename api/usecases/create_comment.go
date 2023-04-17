@@ -8,10 +8,10 @@ import (
 )
 
 type CreateCommentUseCase struct {
-	dbGateway gateways.IDatabaseGateway
+	dbGateway gateways.DatabaseGateway
 }
 
-func NewCreateCommentUseCase(dbGateway gateways.IDatabaseGateway) *CreateCommentUseCase {
+func NewCreateCommentUseCase(dbGateway gateways.DatabaseGateway) *CreateCommentUseCase {
 	return &CreateCommentUseCase{
 		dbGateway,
 	}

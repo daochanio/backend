@@ -36,7 +36,7 @@ func appName() string {
 	return "distributor"
 }
 
-func startWorker(ctx context.Context, worker *worker.Worker, logger common.ILogger) {
+func startWorker(ctx context.Context, worker *worker.Worker, logger common.Logger) {
 	go func() {
 		// blocking call to start the worker
 		if err := worker.Start(ctx); err != nil {
@@ -46,7 +46,7 @@ func startWorker(ctx context.Context, worker *worker.Worker, logger common.ILogg
 	}()
 }
 
-func awaitSigterm(ctx context.Context, logger common.ILogger) {
+func awaitSigterm(ctx context.Context, logger common.Logger) {
 	logger.Info(ctx).Msg("awaiting sigterm")
 
 	cancelChan := make(chan os.Signal, 1)

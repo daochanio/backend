@@ -11,16 +11,16 @@ import (
 )
 
 type IndexBlocksUseCase struct {
-	logger            common.ILogger
-	settings          settings.ISettings
+	logger            common.Logger
+	settings          settings.Settings
 	databaseGateway   gateways.IDatabaseGateway
 	blockchainGateway gateways.IBlockchainGateway
 	indexRepUseCase   *IndexTokenUseCase
 }
 
 func NewIndexBlocksUseCase(
-	logger common.ILogger,
-	settings settings.ISettings,
+	logger common.Logger,
+	settings settings.Settings,
 	indexRepUseCase *IndexTokenUseCase,
 	databaseGateway gateways.IDatabaseGateway,
 	blockchainGateway gateways.IBlockchainGateway) *IndexBlocksUseCase {

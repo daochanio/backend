@@ -22,8 +22,8 @@ type IHttpServer interface {
 }
 
 type httpServer struct {
-	logger                   common.ILogger
-	settings                 settings.ISettings
+	logger                   common.Logger
+	settings                 settings.Settings
 	getChallengeUseCase      *usecases.GetChallengeUseCase
 	verifyChallengeUseCase   *usecases.VerifyChallengeUseCase
 	verifyRateLimitUseCase   *usecases.VerifyRateLimitUseCase
@@ -40,8 +40,8 @@ type httpServer struct {
 }
 
 func NewHttpServer(
-	logger common.ILogger,
-	settings settings.ISettings,
+	logger common.Logger,
+	settings settings.Settings,
 	getChallengeUseCase *usecases.GetChallengeUseCase,
 	verifyChallengeUseCase *usecases.VerifyChallengeUseCase,
 	verifyRateLimitUseCase *usecases.VerifyRateLimitUseCase,
@@ -95,8 +95,10 @@ func (h *httpServer) Start(ctx context.Context) error {
 
 	r.Get("/", h.healthRoute)
 
-	// .With(h.rateLimit) disabled while investigating support for replicate_commands in our redis provider
+	// TODO: .With(h.rateLimit) disabled while investigating support for replicate_commands in our redis provider
+	// TODO: Add stricter rate limiting for uploading images / creating threads / comments
 	r.Route("/v1", func(r chi.Router) {
+
 		r.Put("/challenge", h.getChallengeRoute)
 
 		r.Route("/threads", func(r chi.Router) {
@@ -169,7 +171,7 @@ func (h *httpServer) presentStatus(w http.ResponseWriter, r *http.Request, statu
 func (h *httpServer) logEvent(w http.ResponseWriter, r *http.Request, statusCode int) {
 	ctx := r.Context()
 	t1 := ctx.Value(common.ContextKeyRequestStartTime).(time.Time)
-	var event common.ILogEvent
+	var event common.LogEvent
 	if statusCode >= 500 {
 		event = h.logger.Error(ctx)
 	} else if statusCode >= 400 {

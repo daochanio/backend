@@ -6,7 +6,7 @@ import (
 	"github.com/daochanio/backend/api/entities"
 )
 
-type IDatabaseGateway interface {
+type DatabaseGateway interface {
 	CreateOrUpdateUser(ctx context.Context, address string, ensName *string) (entities.User, error)
 
 	CreateThread(ctx context.Context, address string, content string) (int64, error)
@@ -26,13 +26,13 @@ type IDatabaseGateway interface {
 	UnVoteComment(ctx context.Context, id int64, address string) error
 }
 
-type ICacheGateway interface {
+type CacheGateway interface {
 	GetChallengeByAddress(ctx context.Context, address string) (entities.Challenge, error)
 	SaveChallenge(ctx context.Context, challenge entities.Challenge) error
 
 	VerifyRateLimit(ctx context.Context, ipAddress string) error
 }
 
-type IBlockchainGateway interface {
+type BlockchainGateway interface {
 	GetENSNameFromAddress(ctx context.Context, address string) (string, error)
 }

@@ -9,7 +9,7 @@ import (
 
 // These are intended to be generic settings that every app is expected to implement.
 // packages in common can safely expect to have access to these settings in their constructors.
-type ICommonSettings interface {
+type CommonSettings interface {
 	Appname() string
 	Hostname() string
 	Env() string
@@ -22,7 +22,7 @@ type commonSettings struct {
 	hostname string
 }
 
-func NewCommonSettings(appname string) ICommonSettings {
+func NewCommonSettings(appname string) CommonSettings {
 	env := os.Getenv("ENV")
 
 	if env == "dev" {

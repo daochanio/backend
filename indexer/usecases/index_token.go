@@ -10,12 +10,12 @@ import (
 )
 
 type IndexTokenUseCase struct {
-	logger            cmn.ILogger
-	settings          settings.ISettings
+	logger            cmn.Logger
+	settings          settings.Settings
 	blockchainGateway gateways.IBlockchainGateway
 }
 
-func NewIndexTokenUseCase(logger cmn.ILogger, settings settings.ISettings, blockchainGateway gateways.IBlockchainGateway) *IndexTokenUseCase {
+func NewIndexTokenUseCase(logger cmn.Logger, settings settings.Settings, blockchainGateway gateways.IBlockchainGateway) *IndexTokenUseCase {
 	return &IndexTokenUseCase{
 		logger,
 		settings,

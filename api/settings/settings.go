@@ -4,7 +4,7 @@ import (
 	"os"
 )
 
-type ISettings interface {
+type Settings interface {
 	Port() string
 	DbConnectionString() string
 	CacheConnectionString() string
@@ -20,7 +20,7 @@ type settings struct {
 	realIPHeader          string
 }
 
-func NewSettings() ISettings {
+func NewSettings() Settings {
 	return &settings{
 		port:                  os.Getenv("PORT"),
 		pgConnectionString:    os.Getenv("PG_CONNECTION_STRING"),

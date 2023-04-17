@@ -13,12 +13,12 @@ import (
 )
 
 type postgresGateway struct {
-	settings settings.ISettings
+	settings settings.Settings
 	db       *sql.DB
 	queries  *bindings.Queries
 }
 
-func NewPostgresGateway(settings settings.ISettings) gateways.IDatabaseGateway {
+func NewPostgresGateway(settings settings.Settings) gateways.IDatabaseGateway {
 	db, err := sql.Open("postgres", settings.DbConnectionString())
 	if err != nil {
 		panic(err)

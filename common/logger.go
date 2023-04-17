@@ -7,30 +7,30 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type ILogger interface {
-	Debug(ctx context.Context) ILogEvent
-	Info(ctx context.Context) ILogEvent
-	Warn(ctx context.Context) ILogEvent
-	Error(ctx context.Context) ILogEvent
+type Logger interface {
+	Debug(ctx context.Context) LogEvent
+	Info(ctx context.Context) LogEvent
+	Warn(ctx context.Context) LogEvent
+	Error(ctx context.Context) LogEvent
 }
 
-type ILogEvent interface {
+type LogEvent interface {
 	Send()
 	Msg(msg string)
 	Msgf(msg string, v ...any)
-	Err(err error) ILogEvent
+	Err(err error) LogEvent
 	Strs(strs []struct {
 		Key   string
 		Value string
-	}) ILogEvent
+	}) LogEvent
 }
 
 type logger struct {
-	appSettings ICommonSettings
+	appSettings CommonSettings
 	logger      zerolog.Logger
 }
 
-func NewLogger(settings ICommonSettings) ILogger {
+func NewLogger(settings CommonSettings) Logger {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
 
 	var zLogger zerolog.Logger
@@ -47,19 +47,19 @@ func NewLogger(settings ICommonSettings) ILogger {
 	}
 }
 
-func (l *logger) Debug(ctx context.Context) ILogEvent {
+func (l *logger) Debug(ctx context.Context) LogEvent {
 	return l.newEvent(ctx, l.logger.Debug())
 }
 
-func (l *logger) Info(ctx context.Context) ILogEvent {
+func (l *logger) Info(ctx context.Context) LogEvent {
 	return l.newEvent(ctx, l.logger.Info())
 }
 
-func (l *logger) Warn(ctx context.Context) ILogEvent {
+func (l *logger) Warn(ctx context.Context) LogEvent {
 	return l.newEvent(ctx, l.logger.Warn())
 }
 
-func (l *logger) Error(ctx context.Context) ILogEvent {
+func (l *logger) Error(ctx context.Context) LogEvent {
 	return l.newEvent(ctx, l.logger.Error())
 }
 
@@ -68,7 +68,7 @@ type logEvent struct {
 }
 
 // add additional context to the event log
-func (l *logger) newEvent(ctx context.Context, event *zerolog.Event) ILogEvent {
+func (l *logger) newEvent(ctx context.Context, event *zerolog.Event) LogEvent {
 	event.Str("hostname", l.appSettings.Hostname())
 	event.Str("appname", l.appSettings.Appname())
 
@@ -99,7 +99,7 @@ func (e *logEvent) Msgf(msg string, v ...any) {
 	e.event.Msgf(msg, v...)
 }
 
-func (e *logEvent) Err(err error) ILogEvent {
+func (e *logEvent) Err(err error) LogEvent {
 	e.event.Stack().Err(err)
 	return e
 }
@@ -107,7 +107,7 @@ func (e *logEvent) Err(err error) ILogEvent {
 func (e *logEvent) Strs(strs []struct {
 	Key   string
 	Value string
-}) ILogEvent {
+}) LogEvent {
 	for _, str := range strs {
 		e.event.Str(str.Key, str.Value)
 	}

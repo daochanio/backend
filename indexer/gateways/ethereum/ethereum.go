@@ -15,11 +15,11 @@ import (
 
 type ethereumGateway struct {
 	ethClient *ethclient.Client
-	logger    com.ILogger
-	settings  settings.ISettings
+	logger    com.Logger
+	settings  settings.Settings
 }
 
-func NewEthereumGateway(logger com.ILogger, settings settings.ISettings) gateways.IBlockchainGateway {
+func NewEthereumGateway(logger com.Logger, settings settings.Settings) gateways.IBlockchainGateway {
 	ethClient, err := ethclient.Dial(settings.BlockchainURI())
 	if err != nil {
 		panic(err)
