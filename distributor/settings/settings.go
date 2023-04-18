@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type ISettings interface {
+type Settings interface {
 	Interval() time.Duration
 }
 
@@ -14,7 +14,7 @@ type settings struct {
 	interval time.Duration
 }
 
-func NewSettings() ISettings {
+func NewSettings() Settings {
 	intervalMinutes, err := strconv.Atoi(os.Getenv("INTERVAL_MINUTES"))
 	if err != nil {
 		panic(err)

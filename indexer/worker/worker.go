@@ -10,12 +10,12 @@ import (
 )
 
 type Worker struct {
-	logger             common.ILogger
-	settings           settings.ISettings
+	logger             common.Logger
+	settings           settings.Settings
 	indexBlocksUseCase *usecases.IndexBlocksUseCase
 }
 
-func NewWorker(logger common.ILogger, settings settings.ISettings, indexBlocksUseCase *usecases.IndexBlocksUseCase) *Worker {
+func NewWorker(logger common.Logger, settings settings.Settings, indexBlocksUseCase *usecases.IndexBlocksUseCase) *Worker {
 	return &Worker{
 		logger,
 		settings,

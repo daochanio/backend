@@ -8,10 +8,10 @@ import (
 )
 
 type VerifyChallengeUseCase struct {
-	cacheGateway gateways.ICacheGateway
+	cacheGateway gateways.CacheGateway
 }
 
-func NewVerifyChallengeUseCase(cacheGateway gateways.ICacheGateway) *VerifyChallengeUseCase {
+func NewVerifyChallengeUseCase(cacheGateway gateways.CacheGateway) *VerifyChallengeUseCase {
 	return &VerifyChallengeUseCase{
 		cacheGateway,
 	}

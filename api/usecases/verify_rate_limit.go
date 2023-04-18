@@ -8,8 +8,8 @@ import (
 )
 
 func NewVerifyRateLimitUseCase(
-	logger common.ILogger,
-	cacheGateway gateways.ICacheGateway,
+	logger common.Logger,
+	cacheGateway gateways.CacheGateway,
 ) *VerifyRateLimitUseCase {
 	return &VerifyRateLimitUseCase{
 		logger,
@@ -18,8 +18,8 @@ func NewVerifyRateLimitUseCase(
 }
 
 type VerifyRateLimitUseCase struct {
-	logger       common.ILogger
-	cacheGateway gateways.ICacheGateway
+	logger       common.Logger
+	cacheGateway gateways.CacheGateway
 }
 
 type VerifyRateLimitInput struct {

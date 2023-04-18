@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-type ISettings interface {
+type Settings interface {
 	DbConnectionString() string
 	BlockchainURI() string
 	TokenAddress() string
@@ -25,7 +25,7 @@ type settings struct {
 	intervalSeconds    int64
 }
 
-func NewSettings() ISettings {
+func NewSettings() Settings {
 	reorgOffset, err := strconv.Atoi(os.Getenv("REORG_OFFSET"))
 	if err != nil {
 		panic(err)

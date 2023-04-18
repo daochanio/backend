@@ -9,10 +9,10 @@ import (
 )
 
 type DeleteThreadUseCase struct {
-	dbGateway gateways.IDatabaseGateway
+	dbGateway gateways.DatabaseGateway
 }
 
-func NewDeleteThreadUseCase(dbGateway gateways.IDatabaseGateway) *DeleteThreadUseCase {
+func NewDeleteThreadUseCase(dbGateway gateways.DatabaseGateway) *DeleteThreadUseCase {
 	return &DeleteThreadUseCase{
 		dbGateway,
 	}

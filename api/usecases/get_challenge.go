@@ -8,14 +8,14 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-func NewGetChallengeUseCase(cacheGateway gateways.ICacheGateway) *GetChallengeUseCase {
+func NewGetChallengeUseCase(cacheGateway gateways.CacheGateway) *GetChallengeUseCase {
 	return &GetChallengeUseCase{
 		cacheGateway,
 	}
 }
 
 type GetChallengeUseCase struct {
-	cacheGateway gateways.ICacheGateway
+	cacheGateway gateways.CacheGateway
 }
 
 type GetChallengeInput struct {

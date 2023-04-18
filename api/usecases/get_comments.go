@@ -9,10 +9,10 @@ import (
 )
 
 type GetCommentsUseCase struct {
-	dbGateway gateways.IDatabaseGateway
+	dbGateway gateways.DatabaseGateway
 }
 
-func NewGetCommentsUseCase(dbGateway gateways.IDatabaseGateway) *GetCommentsUseCase {
+func NewGetCommentsUseCase(dbGateway gateways.DatabaseGateway) *GetCommentsUseCase {
 	return &GetCommentsUseCase{
 		dbGateway,
 	}

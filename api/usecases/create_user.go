@@ -9,12 +9,12 @@ import (
 )
 
 type CreateUserUseCase struct {
-	logger common.ILogger
-	db     gateways.IDatabaseGateway
-	bc     gateways.IBlockchainGateway
+	logger common.Logger
+	db     gateways.DatabaseGateway
+	bc     gateways.BlockchainGateway
 }
 
-func NewCreateUserUseCase(logger common.ILogger, db gateways.IDatabaseGateway, bc gateways.IBlockchainGateway) *CreateUserUseCase {
+func NewCreateUserUseCase(logger common.Logger, db gateways.DatabaseGateway, bc gateways.BlockchainGateway) *CreateUserUseCase {
 	return &CreateUserUseCase{
 		logger,
 		db,

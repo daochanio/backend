@@ -63,7 +63,7 @@ func startHttpServer(ctx context.Context, httpServer http.IHttpServer) {
 	}()
 }
 
-func awaitSigterm(ctx context.Context, logger common.ILogger) {
+func awaitSigterm(ctx context.Context, logger common.Logger) {
 	logger.Info(ctx).Msg("awaiting sigterm")
 
 	cancelChan := make(chan os.Signal, 1)

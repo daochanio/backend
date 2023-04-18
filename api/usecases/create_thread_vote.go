@@ -9,10 +9,10 @@ import (
 )
 
 type CreateThreadVoteUseCase struct {
-	dbGateway gateways.IDatabaseGateway
+	dbGateway gateways.DatabaseGateway
 }
 
-func NewCreateThreadVoteUseCase(dbGateway gateways.IDatabaseGateway) *CreateThreadVoteUseCase {
+func NewCreateThreadVoteUseCase(dbGateway gateways.DatabaseGateway) *CreateThreadVoteUseCase {
 	return &CreateThreadVoteUseCase{
 		dbGateway,
 	}

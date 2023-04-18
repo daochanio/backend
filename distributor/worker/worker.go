@@ -9,11 +9,11 @@ import (
 )
 
 type Worker struct {
-	logger   common.ILogger
-	settings settings.ISettings
+	logger   common.Logger
+	settings settings.Settings
 }
 
-func NewWorker(logger common.ILogger, settings settings.ISettings) *Worker {
+func NewWorker(logger common.Logger, settings settings.Settings) *Worker {
 	return &Worker{
 		logger,
 		settings,

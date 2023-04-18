@@ -9,10 +9,10 @@ import (
 )
 
 type DeleteCommentUseCase struct {
-	dbGateway gateways.IDatabaseGateway
+	dbGateway gateways.DatabaseGateway
 }
 
-func NewDeleteCommentUseCase(dbGateway gateways.IDatabaseGateway) *DeleteCommentUseCase {
+func NewDeleteCommentUseCase(dbGateway gateways.DatabaseGateway) *DeleteCommentUseCase {
 	return &DeleteCommentUseCase{
 		dbGateway,
 	}
