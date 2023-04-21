@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 
+	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 )
@@ -38,5 +39,12 @@ func (u *CreateCommentUseCase) Execute(ctx context.Context, input CreateCommentI
 		return 0, err
 	}
 
-	return u.dbGateway.CreateComment(ctx, input.ThreadId, input.Address, input.RepliedToCommentId, input.Content, image.FileName(), image.Url(), image.ContentType())
+	comment := entities.NewComment(entities.CommentParams{
+		ThreadId: input.ThreadId,
+		Address:  input.Address,
+		Content:  input.Content,
+		Image:    image,
+	})
+
+	return u.dbGateway.CreateComment(ctx, comment, input.RepliedToCommentId)
 }

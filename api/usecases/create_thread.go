@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 
+	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 )
@@ -39,5 +40,12 @@ func (u *CreateThreadUseCase) Execute(ctx context.Context, input CreateThreadInp
 		return 0, err
 	}
 
-	return u.dbGateway.CreateThread(ctx, input.Address, input.Title, input.Content, image.FileName(), image.Url(), image.ContentType())
+	thread := entities.NewThread(entities.ThreadParams{
+		Address: input.Address,
+		Title:   input.Title,
+		Content: input.Content,
+		Image:   image,
+	})
+
+	return u.dbGateway.CreateThread(ctx, thread)
 }

@@ -36,7 +36,7 @@ func (h *httpServer) uploadImageRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.presentJSON(w, r, http.StatusCreated, imageJson{FileName: image.FileName(), Url: image.Url(), ContentType: image.ContentType()})
+	h.presentJSON(w, r, http.StatusCreated, toImageJson(image))
 }
 
 type imageJson struct {

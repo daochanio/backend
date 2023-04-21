@@ -11,14 +11,14 @@ import (
 	"github.com/daochanio/backend/db/bindings"
 )
 
-func (p *postgresGateway) CreateThread(ctx context.Context, address string, title string, content string, imageFileName string, imageURL string, imageContentType string) (int64, error) {
+func (p *postgresGateway) CreateThread(ctx context.Context, thread entities.Thread) (int64, error) {
 	return p.queries.CreateThread(ctx, bindings.CreateThreadParams{
-		Address:          address,
-		Title:            title,
-		Content:          content,
-		ImageFileName:    imageFileName,
-		ImageUrl:         imageURL,
-		ImageContentType: imageContentType,
+		Address:          thread.Address(),
+		Title:            thread.Title(),
+		Content:          thread.Content(),
+		ImageFileName:    thread.Image().FileName(),
+		ImageUrl:         thread.Image().Url(),
+		ImageContentType: thread.Image().ContentType(),
 	})
 }
 

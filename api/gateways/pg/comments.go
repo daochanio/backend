@@ -11,7 +11,7 @@ import (
 	"github.com/daochanio/backend/db/bindings"
 )
 
-func (p *postgresGateway) CreateComment(ctx context.Context, threadId int64, address string, repliedToCommentId *int64, content string, imageFileName string, imageURL string, imageContentType string) (int64, error) {
+func (p *postgresGateway) CreateComment(ctx context.Context, comment entities.Comment, repliedToCommentId *int64) (int64, error) {
 	rep := sql.NullInt64{
 		Valid: repliedToCommentId != nil,
 	}
@@ -21,13 +21,13 @@ func (p *postgresGateway) CreateComment(ctx context.Context, threadId int64, add
 	}
 
 	return p.queries.CreateComment(ctx, bindings.CreateCommentParams{
-		ThreadID:           threadId,
-		Address:            address,
+		ThreadID:           comment.ThreadId(),
+		Address:            comment.Address(),
 		RepliedToCommentID: rep,
-		Content:            content,
-		ImageFileName:      imageFileName,
-		ImageUrl:           imageURL,
-		ImageContentType:   imageContentType,
+		Content:            comment.Content(),
+		ImageFileName:      comment.Image().FileName(),
+		ImageUrl:           comment.Image().Url(),
+		ImageContentType:   comment.Image().ContentType(),
 	})
 }
 
