@@ -15,6 +15,9 @@ type Comment struct {
 	RepliedToCommentID sql.NullInt64
 	Address            string
 	Content            string
+	ImageFileName      string
+	ImageUrl           string
+	ImageContentType   string
 	IsDeleted          bool
 	CreatedAt          time.Time
 	DeletedAt          sql.NullTime
@@ -35,12 +38,16 @@ type IndexerProgress struct {
 }
 
 type Thread struct {
-	ID        int64
-	Address   string
-	Content   string
-	IsDeleted bool
-	CreatedAt time.Time
-	DeletedAt sql.NullTime
+	ID               int64
+	Address          string
+	Title            string
+	Content          string
+	ImageFileName    string
+	ImageUrl         string
+	ImageContentType string
+	IsDeleted        bool
+	CreatedAt        time.Time
+	DeletedAt        sql.NullTime
 }
 
 type ThreadVote struct {

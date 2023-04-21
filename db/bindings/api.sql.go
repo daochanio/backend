@@ -12,8 +12,8 @@ import (
 )
 
 const createComment = `-- name: CreateComment :one
-INSERT INTO comments (address, thread_id, replied_to_comment_id, content)
-VALUES ($1, $2, $3, $4)
+INSERT INTO comments (address, thread_id, replied_to_comment_id, content, image_file_name, image_url, image_content_type)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING id
 `
 
@@ -22,6 +22,9 @@ type CreateCommentParams struct {
 	ThreadID           int64
 	RepliedToCommentID sql.NullInt64
 	Content            string
+	ImageFileName      string
+	ImageUrl           string
+	ImageContentType   string
 }
 
 func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (int64, error) {
@@ -30,6 +33,9 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (i
 		arg.ThreadID,
 		arg.RepliedToCommentID,
 		arg.Content,
+		arg.ImageFileName,
+		arg.ImageUrl,
+		arg.ImageContentType,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -110,18 +116,29 @@ func (q *Queries) CreateOrUpdateUser(ctx context.Context, arg CreateOrUpdateUser
 }
 
 const createThread = `-- name: CreateThread :one
-INSERT INTO threads (address, content)
-VALUES ($1, $2)
+INSERT INTO threads (address, title, content, image_file_name, image_url, image_content_type)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id
 `
 
 type CreateThreadParams struct {
-	Address string
-	Content string
+	Address          string
+	Title            string
+	Content          string
+	ImageFileName    string
+	ImageUrl         string
+	ImageContentType string
 }
 
 func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, createThread, arg.Address, arg.Content)
+	row := q.db.QueryRowContext(ctx, createThread,
+		arg.Address,
+		arg.Title,
+		arg.Content,
+		arg.ImageFileName,
+		arg.ImageUrl,
+		arg.ImageContentType,
+	)
 	var id int64
 	err := row.Scan(&id)
 	return id, err
@@ -203,7 +220,7 @@ func (q *Queries) DeleteThread(ctx context.Context, id int64) (int64, error) {
 
 const getComment = `-- name: GetComment :one
 SELECT
-	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.is_deleted, c.created_at, c.deleted_at,
+	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.image_file_name, c.image_url, c.image_content_type, c.is_deleted, c.created_at, c.deleted_at,
 	SUM(COALESCE(cv.vote, 0)) as votes
 FROM comments c
 LEFT JOIN comment_votes cv on c.id = cv.comment_id
@@ -216,6 +233,9 @@ type GetCommentRow struct {
 	RepliedToCommentID sql.NullInt64
 	Address            string
 	Content            string
+	ImageFileName      string
+	ImageUrl           string
+	ImageContentType   string
 	IsDeleted          bool
 	CreatedAt          time.Time
 	DeletedAt          sql.NullTime
@@ -231,6 +251,9 @@ func (q *Queries) GetComment(ctx context.Context, id int64) (GetCommentRow, erro
 		&i.RepliedToCommentID,
 		&i.Address,
 		&i.Content,
+		&i.ImageFileName,
+		&i.ImageUrl,
+		&i.ImageContentType,
 		&i.IsDeleted,
 		&i.CreatedAt,
 		&i.DeletedAt,
@@ -241,11 +264,14 @@ func (q *Queries) GetComment(ctx context.Context, id int64) (GetCommentRow, erro
 
 const getComments = `-- name: GetComments :many
 SELECT
-	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.is_deleted, c.created_at, c.deleted_at,
+	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.image_file_name, c.image_url, c.image_content_type, c.is_deleted, c.created_at, c.deleted_at,
 	SUM(COALESCE(cv.vote, 0)) as votes,
 	r.id as r_id,
 	r.address as r_address,
 	r.content as r_content,
+	r.image_file_name as r_image_file_name,
+	r.image_url as r_image_url,
+	r.image_content_type as r_image_content_type,
 	r.is_deleted as r_is_deleted,
 	r.created_at as r_created_at,
 	r.deleted_at as r_deleted_at
@@ -271,6 +297,9 @@ type GetCommentsRow struct {
 	RepliedToCommentID sql.NullInt64
 	Address            string
 	Content            string
+	ImageFileName      string
+	ImageUrl           string
+	ImageContentType   string
 	IsDeleted          bool
 	CreatedAt          time.Time
 	DeletedAt          sql.NullTime
@@ -278,6 +307,9 @@ type GetCommentsRow struct {
 	RID                sql.NullInt64
 	RAddress           sql.NullString
 	RContent           sql.NullString
+	RImageFileName     sql.NullString
+	RImageUrl          sql.NullString
+	RImageContentType  sql.NullString
 	RIsDeleted         sql.NullBool
 	RCreatedAt         sql.NullTime
 	RDeletedAt         sql.NullTime
@@ -298,6 +330,9 @@ func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]Get
 			&i.RepliedToCommentID,
 			&i.Address,
 			&i.Content,
+			&i.ImageFileName,
+			&i.ImageUrl,
+			&i.ImageContentType,
 			&i.IsDeleted,
 			&i.CreatedAt,
 			&i.DeletedAt,
@@ -305,6 +340,9 @@ func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]Get
 			&i.RID,
 			&i.RAddress,
 			&i.RContent,
+			&i.RImageFileName,
+			&i.RImageUrl,
+			&i.RImageContentType,
 			&i.RIsDeleted,
 			&i.RCreatedAt,
 			&i.RDeletedAt,
@@ -324,7 +362,7 @@ func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]Get
 
 const getThread = `-- name: GetThread :one
 SELECT
-	threads.id, threads.address, threads.content, threads.is_deleted, threads.created_at, threads.deleted_at,
+	threads.id, threads.address, threads.title, threads.content, threads.image_file_name, threads.image_url, threads.image_content_type, threads.is_deleted, threads.created_at, threads.deleted_at,
 	SUM(COALESCE(thread_votes.vote, 0)) as votes
 FROM threads
 LEFT JOIN thread_votes ON thread_votes.thread_id = threads.id
@@ -334,13 +372,17 @@ GROUP BY threads.id
 `
 
 type GetThreadRow struct {
-	ID        int64
-	Address   string
-	Content   string
-	IsDeleted bool
-	CreatedAt time.Time
-	DeletedAt sql.NullTime
-	Votes     int64
+	ID               int64
+	Address          string
+	Title            string
+	Content          string
+	ImageFileName    string
+	ImageUrl         string
+	ImageContentType string
+	IsDeleted        bool
+	CreatedAt        time.Time
+	DeletedAt        sql.NullTime
+	Votes            int64
 }
 
 func (q *Queries) GetThread(ctx context.Context, id int64) (GetThreadRow, error) {
@@ -349,7 +391,11 @@ func (q *Queries) GetThread(ctx context.Context, id int64) (GetThreadRow, error)
 	err := row.Scan(
 		&i.ID,
 		&i.Address,
+		&i.Title,
 		&i.Content,
+		&i.ImageFileName,
+		&i.ImageUrl,
+		&i.ImageContentType,
 		&i.IsDeleted,
 		&i.CreatedAt,
 		&i.DeletedAt,
@@ -360,7 +406,7 @@ func (q *Queries) GetThread(ctx context.Context, id int64) (GetThreadRow, error)
 
 const getThreads = `-- name: GetThreads :many
 SELECT
-  threads.id, threads.address, threads.content, threads.is_deleted, threads.created_at, threads.deleted_at,
+  threads.id, threads.address, threads.title, threads.content, threads.image_file_name, threads.image_url, threads.image_content_type, threads.is_deleted, threads.created_at, threads.deleted_at,
   SUM(COALESCE(thread_votes.vote, 0)) as votes
 FROM threads
 LEFT JOIN thread_votes ON thread_votes.thread_id = threads.id
@@ -371,13 +417,17 @@ LIMIT $1
 `
 
 type GetThreadsRow struct {
-	ID        int64
-	Address   string
-	Content   string
-	IsDeleted bool
-	CreatedAt time.Time
-	DeletedAt sql.NullTime
-	Votes     int64
+	ID               int64
+	Address          string
+	Title            string
+	Content          string
+	ImageFileName    string
+	ImageUrl         string
+	ImageContentType string
+	IsDeleted        bool
+	CreatedAt        time.Time
+	DeletedAt        sql.NullTime
+	Votes            int64
 }
 
 // Order by random is not performant as we need to do a full table scan.
@@ -396,7 +446,11 @@ func (q *Queries) GetThreads(ctx context.Context, limit int32) ([]GetThreadsRow,
 		if err := rows.Scan(
 			&i.ID,
 			&i.Address,
+			&i.Title,
 			&i.Content,
+			&i.ImageFileName,
+			&i.ImageUrl,
+			&i.ImageContentType,
 			&i.IsDeleted,
 			&i.CreatedAt,
 			&i.DeletedAt,

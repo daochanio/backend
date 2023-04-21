@@ -6,13 +6,13 @@ ON CONFLICT (address) DO UPDATE SET ens_name = $2, updated_at = NOW()
 RETURNING *;
 
 -- name: CreateThread :one
-INSERT INTO threads (address, content)
-VALUES ($1, $2)
+INSERT INTO threads (address, title, content, image_file_name, image_url, image_content_type)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id;
 
 -- name: CreateComment :one
-INSERT INTO comments (address, thread_id, replied_to_comment_id, content)
-VALUES ($1, $2, $3, $4)
+INSERT INTO comments (address, thread_id, replied_to_comment_id, content, image_file_name, image_url, image_content_type)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING id;
 
 -- Order by random is not performant as we need to do a full table scan.
@@ -47,6 +47,9 @@ SELECT
 	r.id as r_id,
 	r.address as r_address,
 	r.content as r_content,
+	r.image_file_name as r_image_file_name,
+	r.image_url as r_image_url,
+	r.image_content_type as r_image_content_type,
 	r.is_deleted as r_is_deleted,
 	r.created_at as r_created_at,
 	r.deleted_at as r_deleted_at

@@ -37,6 +37,7 @@ type httpServer struct {
 	getCommentsUseCase       *usecases.GetCommentsUseCase
 	deleteCommentUseCase     *usecases.DeleteCommentUseCase
 	createCommentVoteUseCase *usecases.CreateCommentVoteUseCase
+	uploadImageUseCase       *usecases.UploadImageUsecase
 }
 
 func NewHttpServer(
@@ -54,7 +55,8 @@ func NewHttpServer(
 	createCommentUseCase *usecases.CreateCommentUseCase,
 	getCommentsUseCase *usecases.GetCommentsUseCase,
 	deleteCommentUseCase *usecases.DeleteCommentUseCase,
-	createCommentVoteUseCase *usecases.CreateCommentVoteUseCase) IHttpServer {
+	createCommentVoteUseCase *usecases.CreateCommentVoteUseCase,
+	uploadImageUseCase *usecases.UploadImageUsecase) IHttpServer {
 	return &httpServer{
 		logger,
 		settings,
@@ -71,6 +73,7 @@ func NewHttpServer(
 		getCommentsUseCase,
 		deleteCommentUseCase,
 		createCommentVoteUseCase,
+		uploadImageUseCase,
 	}
 }
 
@@ -97,7 +100,11 @@ func (h *httpServer) Start(ctx context.Context) error {
 
 	// TODO: .With(h.rateLimit) disabled while investigating support for replicate_commands in our redis provider
 	// TODO: Add stricter rate limiting for uploading images / creating threads / comments
-	r.Route("/v1", func(r chi.Router) {
+
+	// image route has special size and rate limiting constraints so its easier to specify it outside the the standard route grouping below
+	r.With(h.authenticate).With(h.maxSize(3*1024) /*3MB*/).Post("/v1/images", h.uploadImageRoute)
+
+	r.With(h.maxSize(5) /*5KB*/).Route("/v1", func(r chi.Router) {
 
 		r.Put("/challenge", h.getChallengeRoute)
 

@@ -9,7 +9,7 @@ import (
 type DatabaseGateway interface {
 	CreateOrUpdateUser(ctx context.Context, address string, ensName *string) (entities.User, error)
 
-	CreateThread(ctx context.Context, address string, content string) (int64, error)
+	CreateThread(ctx context.Context, thread entities.Thread) (int64, error)
 	GetThreads(ctx context.Context, limit int32) ([]entities.Thread, error)
 	GetThreadById(ctx context.Context, id int64) (entities.Thread, error)
 	DeleteThread(ctx context.Context, id int64) error
@@ -17,7 +17,7 @@ type DatabaseGateway interface {
 	DownVoteThread(ctx context.Context, id int64, address string) error
 	UnVoteThread(ctx context.Context, id int64, address string) error
 
-	CreateComment(ctx context.Context, threadId int64, address string, repliedToCommentId *int64, content string) (int64, error)
+	CreateComment(ctx context.Context, comment entities.Comment, repliedToCommentId *int64) (int64, error)
 	GetComments(ctx context.Context, threadId int64, offset int32, limit int32) ([]entities.Comment, error)
 	GetCommentById(ctx context.Context, id int64) (entities.Comment, error)
 	DeleteComment(ctx context.Context, id int64) error
@@ -35,4 +35,9 @@ type CacheGateway interface {
 
 type BlockchainGateway interface {
 	GetENSNameFromAddress(ctx context.Context, address string) (string, error)
+}
+
+type ImageGateway interface {
+	UploadImage(ctx context.Context, fileName string, contentType string, data *[]byte) (entities.Image, error)
+	GetImageByFileName(ctx context.Context, fileName string) (entities.Image, error)
 }

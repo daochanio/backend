@@ -9,6 +9,8 @@ require (
 	github.com/go-redis/redis_rate/v10 v10.0.1
 	github.com/redis/go-redis/v9 v9.0.3
 	go.uber.org/dig v1.16.1
+	github.com/aws/aws-sdk-go v1.44.246
+	github.com/google/uuid v1.3.0
 )
 
 require (
@@ -21,10 +23,10 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/holiman/uint256 v1.2.0 // indirect
 	github.com/ipfs/go-cid v0.2.0 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

@@ -10,6 +10,7 @@ type Comment struct {
 	threadId         int64
 	address          string
 	content          string
+	image            Image
 	isDeleted        bool
 	createdAt        time.Time
 	deletedAt        *time.Time
@@ -22,6 +23,7 @@ type CommentParams struct {
 	ThreadId         int64
 	Address          string
 	Content          string
+	Image            Image
 	IsDeleted        bool
 	CreatedAt        time.Time
 	DeletedAt        *time.Time
@@ -35,6 +37,7 @@ func NewComment(params CommentParams) Comment {
 		threadId:         params.ThreadId,
 		address:          params.Address,
 		content:          params.Content,
+		image:            params.Image,
 		isDeleted:        params.IsDeleted,
 		createdAt:        params.CreatedAt,
 		deletedAt:        params.DeletedAt,
@@ -63,6 +66,10 @@ func (c *Comment) Content() string {
 		return "This comment has been deleted."
 	}
 	return c.content
+}
+
+func (c *Comment) Image() Image {
+	return c.image
 }
 
 func (c *Comment) IsDeleted() bool {

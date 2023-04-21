@@ -57,6 +57,7 @@ func (h *httpServer) createCommentRoute(w http.ResponseWriter, r *http.Request) 
 		ThreadId:           body.ThreadId,
 		Address:            ctx.Value(common.ContextKeyAddress).(string),
 		Content:            body.Content,
+		ImageFileName:      body.ImageFileName,
 	})
 
 	if err != nil {
@@ -126,6 +127,7 @@ type createCommentJson struct {
 	RepliedToCommentId *int64 `json:"repliedToCommentId,omitempty"`
 	ThreadId           int64  `json:"threadId"`
 	Content            string `json:"content"`
+	ImageFileName      string `json:"imageFileName"`
 }
 
 type getCommentJson struct {
@@ -134,6 +136,7 @@ type getCommentJson struct {
 	ThreadId         int64           `json:"threadId,omitempty"` // empty if reply
 	Address          string          `json:"address"`
 	Content          string          `json:"content"`
+	Image            imageJson       `json:"image"`
 	IsDeleted        bool            `json:"isDeleted"`
 	CreatedAt        time.Time       `json:"createdAt"`
 	DeletedAt        *time.Time      `json:"deletedAt"`
@@ -156,6 +159,7 @@ func toCommentJson(comment entities.Comment) getCommentJson {
 		ThreadId:  comment.ThreadId(),
 		Address:   comment.Address(),
 		Content:   comment.Content(),
+		Image:     toImageJson(comment.Image()),
 		IsDeleted: comment.IsDeleted(),
 		CreatedAt: comment.CreatedAt(),
 		DeletedAt: comment.DeletedAt(),
@@ -167,6 +171,7 @@ func toCommentJson(comment entities.Comment) getCommentJson {
 			Id:        repliedToComment.Id(),
 			Address:   repliedToComment.Address(),
 			Content:   repliedToComment.Content(),
+			Image:     toImageJson(repliedToComment.Image()),
 			IsDeleted: repliedToComment.IsDeleted(),
 			CreatedAt: repliedToComment.CreatedAt(),
 			DeletedAt: repliedToComment.DeletedAt(),

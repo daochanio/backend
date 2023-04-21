@@ -7,7 +7,9 @@ import (
 type Thread struct {
 	id        int64
 	address   string
+	title     string
 	content   string
+	image     Image
 	isDeleted bool
 	createdAt time.Time
 	deletedAt *time.Time
@@ -17,7 +19,9 @@ type Thread struct {
 type ThreadParams struct {
 	Id        int64
 	Address   string
+	Title     string
 	Content   string
+	Image     Image
 	IsDeleted bool
 	CreatedAt time.Time
 	DeletedAt *time.Time
@@ -28,7 +32,9 @@ func NewThread(params ThreadParams) Thread {
 	return Thread{
 		id:        params.Id,
 		address:   params.Address,
+		title:     params.Title,
 		content:   params.Content,
+		image:     params.Image,
 		isDeleted: params.IsDeleted,
 		createdAt: params.CreatedAt,
 		deletedAt: params.DeletedAt,
@@ -44,12 +50,20 @@ func (t *Thread) Address() string {
 	return t.address
 }
 
+func (t *Thread) Title() string {
+	return t.title
+}
+
 func (t *Thread) Content() string {
 	if t.isDeleted {
 		return "This thread has been deleted."
 	}
 
 	return t.content
+}
+
+func (t *Thread) Image() Image {
+	return t.image
 }
 
 func (t *Thread) IsDeleted() bool {

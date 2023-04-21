@@ -61,8 +61,10 @@ func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id, err := h.createThreadUseCase.Execute(ctx, usecases.CreateThreadInput{
-		Address: ctx.Value(common.ContextKeyAddress).(string),
-		Content: body.Content,
+		Address:       ctx.Value(common.ContextKeyAddress).(string),
+		Title:         body.Title,
+		ImageFileName: body.ImageFileName,
+		Content:       body.Content,
 	})
 
 	if err != nil {
@@ -127,13 +129,17 @@ func (h *httpServer) createThreadVoteRoute(w http.ResponseWriter, r *http.Reques
 }
 
 type createThreadJson struct {
-	Content string `json:"content"`
+	Title         string `json:"title"`
+	Content       string `json:"content"`
+	ImageFileName string `json:"imageFileName"`
 }
 
 type getThreadJson struct {
 	Id        int64      `json:"id"`
 	Address   string     `json:"address"`
+	Title     string     `json:"title"`
 	Content   string     `json:"content"`
+	Image     imageJson  `json:"image"`
 	IsDeleted bool       `json:"isDeleted"`
 	CreatedAt time.Time  `json:"createdAt"`
 	DeletedAt *time.Time `json:"deletedAt"`
@@ -144,7 +150,9 @@ func toThreadJson(thread entities.Thread) getThreadJson {
 	return getThreadJson{
 		Id:        thread.Id(),
 		Address:   thread.Address(),
+		Title:     thread.Title(),
 		Content:   thread.Content(),
+		Image:     toImageJson(thread.Image()),
 		IsDeleted: thread.IsDeleted(),
 		CreatedAt: thread.CreatedAt(),
 		DeletedAt: thread.DeletedAt(),
