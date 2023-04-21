@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/daochanio/backend/api/gateways/cloudfront"
 	"github.com/daochanio/backend/api/gateways/ethereum"
 	"github.com/daochanio/backend/api/gateways/pg"
 	"github.com/daochanio/backend/api/gateways/redis"
@@ -25,6 +26,7 @@ func main() {
 	container.Provide(settings.NewSettings)
 	container.Provide(pg.NewPostgresGateway)
 	container.Provide(redis.NewRedisGateway)
+	container.Provide(cloudfront.NewCloudfrontGateway)
 	container.Provide(ethereum.NewEthereumGateway)
 	container.Provide(usecases.NewCreateUserUseCase)
 	container.Provide(usecases.NewVerifyRateLimitUseCase)
@@ -39,6 +41,7 @@ func main() {
 	container.Provide(usecases.NewCreateCommentUseCase)
 	container.Provide(usecases.NewDeleteCommentUseCase)
 	container.Provide(usecases.NewCreateCommentVoteUseCase)
+	container.Provide(usecases.NewUploadImageUsecase)
 	container.Provide(http.NewHttpServer)
 
 	// start the http controller inside a go routine

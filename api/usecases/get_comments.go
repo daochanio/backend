@@ -21,7 +21,7 @@ func NewGetCommentsUseCase(dbGateway gateways.DatabaseGateway) *GetCommentsUseCa
 type GetCommentsInput struct {
 	ThreadId int64 `validate:"gt=0"`
 	Offset   int32 `validate:"gte=0"`
-	Limit    int32 `validate:"gte=0"`
+	Limit    int32 `validate:"gte=0,lte=100"`
 }
 
 func (u *GetCommentsUseCase) Execute(ctx context.Context, input GetCommentsInput) ([]entities.Comment, error) {

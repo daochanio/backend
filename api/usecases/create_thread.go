@@ -8,18 +8,24 @@ import (
 )
 
 type CreateThreadUseCase struct {
-	dbGateway gateways.DatabaseGateway
+	logger       common.Logger
+	imageGateway gateways.ImageGateway
+	dbGateway    gateways.DatabaseGateway
 }
 
-func NewCreateThreadUseCase(dbGateway gateways.DatabaseGateway) *CreateThreadUseCase {
+func NewCreateThreadUseCase(logger common.Logger, imageGateway gateways.ImageGateway, dbGateway gateways.DatabaseGateway) *CreateThreadUseCase {
 	return &CreateThreadUseCase{
+		logger,
+		imageGateway,
 		dbGateway,
 	}
 }
 
 type CreateThreadInput struct {
-	Address string `validate:"eth_addr"`
-	Content string `validate:"max=1000"`
+	Address       string `validate:"eth_addr"`
+	Title         string `validate:"max=100"`
+	Content       string `validate:"max=1000"`
+	ImageFileName string `validate:"max=100"`
 }
 
 func (u *CreateThreadUseCase) Execute(ctx context.Context, input CreateThreadInput) (int64, error) {
@@ -27,5 +33,11 @@ func (u *CreateThreadUseCase) Execute(ctx context.Context, input CreateThreadInp
 		return 0, err
 	}
 
-	return u.dbGateway.CreateThread(ctx, input.Address, input.Content)
+	image, err := u.imageGateway.GetImageById(ctx, input.ImageFileName)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return u.dbGateway.CreateThread(ctx, input.Address, input.Title, input.Content, image.FileName(), image.Url(), image.ContentType())
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/daochanio/backend/db/bindings"
 )
 
-func (p *postgresGateway) CreateComment(ctx context.Context, threadId int64, address string, repliedToCommentId *int64, content string) (int64, error) {
+func (p *postgresGateway) CreateComment(ctx context.Context, threadId int64, address string, repliedToCommentId *int64, content string, imageFileName string, imageURL string, imageContentType string) (int64, error) {
 	rep := sql.NullInt64{
 		Valid: repliedToCommentId != nil,
 	}
@@ -25,6 +25,9 @@ func (p *postgresGateway) CreateComment(ctx context.Context, threadId int64, add
 		Address:            address,
 		RepliedToCommentID: rep,
 		Content:            content,
+		ImageFileName:      imageFileName,
+		ImageUrl:           imageURL,
+		ImageContentType:   imageContentType,
 	})
 }
 
@@ -46,6 +49,7 @@ func (p *postgresGateway) GetComments(ctx context.Context, threadId int64, offse
 			deletedAt = &comment.DeletedAt.Time
 		}
 
+		image := entities.NewImage(comment.ImageFileName, comment.ImageUrl, comment.ImageContentType)
 		// set replying comment if exists
 		var repliedToComment *entities.Comment
 		if comment.RID.Valid {
@@ -53,10 +57,12 @@ func (p *postgresGateway) GetComments(ctx context.Context, threadId int64, offse
 			if comment.RDeletedAt.Valid {
 				deletedAt = &comment.RDeletedAt.Time
 			}
+			repliedToImage := entities.NewImage(comment.RImageFileName.String, comment.RImageUrl.String, comment.RImageContentType.String)
 			comment := entities.NewComment(entities.CommentParams{
 				Id:        comment.RID.Int64,
 				Address:   comment.RAddress.String,
 				Content:   comment.RContent.String,
+				Image:     repliedToImage,
 				IsDeleted: comment.RIsDeleted.Bool,
 				CreatedAt: comment.RCreatedAt.Time,
 				DeletedAt: deletedAt,
@@ -69,6 +75,7 @@ func (p *postgresGateway) GetComments(ctx context.Context, threadId int64, offse
 			ThreadId:         comment.ThreadID,
 			Address:          comment.Address,
 			Content:          comment.Content,
+			Image:            image,
 			RepliedToComment: repliedToComment,
 			IsDeleted:        comment.IsDeleted,
 			CreatedAt:        comment.CreatedAt,
@@ -98,11 +105,13 @@ func (p *postgresGateway) GetCommentById(ctx context.Context, id int64) (entitie
 		deletedAt = &comment.DeletedAt.Time
 	}
 
+	image := entities.NewImage(comment.ImageFileName, comment.ImageUrl, comment.ImageContentType)
 	entitie := entities.NewComment(entities.CommentParams{
 		Id:        comment.ID,
 		ThreadId:  comment.ThreadID,
 		Address:   comment.Address,
 		Content:   comment.Content,
+		Image:     image,
 		IsDeleted: comment.IsDeleted,
 		CreatedAt: comment.CreatedAt,
 		DeletedAt: deletedAt,

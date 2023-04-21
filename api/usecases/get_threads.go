@@ -19,7 +19,7 @@ func NewGetThreadsUseCase(dbGateway gateways.DatabaseGateway) *GetThreadsUseCase
 
 // get threads input
 type GetThreadsInput struct {
-	Limit int32 `validate:"gte=0"`
+	Limit int32 `validate:"gte=0,lte=100"`
 }
 
 func (u *GetThreadsUseCase) Execute(ctx context.Context, input GetThreadsInput) ([]entities.Thread, error) {

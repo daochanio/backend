@@ -11,10 +11,14 @@ import (
 	"github.com/daochanio/backend/db/bindings"
 )
 
-func (p *postgresGateway) CreateThread(ctx context.Context, address string, content string) (int64, error) {
+func (p *postgresGateway) CreateThread(ctx context.Context, address string, title string, content string, imageFileName string, imageURL string, imageContentType string) (int64, error) {
 	return p.queries.CreateThread(ctx, bindings.CreateThreadParams{
-		Address: address,
-		Content: content,
+		Address:          address,
+		Title:            title,
+		Content:          content,
+		ImageFileName:    imageFileName,
+		ImageUrl:         imageURL,
+		ImageContentType: imageContentType,
 	})
 }
 
@@ -32,10 +36,13 @@ func (p *postgresGateway) GetThreads(ctx context.Context, limit int32) ([]entiti
 			deletedAt = &thread.DeletedAt.Time
 		}
 
+		image := entities.NewImage(thread.ImageFileName, thread.ImageUrl, thread.ImageContentType)
 		entitie := entities.NewThread(entities.ThreadParams{
 			Id:        thread.ID,
 			Address:   thread.Address,
+			Title:     thread.Title,
 			Content:   thread.Content,
+			Image:     image,
 			Votes:     thread.Votes,
 			CreatedAt: thread.CreatedAt,
 			IsDeleted: thread.IsDeleted,
@@ -62,10 +69,13 @@ func (p *postgresGateway) GetThreadById(ctx context.Context, id int64) (entities
 		deletedAt = &thread.DeletedAt.Time
 	}
 
+	image := entities.NewImage(thread.ImageFileName, thread.ImageUrl, thread.ImageContentType)
 	entitie := entities.NewThread(entities.ThreadParams{
 		Id:        thread.ID,
 		Address:   thread.Address,
+		Title:     thread.Title,
 		Content:   thread.Content,
+		Image:     image,
 		Votes:     thread.Votes,
 		CreatedAt: thread.CreatedAt,
 		IsDeleted: thread.IsDeleted,

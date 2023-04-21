@@ -11,7 +11,11 @@ CREATE TABLE users (
 CREATE TABLE threads (
 	id BIGSERIAL PRIMARY KEY,
 	address VARCHAR(42) NOT NULL REFERENCES users(address),
+	title TEXT NOT NULL,
 	content TEXT NOT NULL,
+	image_file_name TEXT NOT NULL,
+	image_url TEXT NOT NULL,
+	image_content_type TEXT NOT NULL,
 	is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	deleted_at TIMESTAMP NULL DEFAULT NULL
@@ -32,6 +36,9 @@ CREATE TABLE comments (
 	replied_to_comment_id BIGINT NULL REFERENCES comments(id),
 	address VARCHAR(42) NOT NULL REFERENCES users(address),
 	content TEXT NOT NULL,
+	image_file_name TEXT NOT NULL,
+	image_url TEXT NOT NULL,
+	image_content_type TEXT NOT NULL,
 	is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	deleted_at TIMESTAMP NULL DEFAULT NULL
