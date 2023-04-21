@@ -59,7 +59,7 @@ func (g *cloudfrontGateway) UploadImage(ctx context.Context, fileName string, co
 }
 
 // We get file header information to both verify that the file exists and to get the content type
-func (g *cloudfrontGateway) GetImageById(ctx context.Context, fileName string) (entities.Image, error) {
+func (g *cloudfrontGateway) GetImageByFileName(ctx context.Context, fileName string) (entities.Image, error) {
 	bucket := g.settings.ImageBucket()
 	header, err := g.client.HeadObject(&s3.HeadObjectInput{
 		Bucket: &bucket,

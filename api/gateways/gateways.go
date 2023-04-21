@@ -39,5 +39,5 @@ type BlockchainGateway interface {
 
 type ImageGateway interface {
 	UploadImage(ctx context.Context, fileName string, contentType string, data *[]byte) (entities.Image, error)
-	GetImageById(ctx context.Context, fileName string) (entities.Image, error)
+	GetImageByFileName(ctx context.Context, fileName string) (entities.Image, error)
 }

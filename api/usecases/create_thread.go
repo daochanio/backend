@@ -33,7 +33,7 @@ func (u *CreateThreadUseCase) Execute(ctx context.Context, input CreateThreadInp
 		return 0, err
 	}
 
-	image, err := u.imageGateway.GetImageById(ctx, input.ImageFileName)
+	image, err := u.imageGateway.GetImageByFileName(ctx, input.ImageFileName)
 
 	if err != nil {
 		return 0, err
