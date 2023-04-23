@@ -10,6 +10,7 @@ type Thread struct {
 	title     string
 	content   string
 	image     Image
+	comments  *[]Comment
 	isDeleted bool
 	createdAt time.Time
 	deletedAt *time.Time
@@ -22,6 +23,7 @@ type ThreadParams struct {
 	Title     string
 	Content   string
 	Image     Image
+	Comments  *[]Comment
 	IsDeleted bool
 	CreatedAt time.Time
 	DeletedAt *time.Time
@@ -35,6 +37,7 @@ func NewThread(params ThreadParams) Thread {
 		title:     params.Title,
 		content:   params.Content,
 		image:     params.Image,
+		comments:  params.Comments,
 		isDeleted: params.IsDeleted,
 		createdAt: params.CreatedAt,
 		deletedAt: params.DeletedAt,
@@ -62,8 +65,8 @@ func (t *Thread) Content() string {
 	return t.content
 }
 
-func (t *Thread) Image() Image {
-	return t.image
+func (t *Thread) Image() *Image {
+	return &t.image
 }
 
 func (t *Thread) IsDeleted() bool {
@@ -80,4 +83,13 @@ func (t *Thread) DeletedAt() *time.Time {
 
 func (t *Thread) Votes() int64 {
 	return t.votes
+}
+
+func (t *Thread) SetComments(comments *[]Comment) {
+	t.comments = comments
+}
+
+// returned comments can be nil if not hydrated
+func (t *Thread) Comments() *[]Comment {
+	return t.comments
 }

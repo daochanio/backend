@@ -5,6 +5,7 @@ import (
 
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/api/gateways"
+	"github.com/daochanio/backend/common"
 )
 
 type GetThreadsUseCase struct {
@@ -17,11 +18,15 @@ func NewGetThreadsUseCase(dbGateway gateways.DatabaseGateway) *GetThreadsUseCase
 	}
 }
 
-// get threads input
 type GetThreadsInput struct {
-	Limit int32 `validate:"gte=0,lte=100"`
+	Limit int64 `validate:"gte=0,lte=100"`
 }
 
+// Threads returned are random and thus the concept of pages/offset/count is not relevant
 func (u *GetThreadsUseCase) Execute(ctx context.Context, input GetThreadsInput) ([]entities.Thread, error) {
+	if err := common.ValidateStruct(input); err != nil {
+		return nil, err
+	}
+
 	return u.dbGateway.GetThreads(ctx, input.Limit)
 }

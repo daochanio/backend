@@ -28,7 +28,7 @@ LEFT JOIN thread_votes ON thread_votes.thread_id = threads.id
 WHERE threads.is_deleted = FALSE
 GROUP BY threads.id
 ORDER BY RANDOM()
-LIMIT $1;
+LIMIT $1::bigint;
 
 -- name: GetThread :one
 SELECT
@@ -52,15 +52,16 @@ SELECT
 	r.image_content_type as r_image_content_type,
 	r.is_deleted as r_is_deleted,
 	r.created_at as r_created_at,
-	r.deleted_at as r_deleted_at
+	r.deleted_at as r_deleted_at,
+	count(*) OVER() AS full_count
 FROM comments c
 LEFT JOIN comment_votes cv on c.id = cv.comment_id
 LEFT JOIN comments r on c.replied_to_comment_id = r.id
 WHERE c.thread_id = $1
 GROUP BY c.id, r.id
 ORDER BY c.created_at DESC
-OFFSET $2
-LIMIT $3;
+OFFSET $2::bigint
+LIMIT $3::bigint;
 
 -- name: GetComment :one
 SELECT

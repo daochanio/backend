@@ -65,11 +65,16 @@ func (c *Comment) Content() string {
 	if c.isDeleted {
 		return "This comment has been deleted."
 	}
+
 	return c.content
 }
 
-func (c *Comment) Image() Image {
-	return c.image
+func (c *Comment) Image() *Image {
+	if c.isDeleted {
+		return nil
+	}
+
+	return &c.image
 }
 
 func (c *Comment) IsDeleted() bool {

@@ -18,10 +18,20 @@ func (h *httpServer) getThreadByIdRoute(w http.ResponseWriter, r *http.Request) 
 
 	if err != nil {
 		h.presentBadRequest(w, r, err)
+		return
 	}
 
-	thread, err := h.getThreadUseCase.Execute(r.Context(), usecases.GetThreadInput{
-		ThreadId: id,
+	page, err := h.getPage(r)
+
+	if err != nil {
+		h.presentBadRequest(w, r, err)
+		return
+	}
+
+	thread, count, err := h.getThreadUseCase.Execute(r.Context(), usecases.GetThreadInput{
+		ThreadId:      id,
+		CommentOffset: page.Offset,
+		CommentLimit:  page.Limit,
 	})
 
 	if errors.Is(err, common.ErrNotFound) {
@@ -34,13 +44,21 @@ func (h *httpServer) getThreadByIdRoute(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	h.presentJSON(w, r, http.StatusOK, toThreadJson(thread))
+	page.Count = count
+
+	h.presentJSON(w, r, http.StatusOK, toThreadJson(thread), &page)
 }
 
 func (h *httpServer) getThreadsRoute(w http.ResponseWriter, r *http.Request) {
+	page, err := h.getPage(r)
+
+	if err != nil {
+		h.presentBadRequest(w, r, err)
+		return
+	}
 
 	threads, err := h.getThreadsUseCase.Execute(r.Context(), usecases.GetThreadsInput{
-		Limit: 10,
+		Limit: page.Limit,
 	})
 
 	if err != nil {
@@ -48,7 +66,7 @@ func (h *httpServer) getThreadsRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.presentJSON(w, r, http.StatusOK, toThreadsJson(threads))
+	h.presentJSON(w, r, http.StatusOK, toThreadsJson(threads), nil)
 }
 
 func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +94,7 @@ func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
 		Id int64 `json:"id"`
 	}{
 		Id: id,
-	})
+	}, nil)
 }
 
 func (h *httpServer) deleteThreadRoute(w http.ResponseWriter, r *http.Request) {
@@ -134,20 +152,21 @@ type createThreadJson struct {
 	ImageFileName string `json:"imageFileName"`
 }
 
-type getThreadJson struct {
-	Id        int64      `json:"id"`
-	Address   string     `json:"address"`
-	Title     string     `json:"title"`
-	Content   string     `json:"content"`
-	Image     imageJson  `json:"image"`
-	IsDeleted bool       `json:"isDeleted"`
-	CreatedAt time.Time  `json:"createdAt"`
-	DeletedAt *time.Time `json:"deletedAt"`
-	Votes     int64      `json:"votes"`
+type threadJson struct {
+	Id        int64          `json:"id"`
+	Address   string         `json:"address"`
+	Title     string         `json:"title"`
+	Content   string         `json:"content"`
+	Image     *imageJson     `json:"image,omitempty"` // empty if thread deleted
+	Comments  *[]commentJson `json:"comments,omitempty"`
+	IsDeleted bool           `json:"isDeleted"`
+	CreatedAt time.Time      `json:"createdAt"`
+	DeletedAt *time.Time     `json:"deletedAt,omitempty"`
+	Votes     int64          `json:"votes"`
 }
 
-func toThreadJson(thread entities.Thread) getThreadJson {
-	return getThreadJson{
+func toThreadJson(thread entities.Thread) threadJson {
+	json := threadJson{
 		Id:        thread.Id(),
 		Address:   thread.Address(),
 		Title:     thread.Title(),
@@ -158,12 +177,18 @@ func toThreadJson(thread entities.Thread) getThreadJson {
 		DeletedAt: thread.DeletedAt(),
 		Votes:     thread.Votes(),
 	}
+
+	if thread.Comments() != nil {
+		commentsJson := toCommentsJson(*thread.Comments())
+		json.Comments = &commentsJson
+	}
+	return json
 }
 
-func toThreadsJson(threads []entities.Thread) []getThreadJson {
-	threadsJson := []getThreadJson{}
+func toThreadsJson(threads []entities.Thread) []threadJson {
+	json := []threadJson{}
 	for _, thread := range threads {
-		threadsJson = append(threadsJson, toThreadJson(thread))
+		json = append(json, toThreadJson(thread))
 	}
-	return threadsJson
+	return json
 }

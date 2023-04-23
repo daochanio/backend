@@ -22,7 +22,7 @@ func (p *postgresGateway) CreateThread(ctx context.Context, thread entities.Thre
 	})
 }
 
-func (p *postgresGateway) GetThreads(ctx context.Context, limit int32) ([]entities.Thread, error) {
+func (p *postgresGateway) GetThreads(ctx context.Context, limit int64) ([]entities.Thread, error) {
 	threads, err := p.queries.GetThreads(ctx, limit)
 
 	if err != nil {

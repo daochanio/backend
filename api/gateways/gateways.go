@@ -10,7 +10,7 @@ type DatabaseGateway interface {
 	CreateOrUpdateUser(ctx context.Context, address string, ensName *string) (entities.User, error)
 
 	CreateThread(ctx context.Context, thread entities.Thread) (int64, error)
-	GetThreads(ctx context.Context, limit int32) ([]entities.Thread, error)
+	GetThreads(ctx context.Context, limit int64) ([]entities.Thread, error)
 	GetThreadById(ctx context.Context, id int64) (entities.Thread, error)
 	DeleteThread(ctx context.Context, id int64) error
 	UpVoteThread(ctx context.Context, id int64, address string) error
@@ -18,7 +18,7 @@ type DatabaseGateway interface {
 	UnVoteThread(ctx context.Context, id int64, address string) error
 
 	CreateComment(ctx context.Context, comment entities.Comment, repliedToCommentId *int64) (int64, error)
-	GetComments(ctx context.Context, threadId int64, offset int32, limit int32) ([]entities.Comment, error)
+	GetComments(ctx context.Context, threadId int64, offset int64, limit int64) ([]entities.Comment, int64, error)
 	GetCommentById(ctx context.Context, id int64) (entities.Comment, error)
 	DeleteComment(ctx context.Context, id int64) error
 	UpVoteComment(ctx context.Context, id int64, address string) error

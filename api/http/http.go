@@ -139,28 +139,40 @@ func (h *httpServer) Start(ctx context.Context) error {
 
 func (h *httpServer) presentNotFound(w http.ResponseWriter, r *http.Request, err error) {
 	h.logger.Warn(r.Context()).Err(err).Msg("not found")
-	h.presentJSON(w, r, http.StatusNotFound, toErrJson("not found"))
+	h.presentJSON(w, r, http.StatusNotFound, toErrJson("not found"), nil)
 }
 
 func (h *httpServer) presentBadRequest(w http.ResponseWriter, r *http.Request, err error) {
 	h.logger.Warn(r.Context()).Err(err).Msg("bad request")
-	h.presentJSON(w, r, http.StatusBadRequest, toErrJson("bad request"))
+	h.presentJSON(w, r, http.StatusBadRequest, toErrJson("bad request"), nil)
 }
 
 func (h *httpServer) presentUnathorized(w http.ResponseWriter, r *http.Request, err error) {
 	h.logger.Warn(r.Context()).Err(err).Msg("unauthorized")
-	h.presentJSON(w, r, http.StatusUnauthorized, toErrJson("unathorized"))
+	h.presentJSON(w, r, http.StatusUnauthorized, toErrJson("unathorized"), nil)
 }
 
 func (h *httpServer) presentTooManyRequests(w http.ResponseWriter, r *http.Request, err error) {
 	h.logger.Warn(r.Context()).Err(err).Msg("too many requests")
-	h.presentJSON(w, r, http.StatusTooManyRequests, toErrJson("too many requests"))
+	h.presentJSON(w, r, http.StatusTooManyRequests, toErrJson("too many requests"), nil)
 }
 
-func (h *httpServer) presentJSON(w http.ResponseWriter, r *http.Request, statusCode int, body interface{}) {
+func (h *httpServer) presentJSON(w http.ResponseWriter, r *http.Request, statusCode int, data any, lastPage *pageJson) {
 	w.Header().Set("Content-Type", "application/json")
 	h.presentStatus(w, r, statusCode)
-	json.NewEncoder(w).Encode(body)
+
+	var nextPage *pageJson
+	if lastPage != nil && lastPage.Offset+lastPage.Limit < lastPage.Count {
+		nextPage = &pageJson{
+			Offset: lastPage.Offset + lastPage.Limit,
+			Limit:  lastPage.Limit,
+			Count:  lastPage.Count,
+		}
+	}
+	json.NewEncoder(w).Encode(bodyJson{
+		Data:     data,
+		NextPage: nextPage,
+	})
 }
 
 func (h *httpServer) presentText(w http.ResponseWriter, r *http.Request, statusCode int, text string) {
@@ -198,6 +210,11 @@ func (h *httpServer) logEvent(w http.ResponseWriter, r *http.Request, statusCode
 	}).Msgf("http %d %v %v", statusCode, r.Method, r.URL.Path)
 }
 
+type bodyJson struct {
+	Data     any       `json:"data"`
+	NextPage *pageJson `json:"nextPage,omitempty"`
+}
+
 func toErrJson(msg string) *errJson {
 	return &errJson{
 		Message: msg,
@@ -208,36 +225,34 @@ type errJson struct {
 	Message string `json:"message"`
 }
 
-func (h *httpServer) getPaginationParams(r *http.Request) (paginationParams, error) {
+func (h *httpServer) getPage(r *http.Request) (pageJson, error) {
 	offsetStr := r.URL.Query().Get("offset")
 	if offsetStr == "" {
 		offsetStr = "0"
 	}
 	offset, err := strconv.ParseInt(offsetStr, 10, 32)
 	if err != nil || offset < 0 {
-		return paginationParams{}, errors.New("invalid offset")
+		return pageJson{}, errors.New("invalid offset")
 	}
 
 	limitStr := r.URL.Query().Get("limit")
 	if limitStr == "" {
-		limitStr = "100"
+		limitStr = "20"
 	}
 	limit, err := strconv.ParseInt(limitStr, 10, 32)
-	if err != nil || limit < 0 {
-		return paginationParams{}, errors.New("invalid limit")
+	if err != nil || limit <= 0 {
+		return pageJson{}, errors.New("invalid limit")
 	}
 
-	if limit < offset {
-		return paginationParams{}, errors.New("limit must be greater than offset")
-	}
-
-	return paginationParams{
-		int32(offset),
-		int32(limit),
+	return pageJson{
+		offset,
+		limit,
+		-1,
 	}, nil
 }
 
-type paginationParams struct {
-	Offset int32
-	Limit  int32
+type pageJson struct {
+	Offset int64 `json:"offset"`
+	Limit  int64 `json:"limit"`
+	Count  int64 `json:"count"`
 }
