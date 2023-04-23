@@ -20,13 +20,13 @@ func NewGetCommentsUseCase(dbGateway gateways.DatabaseGateway) *GetCommentsUseCa
 
 type GetCommentsInput struct {
 	ThreadId int64 `validate:"gt=0"`
-	Offset   int32 `validate:"gte=0"`
-	Limit    int32 `validate:"gte=0,lte=100"`
+	Offset   int64 `validate:"gte=0"`
+	Limit    int64 `validate:"gt=0,lte=100"`
 }
 
-func (u *GetCommentsUseCase) Execute(ctx context.Context, input GetCommentsInput) ([]entities.Comment, error) {
+func (u *GetCommentsUseCase) Execute(ctx context.Context, input GetCommentsInput) ([]entities.Comment, int64, error) {
 	if err := common.ValidateStruct(input); err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 
 	return u.dbGateway.GetComments(ctx, input.ThreadId, input.Offset, input.Limit)

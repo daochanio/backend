@@ -21,17 +21,17 @@ func (h *httpServer) getCommentsRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	paginationParams, err := h.getPaginationParams(r)
+	page, err := h.getPage(r)
 
 	if err != nil {
 		h.presentBadRequest(w, r, err)
 		return
 	}
 
-	comments, err := h.getCommentsUseCase.Execute(r.Context(), usecases.GetCommentsInput{
+	comments, count, err := h.getCommentsUseCase.Execute(r.Context(), usecases.GetCommentsInput{
 		ThreadId: threadId,
-		Offset:   paginationParams.Offset,
-		Limit:    paginationParams.Limit,
+		Offset:   page.Offset,
+		Limit:    page.Limit,
 	})
 
 	if err != nil {
@@ -39,7 +39,9 @@ func (h *httpServer) getCommentsRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.presentJSON(w, r, http.StatusOK, toCommentsJson(comments))
+	page.Count = count
+
+	h.presentJSON(w, r, http.StatusOK, toCommentsJson(comments), &page)
 }
 
 func (h *httpServer) createCommentRoute(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +71,7 @@ func (h *httpServer) createCommentRoute(w http.ResponseWriter, r *http.Request) 
 		Id int64 `json:"id"`
 	}{
 		Id: id,
-	})
+	}, nil)
 }
 
 func (h *httpServer) deleteCommentRoute(w http.ResponseWriter, r *http.Request) {
@@ -130,31 +132,31 @@ type createCommentJson struct {
 	ImageFileName      string `json:"imageFileName"`
 }
 
-type getCommentJson struct {
-	Id               int64           `json:"id"`
-	RepliedToComment *getCommentJson `json:"repliedToComment,omitempty"`
-	ThreadId         int64           `json:"threadId,omitempty"` // empty if reply
-	Address          string          `json:"address"`
-	Content          string          `json:"content"`
-	Image            imageJson       `json:"image"`
-	IsDeleted        bool            `json:"isDeleted"`
-	CreatedAt        time.Time       `json:"createdAt"`
-	DeletedAt        *time.Time      `json:"deletedAt"`
-	Votes            int64           `json:"votes,omitempty"` // empty if reply
+type commentJson struct {
+	Id               int64        `json:"id"`
+	RepliedToComment *commentJson `json:"repliedToComment,omitempty"`
+	ThreadId         int64        `json:"threadId,omitempty"` // empty if reply
+	Address          string       `json:"address"`
+	Content          string       `json:"content"`
+	Image            *imageJson   `json:"image,omitempty"` // empty if comment deleted
+	IsDeleted        bool         `json:"isDeleted"`
+	CreatedAt        time.Time    `json:"createdAt"`
+	DeletedAt        *time.Time   `json:"deletedAt,omitempty"`
+	Votes            int64        `json:"votes,omitempty"` // empty if reply
 }
 
-func toCommentsJson(comments []entities.Comment) []getCommentJson {
-	commentsJson := make([]getCommentJson, len(comments))
+func toCommentsJson(comments []entities.Comment) []commentJson {
+	json := make([]commentJson, len(comments))
 
 	for i, comment := range comments {
-		commentsJson[i] = toCommentJson(comment)
+		json[i] = toCommentJson(comment)
 	}
 
-	return commentsJson
+	return json
 }
 
-func toCommentJson(comment entities.Comment) getCommentJson {
-	commentJson := getCommentJson{
+func toCommentJson(comment entities.Comment) commentJson {
+	json := commentJson{
 		Id:        comment.Id(),
 		ThreadId:  comment.ThreadId(),
 		Address:   comment.Address(),
@@ -167,7 +169,7 @@ func toCommentJson(comment entities.Comment) getCommentJson {
 	}
 
 	if repliedToComment := comment.RepliedToComment(); repliedToComment != nil {
-		repliedToCommentJson := getCommentJson{
+		repliedToCommentJson := commentJson{
 			Id:        repliedToComment.Id(),
 			Address:   repliedToComment.Address(),
 			Content:   repliedToComment.Content(),
@@ -176,8 +178,8 @@ func toCommentJson(comment entities.Comment) getCommentJson {
 			CreatedAt: repliedToComment.CreatedAt(),
 			DeletedAt: repliedToComment.DeletedAt(),
 		}
-		commentJson.RepliedToComment = &repliedToCommentJson
+		json.RepliedToComment = &repliedToCommentJson
 	}
 
-	return commentJson
+	return json
 }

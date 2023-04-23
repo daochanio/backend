@@ -274,21 +274,22 @@ SELECT
 	r.image_content_type as r_image_content_type,
 	r.is_deleted as r_is_deleted,
 	r.created_at as r_created_at,
-	r.deleted_at as r_deleted_at
+	r.deleted_at as r_deleted_at,
+	count(*) OVER() AS full_count
 FROM comments c
 LEFT JOIN comment_votes cv on c.id = cv.comment_id
 LEFT JOIN comments r on c.replied_to_comment_id = r.id
 WHERE c.thread_id = $1
 GROUP BY c.id, r.id
 ORDER BY c.created_at DESC
-OFFSET $2
-LIMIT $3
+OFFSET $2::bigint
+LIMIT $3::bigint
 `
 
 type GetCommentsParams struct {
 	ThreadID int64
-	Offset   int32
-	Limit    int32
+	Column2  int64
+	Column3  int64
 }
 
 type GetCommentsRow struct {
@@ -313,10 +314,11 @@ type GetCommentsRow struct {
 	RIsDeleted         sql.NullBool
 	RCreatedAt         sql.NullTime
 	RDeletedAt         sql.NullTime
+	FullCount          int64
 }
 
 func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]GetCommentsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getComments, arg.ThreadID, arg.Offset, arg.Limit)
+	rows, err := q.db.QueryContext(ctx, getComments, arg.ThreadID, arg.Column2, arg.Column3)
 	if err != nil {
 		return nil, err
 	}
@@ -346,6 +348,7 @@ func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]Get
 			&i.RIsDeleted,
 			&i.RCreatedAt,
 			&i.RDeletedAt,
+			&i.FullCount,
 		); err != nil {
 			return nil, err
 		}
@@ -413,7 +416,7 @@ LEFT JOIN thread_votes ON thread_votes.thread_id = threads.id
 WHERE threads.is_deleted = FALSE
 GROUP BY threads.id
 ORDER BY RANDOM()
-LIMIT $1
+LIMIT $1::bigint
 `
 
 type GetThreadsRow struct {
@@ -434,8 +437,8 @@ type GetThreadsRow struct {
 // Move to TABLESAMPLE SYSTEM_ROWS(N) when performance becomes an issue.
 // Table sample is not random enough until the table gets big.
 // https://www.postgresql.org/docs/current/tsm-system-rows.html
-func (q *Queries) GetThreads(ctx context.Context, limit int32) ([]GetThreadsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getThreads, limit)
+func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]GetThreadsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getThreads, dollar_1)
 	if err != nil {
 		return nil, err
 	}

@@ -27,7 +27,7 @@ func (h *httpServer) getChallengeRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.presentJSON(w, r, http.StatusOK, toChallengeJson(challenge))
+	h.presentJSON(w, r, http.StatusOK, toChallengeJson(challenge), nil)
 }
 
 type challengeJsonRequest struct {

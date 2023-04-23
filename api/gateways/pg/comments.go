@@ -31,25 +31,29 @@ func (p *postgresGateway) CreateComment(ctx context.Context, comment entities.Co
 	})
 }
 
-func (p *postgresGateway) GetComments(ctx context.Context, threadId int64, offset int32, limit int32) ([]entities.Comment, error) {
+func (p *postgresGateway) GetComments(ctx context.Context, threadId int64, offset int64, limit int64) ([]entities.Comment, int64, error) {
 	comments, err := p.queries.GetComments(ctx, bindings.GetCommentsParams{
 		ThreadID: threadId,
-		Offset:   offset,
-		Limit:    limit,
+		Column2:  offset,
+		Column3:  limit,
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 
+	count := int64(0)
 	commentEnts := []entities.Comment{}
 	for _, comment := range comments {
+		count = comment.FullCount
+
 		var deletedAt *time.Time
 		if comment.DeletedAt.Valid {
 			deletedAt = &comment.DeletedAt.Time
 		}
 
 		image := entities.NewImage(comment.ImageFileName, comment.ImageUrl, comment.ImageContentType)
+
 		// set replying comment if exists
 		var repliedToComment *entities.Comment
 		if comment.RID.Valid {
@@ -85,7 +89,7 @@ func (p *postgresGateway) GetComments(ctx context.Context, threadId int64, offse
 
 		commentEnts = append(commentEnts, entitie)
 	}
-	return commentEnts, nil
+	return commentEnts, count, nil
 }
 
 // does not return with the hydrated replied to comment
