@@ -8,6 +8,7 @@ package bindings
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -318,6 +319,10 @@ type GetCommentsRow struct {
 }
 
 func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]GetCommentsRow, error) {
+	fmt.Println("-------- START COMMENTS QUERY --------")
+	fmt.Print(getComments)
+	fmt.Println(arg.ThreadID, arg.Column2, arg.Column3)
+	fmt.Println("-------- END COMMENTS QUERY --------")
 	rows, err := q.db.QueryContext(ctx, getComments, arg.ThreadID, arg.Column2, arg.Column3)
 	if err != nil {
 		return nil, err
@@ -389,6 +394,10 @@ type GetThreadRow struct {
 }
 
 func (q *Queries) GetThread(ctx context.Context, id int64) (GetThreadRow, error) {
+	fmt.Println("-------- START THREAD QUERY --------")
+	fmt.Print(getThread)
+	fmt.Println(id)
+	fmt.Println("-------- END THREAD QUERY --------")
 	row := q.db.QueryRowContext(ctx, getThread, id)
 	var i GetThreadRow
 	err := row.Scan(
