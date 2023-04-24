@@ -34,49 +34,33 @@ func (u *GetThreadUseCase) Execute(ctx context.Context, input GetThreadInput) (e
 	}
 
 	// threads and comments can be fetched concurrently
-	threadChan := make(chan entities.Thread, 1)
-	commentsChan := make(chan []entities.Comment, 1)
-	commentsCountChan := make(chan int64, 1)
-	errs := make(chan error, 2)
+	var thread entities.Thread
+	var comments []entities.Comment
+	var commentsCount int64
+	var threadErr error
+	var commentsErr error
 
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		thread, err := u.dbGateway.GetThreadById(ctx, input.ThreadId)
-		if err != nil {
-			errs <- fmt.Errorf("failed to get thread: %w", err)
-			return
-		}
-		threadChan <- thread
+		thread, threadErr = u.dbGateway.GetThreadById(ctx, input.ThreadId)
 	}()
 	go func() {
 		defer wg.Done()
-		comments, count, err := u.dbGateway.GetComments(ctx, input.ThreadId, input.CommentOffset, input.CommentLimit)
-		if err != nil {
-			errs <- fmt.Errorf("failed to get comments: %w", err)
-			return
-		}
-		commentsChan <- comments
-		commentsCountChan <- count
+		comments, commentsCount, commentsErr = u.dbGateway.GetComments(ctx, input.ThreadId, input.CommentOffset, input.CommentLimit)
 	}()
 	wg.Wait()
 
-	close(threadChan)
-	close(commentsChan)
-	close(commentsCountChan)
-	close(errs)
-
-	for err := range errs {
-		if err != nil {
-			return entities.Thread{}, -1, err
-		}
+	if threadErr != nil {
+		return entities.Thread{}, -1, fmt.Errorf("failed to fetch thread: %w", threadErr)
 	}
 
-	thread := <-threadChan
-	comments := <-commentsChan
-	count := <-commentsCountChan
+	if commentsErr != nil {
+		return entities.Thread{}, -1, fmt.Errorf("failed to fetch comments: %w", commentsErr)
+	}
+
 	thread.SetComments(&comments)
 
-	return thread, count, nil
+	return thread, commentsCount, nil
 }
