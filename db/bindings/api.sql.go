@@ -7,9 +7,8 @@ package bindings
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
-	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createComment = `-- name: CreateComment :one
@@ -21,7 +20,7 @@ RETURNING id
 type CreateCommentParams struct {
 	Address            string
 	ThreadID           int64
-	RepliedToCommentID sql.NullInt64
+	RepliedToCommentID pgtype.Int8
 	Content            string
 	ImageFileName      string
 	ImageUrl           string
@@ -29,7 +28,7 @@ type CreateCommentParams struct {
 }
 
 func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, createComment,
+	row := q.db.QueryRow(ctx, createComment,
 		arg.Address,
 		arg.ThreadID,
 		arg.RepliedToCommentID,
@@ -55,7 +54,7 @@ type CreateCommentDownVoteParams struct {
 }
 
 func (q *Queries) CreateCommentDownVote(ctx context.Context, arg CreateCommentDownVoteParams) error {
-	_, err := q.db.ExecContext(ctx, createCommentDownVote, arg.Address, arg.CommentID)
+	_, err := q.db.Exec(ctx, createCommentDownVote, arg.Address, arg.CommentID)
 	return err
 }
 
@@ -71,7 +70,7 @@ type CreateCommentUnVoteParams struct {
 }
 
 func (q *Queries) CreateCommentUnVote(ctx context.Context, arg CreateCommentUnVoteParams) error {
-	_, err := q.db.ExecContext(ctx, createCommentUnVote, arg.Address, arg.CommentID)
+	_, err := q.db.Exec(ctx, createCommentUnVote, arg.Address, arg.CommentID)
 	return err
 }
 
@@ -87,7 +86,7 @@ type CreateCommentUpVoteParams struct {
 }
 
 func (q *Queries) CreateCommentUpVote(ctx context.Context, arg CreateCommentUpVoteParams) error {
-	_, err := q.db.ExecContext(ctx, createCommentUpVote, arg.Address, arg.CommentID)
+	_, err := q.db.Exec(ctx, createCommentUpVote, arg.Address, arg.CommentID)
 	return err
 }
 
@@ -100,12 +99,12 @@ RETURNING address, ens_name, created_at, updated_at
 
 type CreateOrUpdateUserParams struct {
 	Address string
-	EnsName sql.NullString
+	EnsName pgtype.Text
 }
 
 // create/update user every time the sign-in
 func (q *Queries) CreateOrUpdateUser(ctx context.Context, arg CreateOrUpdateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createOrUpdateUser, arg.Address, arg.EnsName)
+	row := q.db.QueryRow(ctx, createOrUpdateUser, arg.Address, arg.EnsName)
 	var i User
 	err := row.Scan(
 		&i.Address,
@@ -132,7 +131,7 @@ type CreateThreadParams struct {
 }
 
 func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, createThread,
+	row := q.db.QueryRow(ctx, createThread,
 		arg.Address,
 		arg.Title,
 		arg.Content,
@@ -157,7 +156,7 @@ type CreateThreadDownVoteParams struct {
 }
 
 func (q *Queries) CreateThreadDownVote(ctx context.Context, arg CreateThreadDownVoteParams) error {
-	_, err := q.db.ExecContext(ctx, createThreadDownVote, arg.Address, arg.ThreadID)
+	_, err := q.db.Exec(ctx, createThreadDownVote, arg.Address, arg.ThreadID)
 	return err
 }
 
@@ -173,7 +172,7 @@ type CreateThreadUnVoteParams struct {
 }
 
 func (q *Queries) CreateThreadUnVote(ctx context.Context, arg CreateThreadUnVoteParams) error {
-	_, err := q.db.ExecContext(ctx, createThreadUnVote, arg.Address, arg.ThreadID)
+	_, err := q.db.Exec(ctx, createThreadUnVote, arg.Address, arg.ThreadID)
 	return err
 }
 
@@ -189,7 +188,7 @@ type CreateThreadUpVoteParams struct {
 }
 
 func (q *Queries) CreateThreadUpVote(ctx context.Context, arg CreateThreadUpVoteParams) error {
-	_, err := q.db.ExecContext(ctx, createThreadUpVote, arg.Address, arg.ThreadID)
+	_, err := q.db.Exec(ctx, createThreadUpVote, arg.Address, arg.ThreadID)
 	return err
 }
 
@@ -197,26 +196,28 @@ const deleteComment = `-- name: DeleteComment :one
 UPDATE comments
 SET is_deleted = TRUE, deleted_at = NOW()
 WHERE id = $1
-RETURNING id
+RETURNING id as comment_id
 `
 
 func (q *Queries) DeleteComment(ctx context.Context, id int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, deleteComment, id)
-	err := row.Scan(&id)
-	return id, err
+	row := q.db.QueryRow(ctx, deleteComment, id)
+	var comment_id int64
+	err := row.Scan(&comment_id)
+	return comment_id, err
 }
 
 const deleteThread = `-- name: DeleteThread :one
 UPDATE threads
 SET is_deleted = TRUE, deleted_at = NOW()
 WHERE id = $1
-RETURNING id
+RETURNING id as thread_id
 `
 
 func (q *Queries) DeleteThread(ctx context.Context, id int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, deleteThread, id)
-	err := row.Scan(&id)
-	return id, err
+	row := q.db.QueryRow(ctx, deleteThread, id)
+	var thread_id int64
+	err := row.Scan(&thread_id)
+	return thread_id, err
 }
 
 const getComment = `-- name: GetComment :one
@@ -231,20 +232,20 @@ WHERE c.id = $1
 type GetCommentRow struct {
 	ID                 int64
 	ThreadID           int64
-	RepliedToCommentID sql.NullInt64
+	RepliedToCommentID pgtype.Int8
 	Address            string
 	Content            string
 	ImageFileName      string
 	ImageUrl           string
 	ImageContentType   string
 	IsDeleted          bool
-	CreatedAt          time.Time
-	DeletedAt          sql.NullTime
+	CreatedAt          pgtype.Timestamp
+	DeletedAt          pgtype.Timestamp
 	Votes              int64
 }
 
 func (q *Queries) GetComment(ctx context.Context, id int64) (GetCommentRow, error) {
-	row := q.db.QueryRowContext(ctx, getComment, id)
+	row := q.db.QueryRow(ctx, getComment, id)
 	var i GetCommentRow
 	err := row.Scan(
 		&i.ID,
@@ -296,34 +297,30 @@ type GetCommentsParams struct {
 type GetCommentsRow struct {
 	ID                 int64
 	ThreadID           int64
-	RepliedToCommentID sql.NullInt64
+	RepliedToCommentID pgtype.Int8
 	Address            string
 	Content            string
 	ImageFileName      string
 	ImageUrl           string
 	ImageContentType   string
 	IsDeleted          bool
-	CreatedAt          time.Time
-	DeletedAt          sql.NullTime
+	CreatedAt          pgtype.Timestamp
+	DeletedAt          pgtype.Timestamp
 	Votes              int64
-	RID                sql.NullInt64
-	RAddress           sql.NullString
-	RContent           sql.NullString
-	RImageFileName     sql.NullString
-	RImageUrl          sql.NullString
-	RImageContentType  sql.NullString
-	RIsDeleted         sql.NullBool
-	RCreatedAt         sql.NullTime
-	RDeletedAt         sql.NullTime
+	RID                pgtype.Int8
+	RAddress           pgtype.Text
+	RContent           pgtype.Text
+	RImageFileName     pgtype.Text
+	RImageUrl          pgtype.Text
+	RImageContentType  pgtype.Text
+	RIsDeleted         pgtype.Bool
+	RCreatedAt         pgtype.Timestamp
+	RDeletedAt         pgtype.Timestamp
 	FullCount          int64
 }
 
 func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]GetCommentsRow, error) {
-	fmt.Println("-------- START COMMENTS QUERY --------")
-	fmt.Print(getComments)
-	fmt.Println(arg.ThreadID, arg.Column2, arg.Column3)
-	fmt.Println("-------- END COMMENTS QUERY --------")
-	rows, err := q.db.QueryContext(ctx, getComments, arg.ThreadID, arg.Column2, arg.Column3)
+	rows, err := q.db.Query(ctx, getComments, arg.ThreadID, arg.Column2, arg.Column3)
 	if err != nil {
 		return nil, err
 	}
@@ -359,9 +356,6 @@ func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]Get
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -388,17 +382,13 @@ type GetThreadRow struct {
 	ImageUrl         string
 	ImageContentType string
 	IsDeleted        bool
-	CreatedAt        time.Time
-	DeletedAt        sql.NullTime
+	CreatedAt        pgtype.Timestamp
+	DeletedAt        pgtype.Timestamp
 	Votes            int64
 }
 
 func (q *Queries) GetThread(ctx context.Context, id int64) (GetThreadRow, error) {
-	fmt.Println("-------- START THREAD QUERY --------")
-	fmt.Print(getThread)
-	fmt.Println(id)
-	fmt.Println("-------- END THREAD QUERY --------")
-	row := q.db.QueryRowContext(ctx, getThread, id)
+	row := q.db.QueryRow(ctx, getThread, id)
 	var i GetThreadRow
 	err := row.Scan(
 		&i.ID,
@@ -437,8 +427,8 @@ type GetThreadsRow struct {
 	ImageUrl         string
 	ImageContentType string
 	IsDeleted        bool
-	CreatedAt        time.Time
-	DeletedAt        sql.NullTime
+	CreatedAt        pgtype.Timestamp
+	DeletedAt        pgtype.Timestamp
 	Votes            int64
 }
 
@@ -447,7 +437,7 @@ type GetThreadsRow struct {
 // Table sample is not random enough until the table gets big.
 // https://www.postgresql.org/docs/current/tsm-system-rows.html
 func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]GetThreadsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getThreads, dollar_1)
+	rows, err := q.db.Query(ctx, getThreads, dollar_1)
 	if err != nil {
 		return nil, err
 	}
@@ -471,9 +461,6 @@ func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]GetThreadsR
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

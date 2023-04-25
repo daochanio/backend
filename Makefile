@@ -38,7 +38,7 @@ db-add:
 	goose -dir db/migrations create $(name).sql
 
 db-bindings:
-	sqlc generate -f "db/sqlc.yml"
+	sqlc generate --experimental -f "db/sqlc.yml"
 
 docker-build-api:
 	docker build -f .docker/DockerfileApi  -t api .

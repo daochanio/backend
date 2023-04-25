@@ -17,7 +17,7 @@ LIMIT 1
 `
 
 func (q *Queries) GetLastIndexedBlock(ctx context.Context) (string, error) {
-	row := q.db.QueryRowContext(ctx, getLastIndexedBlock)
+	row := q.db.QueryRow(ctx, getLastIndexedBlock)
 	var last_indexed_block string
 	err := row.Scan(&last_indexed_block)
 	return last_indexed_block, err
@@ -32,6 +32,6 @@ WHERE version = '1.0'
 `
 
 func (q *Queries) UpdateLastIndexedBlock(ctx context.Context, lastIndexedBlock string) error {
-	_, err := q.db.ExecContext(ctx, updateLastIndexedBlock, lastIndexedBlock)
+	_, err := q.db.Exec(ctx, updateLastIndexedBlock, lastIndexedBlock)
 	return err
 }

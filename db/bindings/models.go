@@ -5,36 +5,35 @@
 package bindings
 
 import (
-	"database/sql"
-	"time"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Comment struct {
 	ID                 int64
 	ThreadID           int64
-	RepliedToCommentID sql.NullInt64
+	RepliedToCommentID pgtype.Int8
 	Address            string
 	Content            string
 	ImageFileName      string
 	ImageUrl           string
 	ImageContentType   string
 	IsDeleted          bool
-	CreatedAt          time.Time
-	DeletedAt          sql.NullTime
+	CreatedAt          pgtype.Timestamp
+	DeletedAt          pgtype.Timestamp
 }
 
 type CommentVote struct {
 	Address   string
 	CommentID int64
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
 	Vote      int16
 }
 
 type IndexerProgress struct {
 	Version          string
 	LastIndexedBlock string
-	IndexedOn        time.Time
+	IndexedOn        pgtype.Timestamp
 }
 
 type Thread struct {
@@ -46,21 +45,21 @@ type Thread struct {
 	ImageUrl         string
 	ImageContentType string
 	IsDeleted        bool
-	CreatedAt        time.Time
-	DeletedAt        sql.NullTime
+	CreatedAt        pgtype.Timestamp
+	DeletedAt        pgtype.Timestamp
 }
 
 type ThreadVote struct {
 	Address   string
 	ThreadID  int64
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
 	Vote      int16
 }
 
 type User struct {
 	Address   string
-	EnsName   sql.NullString
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	EnsName   pgtype.Text
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
 }
