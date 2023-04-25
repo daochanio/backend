@@ -9,10 +9,11 @@ import (
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/db/bindings"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func (p *postgresGateway) CreateComment(ctx context.Context, comment entities.Comment, repliedToCommentId *int64) (int64, error) {
-	rep := sql.NullInt64{
+	rep := pgtype.Int8{
 		Valid: repliedToCommentId != nil,
 	}
 
@@ -82,7 +83,7 @@ func (p *postgresGateway) GetComments(ctx context.Context, threadId int64, offse
 			Image:            image,
 			RepliedToComment: repliedToComment,
 			IsDeleted:        comment.IsDeleted,
-			CreatedAt:        comment.CreatedAt,
+			CreatedAt:        comment.CreatedAt.Time,
 			DeletedAt:        deletedAt,
 			Votes:            comment.Votes,
 		})
@@ -117,7 +118,7 @@ func (p *postgresGateway) GetCommentById(ctx context.Context, id int64) (entitie
 		Content:   comment.Content,
 		Image:     image,
 		IsDeleted: comment.IsDeleted,
-		CreatedAt: comment.CreatedAt,
+		CreatedAt: comment.CreatedAt.Time,
 		DeletedAt: deletedAt,
 		Votes:     comment.Votes,
 	})

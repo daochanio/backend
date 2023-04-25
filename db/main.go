@@ -4,8 +4,8 @@ import (
 	"embed"
 	"os"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
-	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 )
 
@@ -19,7 +19,7 @@ func main() {
 		}
 	}
 
-	db, err := goose.OpenDBWithDriver("postgres", os.Getenv("DB_CONNECTION_STRING"))
+	db, err := goose.OpenDBWithDriver("pgx", os.Getenv("DB_CONNECTION_STRING"))
 	if err != nil {
 		panic(err)
 	}

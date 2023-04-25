@@ -2,21 +2,21 @@ package pg
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/db/bindings"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func (p *postgresGateway) CreateOrUpdateUser(ctx context.Context, address string, ensName *string) (entities.User, error) {
-	var sqlEnsName sql.NullString
+	var sqlEnsName pgtype.Text
 	if ensName != nil {
-		sqlEnsName = sql.NullString{
+		sqlEnsName = pgtype.Text{
 			String: *ensName,
 			Valid:  true,
 		}
 	} else {
-		sqlEnsName = sql.NullString{
+		sqlEnsName = pgtype.Text{
 			String: "",
 			Valid:  false,
 		}
@@ -34,7 +34,7 @@ func (p *postgresGateway) CreateOrUpdateUser(ctx context.Context, address string
 	return entities.NewUser(entities.UserParams{
 		Address:   address,
 		EnsName:   ensName,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+		CreatedAt: user.CreatedAt.Time,
+		UpdatedAt: user.UpdatedAt.Time,
 	}), nil
 }

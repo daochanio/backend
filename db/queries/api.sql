@@ -75,13 +75,13 @@ WHERE c.id = $1;
 UPDATE threads
 SET is_deleted = TRUE, deleted_at = NOW()
 WHERE id = $1
-RETURNING id;
+RETURNING id as thread_id;
 
 -- name: DeleteComment :one
 UPDATE comments
 SET is_deleted = TRUE, deleted_at = NOW()
 WHERE id = $1
-RETURNING id;
+RETURNING id as comment_id;
 
 -- name: CreateThreadUpVote :exec
 INSERT INTO thread_votes (address, thread_id, vote)

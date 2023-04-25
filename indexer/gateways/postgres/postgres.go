@@ -2,24 +2,22 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"math/big"
 
 	"github.com/daochanio/backend/db/bindings"
 	"github.com/daochanio/backend/indexer/gateways"
 	"github.com/daochanio/backend/indexer/settings"
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type postgresGateway struct {
 	settings settings.Settings
-	db       *sql.DB
 	queries  *bindings.Queries
 }
 
-func NewPostgresGateway(settings settings.Settings) gateways.IDatabaseGateway {
-	db, err := sql.Open("postgres", settings.DbConnectionString())
+func NewPostgresGateway(ctx context.Context, settings settings.Settings) gateways.IDatabaseGateway {
+	db, err := pgxpool.New(ctx, settings.DbConnectionString())
 	if err != nil {
 		panic(err)
 	}
@@ -28,7 +26,6 @@ func NewPostgresGateway(settings settings.Settings) gateways.IDatabaseGateway {
 
 	return &postgresGateway{
 		settings,
-		db,
 		queries,
 	}
 }

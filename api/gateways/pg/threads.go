@@ -44,7 +44,7 @@ func (p *postgresGateway) GetThreads(ctx context.Context, limit int64) ([]entiti
 			Content:   thread.Content,
 			Image:     image,
 			Votes:     thread.Votes,
-			CreatedAt: thread.CreatedAt,
+			CreatedAt: thread.CreatedAt.Time,
 			IsDeleted: thread.IsDeleted,
 			DeletedAt: deletedAt,
 		})
@@ -77,7 +77,7 @@ func (p *postgresGateway) GetThreadById(ctx context.Context, id int64) (entities
 		Content:   thread.Content,
 		Image:     image,
 		Votes:     thread.Votes,
-		CreatedAt: thread.CreatedAt,
+		CreatedAt: thread.CreatedAt.Time,
 		IsDeleted: thread.IsDeleted,
 		DeletedAt: deletedAt,
 	})
