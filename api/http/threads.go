@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -78,7 +79,7 @@ func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.createThreadUseCase.Execute(ctx, usecases.CreateThreadInput{
+	thread, err := h.createThreadUseCase.Execute(ctx, usecases.CreateThreadInput{
 		Address:       ctx.Value(common.ContextKeyAddress).(string),
 		Title:         body.Title,
 		ImageFileName: body.ImageFileName,
@@ -90,11 +91,7 @@ func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.presentJSON(w, r, http.StatusCreated, struct {
-		Id int64 `json:"id"`
-	}{
-		Id: id,
-	}, nil)
+	h.presentJSON(w, r, http.StatusCreated, toThreadJson(thread), nil)
 }
 
 func (h *httpServer) deleteThreadRoute(w http.ResponseWriter, r *http.Request) {
@@ -153,7 +150,7 @@ type createThreadJson struct {
 }
 
 type threadJson struct {
-	Id        int64          `json:"id"`
+	Id        string         `json:"id"`
 	Address   string         `json:"address"`
 	Title     string         `json:"title"`
 	Content   string         `json:"content"`
@@ -167,7 +164,7 @@ type threadJson struct {
 
 func toThreadJson(thread entities.Thread) threadJson {
 	json := threadJson{
-		Id:        thread.Id(),
+		Id:        fmt.Sprint(thread.Id()),
 		Address:   thread.Address(),
 		Title:     thread.Title(),
 		Content:   thread.Content(),

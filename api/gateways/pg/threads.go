@@ -11,8 +11,8 @@ import (
 	"github.com/daochanio/backend/db/bindings"
 )
 
-func (p *postgresGateway) CreateThread(ctx context.Context, thread entities.Thread) (int64, error) {
-	return p.queries.CreateThread(ctx, bindings.CreateThreadParams{
+func (p *postgresGateway) CreateThread(ctx context.Context, thread entities.Thread) (entities.Thread, error) {
+	createdThread, err := p.queries.CreateThread(ctx, bindings.CreateThreadParams{
 		Address:          thread.Address(),
 		Title:            thread.Title(),
 		Content:          thread.Content(),
@@ -20,6 +20,29 @@ func (p *postgresGateway) CreateThread(ctx context.Context, thread entities.Thre
 		ImageUrl:         thread.Image().Url(),
 		ImageContentType: thread.Image().ContentType(),
 	})
+
+	if err != nil {
+		return entities.Thread{}, err
+	}
+
+	var deletedAt *time.Time
+	if createdThread.DeletedAt.Valid {
+		deletedAt = &createdThread.DeletedAt.Time
+	}
+
+	image := entities.NewImage(createdThread.ImageFileName, createdThread.ImageUrl, createdThread.ImageContentType)
+
+	return entities.NewThread(entities.ThreadParams{
+		Id:        createdThread.ID,
+		Address:   createdThread.Address,
+		Title:     createdThread.Title,
+		Content:   createdThread.Content,
+		Image:     image,
+		Votes:     0,
+		CreatedAt: createdThread.CreatedAt.Time,
+		IsDeleted: createdThread.IsDeleted,
+		DeletedAt: deletedAt,
+	}), nil
 }
 
 func (p *postgresGateway) GetThreads(ctx context.Context, limit int64) ([]entities.Thread, error) {

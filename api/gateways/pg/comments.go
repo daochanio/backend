@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (p *postgresGateway) CreateComment(ctx context.Context, comment entities.Comment, repliedToCommentId *int64) (int64, error) {
+func (p *postgresGateway) CreateComment(ctx context.Context, comment entities.Comment, repliedToCommentId *int64) (entities.Comment, error) {
 	rep := pgtype.Int8{
 		Valid: repliedToCommentId != nil,
 	}
@@ -21,7 +21,7 @@ func (p *postgresGateway) CreateComment(ctx context.Context, comment entities.Co
 		rep.Int64 = *repliedToCommentId
 	}
 
-	return p.queries.CreateComment(ctx, bindings.CreateCommentParams{
+	createdComment, err := p.queries.CreateComment(ctx, bindings.CreateCommentParams{
 		ThreadID:           comment.ThreadId(),
 		Address:            comment.Address(),
 		RepliedToCommentID: rep,
@@ -30,6 +30,41 @@ func (p *postgresGateway) CreateComment(ctx context.Context, comment entities.Co
 		ImageUrl:           comment.Image().Url(),
 		ImageContentType:   comment.Image().ContentType(),
 	})
+
+	if err != nil {
+		return entities.Comment{}, err
+	}
+
+	var deletedAt *time.Time
+	if createdComment.DeletedAt.Valid {
+		deletedAt = &createdComment.DeletedAt.Time
+	}
+
+	image := entities.NewImage(createdComment.ImageFileName, createdComment.ImageUrl, createdComment.ImageContentType)
+	ent := entities.NewComment(entities.CommentParams{
+		Id:        createdComment.ID,
+		ThreadId:  createdComment.ThreadID,
+		Address:   createdComment.Address,
+		Content:   createdComment.Content,
+		Image:     image,
+		IsDeleted: createdComment.IsDeleted,
+		CreatedAt: createdComment.CreatedAt.Time,
+		DeletedAt: deletedAt,
+	})
+
+	// set replying comment if exists
+	if createdComment.RepliedToCommentID.Valid {
+		repliedToComment, err := p.GetCommentById(ctx, createdComment.RepliedToCommentID.Int64)
+
+		if err != nil {
+			p.logger.Warn(ctx).Err(err).Msg("failed to get replied to comment")
+			return ent, nil
+		}
+
+		ent.SetRepliedToComment(&repliedToComment)
+	}
+
+	return ent, nil
 }
 
 func (p *postgresGateway) GetComments(ctx context.Context, threadId int64, offset int64, limit int64) ([]entities.Comment, int64, error) {

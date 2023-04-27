@@ -5,16 +5,18 @@ import (
 
 	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/api/settings"
+	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/db/bindings"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type postgresGateway struct {
 	settings settings.Settings
+	logger   common.Logger
 	queries  *bindings.Queries
 }
 
-func NewPostgresGateway(ctx context.Context, settings settings.Settings) gateways.DatabaseGateway {
+func NewPostgresGateway(ctx context.Context, settings settings.Settings, logger common.Logger) gateways.DatabaseGateway {
 	config, err := pgxpool.ParseConfig(settings.DbConnectionString())
 
 	if err != nil {
@@ -33,6 +35,7 @@ func NewPostgresGateway(ctx context.Context, settings settings.Settings) gateway
 
 	return &postgresGateway{
 		settings,
+		logger,
 		queries,
 	}
 }

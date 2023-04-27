@@ -8,12 +8,12 @@ RETURNING *;
 -- name: CreateThread :one
 INSERT INTO threads (address, title, content, image_file_name, image_url, image_content_type)
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id;
+RETURNING *;
 
 -- name: CreateComment :one
 INSERT INTO comments (address, thread_id, replied_to_comment_id, content, image_file_name, image_url, image_content_type)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id;
+RETURNING *;
 
 -- Order by random is not performant as we need to do a full table scan.
 -- Move to TABLESAMPLE SYSTEM_ROWS(N) when performance becomes an issue.
@@ -69,7 +69,8 @@ SELECT
 	SUM(COALESCE(cv.vote, 0)) as votes
 FROM comments c
 LEFT JOIN comment_votes cv on c.id = cv.comment_id
-WHERE c.id = $1;
+WHERE c.id = $1
+GROUP BY c.id;
 
 -- name: DeleteThread :one
 UPDATE threads
