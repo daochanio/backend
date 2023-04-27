@@ -3,6 +3,7 @@ package http
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -50,28 +51,43 @@ func (h *httpServer) createCommentRoute(w http.ResponseWriter, r *http.Request) 
 	var body createCommentJson
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
-		h.presentBadRequest(w, r, err)
+		h.presentBadRequest(w, r, fmt.Errorf("invalid json: %w", err))
 		return
 	}
 
-	id, err := h.createCommentUseCase.Execute(ctx, usecases.CreateCommentInput{
-		RepliedToCommentId: body.RepliedToCommentId,
-		ThreadId:           body.ThreadId,
+	var repliedToCommentId *int64
+	if body.RepliedToCommentId != nil {
+		id, err := strconv.ParseInt(*body.RepliedToCommentId, 10, 64)
+
+		if err != nil {
+			h.presentBadRequest(w, r, fmt.Errorf("invalid replied to comment id: %w", err))
+			return
+		}
+
+		repliedToCommentId = &id
+	}
+
+	threadId, err := strconv.ParseInt(body.ThreadId, 10, 64)
+
+	if err != nil {
+		h.presentBadRequest(w, r, fmt.Errorf("invalid thread id: %w", err))
+		return
+	}
+
+	comment, err := h.createCommentUseCase.Execute(ctx, usecases.CreateCommentInput{
+		RepliedToCommentId: repliedToCommentId,
+		ThreadId:           threadId,
 		Address:            ctx.Value(common.ContextKeyAddress).(string),
 		Content:            body.Content,
 		ImageFileName:      body.ImageFileName,
 	})
 
 	if err != nil {
-		h.presentBadRequest(w, r, err)
+		h.presentBadRequest(w, r, fmt.Errorf("invalid comment: %w", err))
 		return
 	}
 
-	h.presentJSON(w, r, http.StatusCreated, struct {
-		Id int64 `json:"id"`
-	}{
-		Id: id,
-	}, nil)
+	h.presentJSON(w, r, http.StatusCreated, toCommentJson(comment), nil)
 }
 
 func (h *httpServer) deleteCommentRoute(w http.ResponseWriter, r *http.Request) {
@@ -126,23 +142,23 @@ func (h *httpServer) createCommentVoteRoute(w http.ResponseWriter, r *http.Reque
 }
 
 type createCommentJson struct {
-	RepliedToCommentId *int64 `json:"repliedToCommentId,omitempty"`
-	ThreadId           int64  `json:"threadId"`
-	Content            string `json:"content"`
-	ImageFileName      string `json:"imageFileName"`
+	RepliedToCommentId *string `json:"repliedToCommentId,omitempty"`
+	ThreadId           string  `json:"threadId"`
+	Content            string  `json:"content"`
+	ImageFileName      string  `json:"imageFileName"`
 }
 
 type commentJson struct {
-	Id               int64        `json:"id"`
+	Id               string       `json:"id"`
 	RepliedToComment *commentJson `json:"repliedToComment,omitempty"`
-	ThreadId         int64        `json:"threadId,omitempty"` // empty if reply
+	ThreadId         string       `json:"threadId,omitempty"` // empty if reply
 	Address          string       `json:"address"`
 	Content          string       `json:"content"`
 	Image            *imageJson   `json:"image,omitempty"` // empty if comment deleted
 	IsDeleted        bool         `json:"isDeleted"`
 	CreatedAt        time.Time    `json:"createdAt"`
-	DeletedAt        *time.Time   `json:"deletedAt,omitempty"`
-	Votes            int64        `json:"votes,omitempty"` // empty if reply
+	DeletedAt        *time.Time   `json:"deletedAt,omitempty"` // empty if comment not deleted
+	Votes            int64        `json:"votes,omitempty"`     // empty if reply
 }
 
 func toCommentsJson(comments []entities.Comment) []commentJson {
@@ -157,8 +173,8 @@ func toCommentsJson(comments []entities.Comment) []commentJson {
 
 func toCommentJson(comment entities.Comment) commentJson {
 	json := commentJson{
-		Id:        comment.Id(),
-		ThreadId:  comment.ThreadId(),
+		Id:        fmt.Sprint(comment.Id()),
+		ThreadId:  fmt.Sprint(comment.ThreadId()),
 		Address:   comment.Address(),
 		Content:   comment.Content(),
 		Image:     toImageJson(comment.Image()),
@@ -170,7 +186,7 @@ func toCommentJson(comment entities.Comment) commentJson {
 
 	if repliedToComment := comment.RepliedToComment(); repliedToComment != nil {
 		repliedToCommentJson := commentJson{
-			Id:        repliedToComment.Id(),
+			Id:        fmt.Sprint(repliedToComment.Id()),
 			Address:   repliedToComment.Address(),
 			Content:   repliedToComment.Content(),
 			Image:     toImageJson(repliedToComment.Image()),

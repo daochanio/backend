@@ -53,6 +53,10 @@ func (c *Comment) RepliedToComment() *Comment {
 	return c.repliedToComment
 }
 
+func (c *Comment) SetRepliedToComment(comment *Comment) {
+	c.repliedToComment = comment
+}
+
 func (c *Comment) ThreadId() int64 {
 	return c.threadId
 }

@@ -28,15 +28,15 @@ type CreateCommentInput struct {
 	ImageFileName      string `validate:"max=100"`
 }
 
-func (u *CreateCommentUseCase) Execute(ctx context.Context, input CreateCommentInput) (int64, error) {
+func (u *CreateCommentUseCase) Execute(ctx context.Context, input CreateCommentInput) (entities.Comment, error) {
 	if err := common.ValidateStruct(input); err != nil {
-		return 0, err
+		return entities.Comment{}, err
 	}
 
 	image, err := u.imageGateway.GetImageByFileName(ctx, input.ImageFileName)
 
 	if err != nil {
-		return 0, err
+		return entities.Comment{}, err
 	}
 
 	comment := entities.NewComment(entities.CommentParams{

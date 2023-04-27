@@ -14,7 +14,7 @@ import (
 const createComment = `-- name: CreateComment :one
 INSERT INTO comments (address, thread_id, replied_to_comment_id, content, image_file_name, image_url, image_content_type)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id
+RETURNING id, thread_id, replied_to_comment_id, address, content, image_file_name, image_url, image_content_type, is_deleted, created_at, deleted_at
 `
 
 type CreateCommentParams struct {
@@ -27,7 +27,7 @@ type CreateCommentParams struct {
 	ImageContentType   string
 }
 
-func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (int64, error) {
+func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error) {
 	row := q.db.QueryRow(ctx, createComment,
 		arg.Address,
 		arg.ThreadID,
@@ -37,9 +37,21 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (i
 		arg.ImageUrl,
 		arg.ImageContentType,
 	)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
+	var i Comment
+	err := row.Scan(
+		&i.ID,
+		&i.ThreadID,
+		&i.RepliedToCommentID,
+		&i.Address,
+		&i.Content,
+		&i.ImageFileName,
+		&i.ImageUrl,
+		&i.ImageContentType,
+		&i.IsDeleted,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const createCommentDownVote = `-- name: CreateCommentDownVote :exec
@@ -118,7 +130,7 @@ func (q *Queries) CreateOrUpdateUser(ctx context.Context, arg CreateOrUpdateUser
 const createThread = `-- name: CreateThread :one
 INSERT INTO threads (address, title, content, image_file_name, image_url, image_content_type)
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id
+RETURNING id, address, title, content, image_file_name, image_url, image_content_type, is_deleted, created_at, deleted_at
 `
 
 type CreateThreadParams struct {
@@ -130,7 +142,7 @@ type CreateThreadParams struct {
 	ImageContentType string
 }
 
-func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (int64, error) {
+func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (Thread, error) {
 	row := q.db.QueryRow(ctx, createThread,
 		arg.Address,
 		arg.Title,
@@ -139,9 +151,20 @@ func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (int
 		arg.ImageUrl,
 		arg.ImageContentType,
 	)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
+	var i Thread
+	err := row.Scan(
+		&i.ID,
+		&i.Address,
+		&i.Title,
+		&i.Content,
+		&i.ImageFileName,
+		&i.ImageUrl,
+		&i.ImageContentType,
+		&i.IsDeleted,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const createThreadDownVote = `-- name: CreateThreadDownVote :exec
@@ -227,6 +250,7 @@ SELECT
 FROM comments c
 LEFT JOIN comment_votes cv on c.id = cv.comment_id
 WHERE c.id = $1
+GROUP BY c.id
 `
 
 type GetCommentRow struct {

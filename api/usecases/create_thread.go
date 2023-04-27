@@ -29,15 +29,15 @@ type CreateThreadInput struct {
 	ImageFileName string `validate:"max=100"`
 }
 
-func (u *CreateThreadUseCase) Execute(ctx context.Context, input CreateThreadInput) (int64, error) {
+func (u *CreateThreadUseCase) Execute(ctx context.Context, input CreateThreadInput) (entities.Thread, error) {
 	if err := common.ValidateStruct(input); err != nil {
-		return 0, err
+		return entities.Thread{}, err
 	}
 
 	image, err := u.imageGateway.GetImageByFileName(ctx, input.ImageFileName)
 
 	if err != nil {
-		return 0, err
+		return entities.Thread{}, err
 	}
 
 	thread := entities.NewThread(entities.ThreadParams{
