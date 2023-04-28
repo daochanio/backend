@@ -2,12 +2,12 @@ package entities
 
 import (
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/google/uuid"
 )
 
 // how long a signature will ultimately be valid for
@@ -41,7 +41,7 @@ func NewChallenge(address string, message string, expires time.Time) Challenge {
 func GenerateChallenge(address string) Challenge {
 	now := time.Now()
 	ttl := CHALLENGE_TTL
-	nonce := fmt.Sprintf("%10d", rand.Intn(10000000000))
+	nonce := uuid.New().String()
 	return Challenge{
 		address: address,
 		message: fmt.Sprintf(CHALLENGE_MESSAGE, address, now.Format(time.RFC3339), nonce),
