@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -12,8 +11,6 @@ func (h *httpServer) rateLimit(namespace string, rate int, period time.Duration)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-
-			fmt.Println("rateLimit", namespace, rate, period)
 
 			err := h.verifyRateLimitUseCase.Execute(ctx, &usecases.VerifyRateLimitInput{
 				Namespace: namespace,
