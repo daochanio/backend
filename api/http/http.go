@@ -98,31 +98,48 @@ func (h *httpServer) Start(ctx context.Context) error {
 
 	r.Get("/", h.healthRoute)
 
-	// TODO: .With(h.rateLimit) disabled while investigating support for replicate_commands in our redis provider
-	// TODO: Add stricter rate limiting for uploading images / creating threads / comments
+	r.Route("/v1", func(r chi.Router) {
+		r.Use(middleware.Compress(5, "application/json"))
 
-	// image route has special size and rate limiting constraints so its easier to specify it outside the the standard route grouping below
-	r.With(h.authenticate).With(h.maxSize(3*1024) /*3MB*/).Post("/v1/images", h.uploadImageRoute)
+		// public routes
+		r.Group(func(r chi.Router) {
+			r.Use(h.rateLimit("public", 10, time.Minute))
+			r.Use(h.maxSize(1))
 
-	r.With(h.maxSize(5) /*5KB*/).Route("/v1", func(r chi.Router) {
+			r.Put("/challenge", h.getChallengeRoute)
+			r.Get("/threads", h.getThreadsRoute)
+			r.Get("/threads/{threadId}", h.getThreadByIdRoute)
+			r.Get("/threads/{threadId}/comments", h.getCommentsRoute)
+		})
 
-		r.Put("/challenge", h.getChallengeRoute)
+		// authenticated routes
+		r.Group(func(r chi.Router) {
+			r.Use(h.authenticate)
+			r.Use(h.maxSize(5))
 
-		r.Route("/threads", func(r chi.Router) {
-			r.Get("/", h.getThreadsRoute)
-			r.Get("/{threadId}", h.getThreadByIdRoute)
+			r.With(h.rateLimit("create:thread", 2, time.Minute*10)).Post("/threads", h.createThreadRoute)
+			r.With(h.rateLimit("vote:thread", 10, time.Minute)).Put("/threads/{threadId}/vote/{vote}", h.createThreadVoteRoute)
+			r.With(h.rateLimit("create:comment", 5, time.Minute*10)).Post("/threads/{threadId}/comments", h.createCommentRoute)
+			r.With(h.rateLimit("vote:comment", 10, time.Minute)).Put("/threads/{threadId}/comments/{commentId}/vote/{vote}", h.createCommentVoteRoute)
+		})
 
-			r.With(h.authenticate).Post("/", h.createThreadRoute)
-			r.With(h.authenticate).Delete("/{threadId}", h.deleteThreadRoute)
-			r.With(h.authenticate).Put("/{threadId}/vote/{vote}", h.createThreadVoteRoute)
+		// permissioned routes
+		r.Group(func(r chi.Router) {
+			r.Use(h.authenticate) // TODO: Make this require moderator+ permission
+			r.Use(h.rateLimit("permissioned", 10, time.Second))
+			r.Use(h.maxSize(1))
 
-			r.Route("/{threadId}/comments", func(r chi.Router) {
-				r.Get("/", h.getCommentsRoute)
+			r.Delete("/threads/{threadId}", h.deleteThreadRoute)
+			r.Delete("/threads/{threadId}/comments/{commentId}", h.deleteCommentRoute)
+		})
 
-				r.With(h.authenticate).Post("/", h.createCommentRoute)
-				r.With(h.authenticate).Delete("/{commentId}", h.deleteCommentRoute)
-				r.With(h.authenticate).Put("/{commentId}/vote/{vote}", h.createCommentVoteRoute)
-			})
+		// image route
+		r.Group(func(r chi.Router) {
+			r.Use(h.authenticate)
+			r.Use(h.rateLimit("create:image", 7, time.Minute*10)) // should encompass creating images for threads and comments
+			r.Use(h.maxSize(3 * 1024))
+
+			r.Post("/images", h.uploadImageRoute)
 		})
 	})
 

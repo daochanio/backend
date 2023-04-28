@@ -2,6 +2,7 @@ package gateways
 
 import (
 	"context"
+	"time"
 
 	"github.com/daochanio/backend/api/entities"
 )
@@ -30,7 +31,7 @@ type CacheGateway interface {
 	GetChallengeByAddress(ctx context.Context, address string) (entities.Challenge, error)
 	SaveChallenge(ctx context.Context, challenge entities.Challenge) error
 
-	VerifyRateLimit(ctx context.Context, ipAddress string) error
+	VerifyRateLimit(ctx context.Context, key string, rate int, period time.Duration) error
 }
 
 type BlockchainGateway interface {

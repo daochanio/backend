@@ -2,6 +2,8 @@ package usecases
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
@@ -23,7 +25,10 @@ type VerifyRateLimitUseCase struct {
 }
 
 type VerifyRateLimitInput struct {
-	IpAddress string `validate:"required,ip"`
+	Namespace string        `validate:"min=1,max=100"`
+	IpAddress string        `validate:"ip"`
+	Rate      int           `validate:"gt=0"`
+	Period    time.Duration `validate:"gt=0"`
 }
 
 func (u *VerifyRateLimitUseCase) Execute(ctx context.Context, input *VerifyRateLimitInput) error {
@@ -31,7 +36,9 @@ func (u *VerifyRateLimitUseCase) Execute(ctx context.Context, input *VerifyRateL
 		return err
 	}
 
-	if err := u.cacheGateway.VerifyRateLimit(ctx, input.IpAddress); err != nil {
+	key := fmt.Sprintf("%s:%s", input.Namespace, input.IpAddress)
+
+	if err := u.cacheGateway.VerifyRateLimit(ctx, key, input.Rate, input.Period); err != nil {
 		return err
 	}
 
