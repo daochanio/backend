@@ -28,7 +28,7 @@ jobs:
         with:
           version: latest
           working-directory: ./api
-          args: --enable gofmt misspell
+          args: --enable gofmt --enable misspell
 
       - name: Go test
         run: go test -v ./api/...
