@@ -17,14 +17,15 @@ jobs:
         with:
           go-version: 1.20.x
 
-      - name: Go fmt
-        run: if [ "$(gofmt -s -l ./db | wc -l)" -gt 0 ]; then exit 1; fi
-
-      - name: Go vet
-        run: go vet ./db/...
-
       - name: Go build
         run: go build -v ./db/...
+
+      - name: Go lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: ./db
+          args: --enable gocyclo --enable gofmt --enable misspell
 
       - name: Go test
         run: go test -v ./db/...
