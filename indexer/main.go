@@ -17,16 +17,37 @@ import (
 
 func main() {
 	container := dig.New()
-	container.Provide(context.Background)
-	container.Provide(appName)
-	container.Provide(common.NewCommonSettings)
-	container.Provide(common.NewLogger)
-	container.Provide(settings.NewSettings)
-	container.Provide(postgres.NewPostgresGateway)
-	container.Provide(ethereum.NewEthereumGateway)
-	container.Provide(usecases.NewIndexBlocksUseCase)
-	container.Provide(usecases.NewIndexTokenUseCase)
-	container.Provide(worker.NewWorker)
+
+	if err := container.Provide(context.Background); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(appName); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(common.NewCommonSettings); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(common.NewLogger); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(settings.NewSettings); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(postgres.NewPostgresGateway); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(ethereum.NewEthereumGateway); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewIndexBlocksUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewIndexTokenUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(worker.NewWorker); err != nil {
+		panic(err)
+	}
 
 	// start the app in a go routine
 	if err := container.Invoke(startWorker); err != nil {

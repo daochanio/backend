@@ -186,16 +186,18 @@ func (h *httpServer) presentJSON(w http.ResponseWriter, r *http.Request, statusC
 			Count:  lastPage.Count,
 		}
 	}
-	json.NewEncoder(w).Encode(bodyJson{
+	err := json.NewEncoder(w).Encode(bodyJson{
 		Data:     data,
 		NextPage: nextPage,
 	})
+	h.logger.Error(r.Context()).Err(err).Msg("error encoding json")
 }
 
 func (h *httpServer) presentText(w http.ResponseWriter, r *http.Request, statusCode int, text string) {
 	w.Header().Set("Content-Type", "text/plain")
 	h.presentStatus(w, r, statusCode)
-	w.Write([]byte(text))
+	_, err := w.Write([]byte(text))
+	h.logger.Error(r.Context()).Err(err).Msg("error writing text")
 }
 
 func (h *httpServer) presentStatus(w http.ResponseWriter, r *http.Request, statusCode int) {

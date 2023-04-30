@@ -19,30 +19,79 @@ import (
 
 func main() {
 	container := dig.New()
-	container.Provide(context.Background)
-	container.Provide(appName)
-	container.Provide(common.NewCommonSettings)
-	container.Provide(common.NewLogger)
-	container.Provide(settings.NewSettings)
-	container.Provide(pg.NewPostgresGateway)
-	container.Provide(redis.NewRedisGateway)
-	container.Provide(cloudfront.NewCloudfrontGateway)
-	container.Provide(ethereum.NewEthereumGateway)
-	container.Provide(usecases.NewCreateUserUseCase)
-	container.Provide(usecases.NewVerifyRateLimitUseCase)
-	container.Provide(usecases.NewVerifyChallengeUseCase)
-	container.Provide(usecases.NewGetChallengeUseCase)
-	container.Provide(usecases.NewGetThreadUseCase)
-	container.Provide(usecases.NewGetThreadsUseCase)
-	container.Provide(usecases.NewCreateThreadUseCase)
-	container.Provide(usecases.NewDeleteThreadUseCase)
-	container.Provide(usecases.NewCreateThreadVoteUseCase)
-	container.Provide(usecases.NewGetCommentsUseCase)
-	container.Provide(usecases.NewCreateCommentUseCase)
-	container.Provide(usecases.NewDeleteCommentUseCase)
-	container.Provide(usecases.NewCreateCommentVoteUseCase)
-	container.Provide(usecases.NewUploadImageUsecase)
-	container.Provide(http.NewHttpServer)
+
+	if err := container.Provide(context.Background); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(appName); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(common.NewCommonSettings); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(common.NewLogger); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(settings.NewSettings); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(pg.NewPostgresGateway); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(redis.NewRedisGateway); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(cloudfront.NewCloudfrontGateway); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(ethereum.NewEthereumGateway); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewCreateUserUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewVerifyRateLimitUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewVerifyChallengeUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewGetChallengeUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewGetThreadUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewGetThreadsUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewCreateThreadUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewDeleteThreadUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewCreateThreadVoteUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewGetCommentsUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewCreateCommentUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewDeleteCommentUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewCreateCommentVoteUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewUploadImageUsecase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(http.NewHttpServer); err != nil {
+		panic(err)
+	}
 
 	// start the http controller inside a go routine
 	if err := container.Invoke(startHttpServer); err != nil {
