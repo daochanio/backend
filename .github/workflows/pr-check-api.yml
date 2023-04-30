@@ -20,11 +20,15 @@ jobs:
       - name: Go fmt
         run: if [ "$(gofmt -s -l ./api | wc -l)" -gt 0 ]; then exit 1; fi
 
-      - name: Go vet
-        run: go vet ./api/...
-
       - name: Go build
         run: go build -v ./api/...
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: ./api
+          args: --enable gofmt misspell
 
       - name: Go test
         run: go test -v ./api/...
