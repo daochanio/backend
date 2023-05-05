@@ -20,30 +20,21 @@ RETURNING *;
 -- Table sample is not random enough until the table gets big.
 -- https://www.postgresql.org/docs/current/tsm-system-rows.html
 -- name: GetThreads :many
-SELECT
-  threads.*,
-  SUM(COALESCE(thread_votes.vote, 0)) as votes
+SELECT threads.*
 FROM threads
-LEFT JOIN thread_votes ON thread_votes.thread_id = threads.id
 WHERE threads.is_deleted = FALSE
-GROUP BY threads.id
 ORDER BY RANDOM()
 LIMIT $1::bigint;
 
 -- name: GetThread :one
-SELECT
-	threads.*,
-	SUM(COALESCE(thread_votes.vote, 0)) as votes
+SELECT threads.*
 FROM threads
-LEFT JOIN thread_votes ON thread_votes.thread_id = threads.id
 WHERE threads.id = $1
-AND threads.is_deleted = FALSE
-GROUP BY threads.id;
+AND threads.is_deleted = FALSE;
 
 -- name: GetComments :many
 SELECT
 	c.*,
-	SUM(COALESCE(cv.vote, 0)) as votes,
 	r.id as r_id,
 	r.address as r_address,
 	r.content as r_content,
@@ -55,22 +46,16 @@ SELECT
 	r.deleted_at as r_deleted_at,
 	count(*) OVER() AS full_count
 FROM comments c
-LEFT JOIN comment_votes cv on c.id = cv.comment_id
 LEFT JOIN comments r on c.replied_to_comment_id = r.id
 WHERE c.thread_id = $1
-GROUP BY c.id, r.id
 ORDER BY c.created_at DESC
 OFFSET $2::bigint
 LIMIT $3::bigint;
 
 -- name: GetComment :one
-SELECT
-	c.*,
-	SUM(COALESCE(cv.vote, 0)) as votes
+SELECT c.*
 FROM comments c
-LEFT JOIN comment_votes cv on c.id = cv.comment_id
-WHERE c.id = $1
-GROUP BY c.id;
+WHERE c.id = $1;
 
 -- name: DeleteThread :one
 UPDATE threads
@@ -113,3 +98,21 @@ ON CONFLICT (address, comment_id) DO UPDATE SET vote = -1, updated_at = NOW();
 INSERT INTO comment_votes (address, comment_id, vote)
 VALUES ($1, $2, 0)
 ON CONFLICT (address, comment_id) DO UPDATE SET vote = 0, updated_at = NOW();
+
+-- name: AggregateThreadVotes :exec
+UPDATE threads
+SET votes = (
+	SELECT COALESCE(SUM(vote), 0)
+	FROM thread_votes
+	WHERE thread_votes.thread_id = $1
+)
+WHERE threads.id = $1;
+
+-- name: AggregateCommentVotes :exec
+UPDATE comments
+SET votes = (
+	SELECT COALESCE(SUM(vote), 0)
+	FROM comment_votes
+	WHERE comment_votes.comment_id = $1
+)
+WHERE comments.id = $1;

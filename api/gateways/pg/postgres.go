@@ -16,7 +16,7 @@ type postgresGateway struct {
 	queries  *bindings.Queries
 }
 
-func NewPostgresGateway(ctx context.Context, settings settings.Settings, logger common.Logger) gateways.DatabaseGateway {
+func NewDatabaseGateway(ctx context.Context, settings settings.Settings, logger common.Logger) gateways.DatabaseGateway {
 	config, err := pgxpool.ParseConfig(settings.DbConnectionString())
 
 	if err != nil {

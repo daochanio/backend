@@ -21,7 +21,7 @@ type cloudfrontGateway struct {
 	client   *s3.S3
 }
 
-func NewCloudfrontGateway(logger common.Logger, settings settings.Settings) gateways.ImageGateway {
+func NewImageGateway(logger common.Logger, settings settings.Settings) gateways.ImageGateway {
 	credentials := credentials.NewStaticCredentials(settings.ImageAccessKeyId(), settings.ImageSecretAccessKey(), "")
 	config := aws.NewConfig().WithCredentials(credentials).WithEndpoint(settings.ImageURL()).WithRegion(settings.ImageRegion())
 	sess, err := session.NewSession(config)

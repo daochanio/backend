@@ -123,16 +123,17 @@ func (h *httpServer) deleteThreadRoute(w http.ResponseWriter, r *http.Request) {
 func (h *httpServer) createThreadVoteRoute(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id, err := strconv.ParseInt(chi.URLParam(r, "threadId"), 10, 64)
-	vote := chi.URLParam(r, "vote")
+	value := chi.URLParam(r, "value")
 
 	if err != nil {
 		h.presentBadRequest(w, r, err)
 	}
 
-	err = h.createThreadVoteUseCase.Execute(ctx, usecases.CreateThreadVoteInput{
-		ThreadId: id,
-		Address:  ctx.Value(common.ContextKeyAddress).(string),
-		Vote:     common.VoteType(vote),
+	err = h.createVoteUseCase.Execute(ctx, usecases.CreateVoteInput{
+		Id:      id,
+		Address: ctx.Value(common.ContextKeyAddress).(string),
+		Value:   common.VoteValue(value),
+		Type:    common.ThreadVote,
 	})
 
 	if err != nil {

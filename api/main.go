@@ -6,12 +6,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/api/gateways/cloudfront"
 	"github.com/daochanio/backend/api/gateways/ethereum"
 	"github.com/daochanio/backend/api/gateways/pg"
 	"github.com/daochanio/backend/api/gateways/redis"
 	"github.com/daochanio/backend/api/http"
 	"github.com/daochanio/backend/api/settings"
+	"github.com/daochanio/backend/api/subscribe"
 	"github.com/daochanio/backend/api/usecases"
 	"github.com/daochanio/backend/common"
 	"go.uber.org/dig"
@@ -35,16 +37,17 @@ func main() {
 	if err := container.Provide(settings.NewSettings); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(pg.NewPostgresGateway); err != nil {
+	if err := container.Provide(pg.NewDatabaseGateway); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(redis.NewRedisGateway); err != nil {
+	// redis provides multiple interface implementations
+	if err := container.Provide(redis.NewGateway, dig.As(new(gateways.MessageGateway), new(gateways.CacheGateway))); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(cloudfront.NewCloudfrontGateway); err != nil {
+	if err := container.Provide(cloudfront.NewImageGateway); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(ethereum.NewEthereumGateway); err != nil {
+	if err := container.Provide(ethereum.NewBlockchainGateway); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(usecases.NewCreateUserUseCase); err != nil {
@@ -71,7 +74,7 @@ func main() {
 	if err := container.Provide(usecases.NewDeleteThreadUseCase); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(usecases.NewCreateThreadVoteUseCase); err != nil {
+	if err := container.Provide(usecases.NewCreateVoteUseCase); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(usecases.NewGetCommentsUseCase); err != nil {
@@ -83,18 +86,26 @@ func main() {
 	if err := container.Provide(usecases.NewDeleteCommentUseCase); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(usecases.NewCreateCommentVoteUseCase); err != nil {
+	if err := container.Provide(usecases.NewUploadImageUsecase); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(usecases.NewUploadImageUsecase); err != nil {
+	if err := container.Provide(usecases.NewAggregateVotesUseCase); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(http.NewHttpServer); err != nil {
 		panic(err)
 	}
+	if err := container.Provide(subscribe.NewSubscriber); err != nil {
+		panic(err)
+	}
 
 	// start the http controller inside a go routine
 	if err := container.Invoke(startHttpServer); err != nil {
+		panic(err)
+	}
+
+	// start the message subscriber inside a go routine
+	if err := container.Invoke(startMessageSubscriber); err != nil {
 		panic(err)
 	}
 
@@ -108,9 +119,16 @@ func appName() string {
 	return "api"
 }
 
-func startHttpServer(ctx context.Context, httpServer http.IHttpServer) {
+func startHttpServer(ctx context.Context, httpServer http.HttpServer) {
 	go func() {
 		err := httpServer.Start(ctx)
+		panic(err)
+	}()
+}
+
+func startMessageSubscriber(ctx context.Context, messageSubscriber subscribe.Subscriber) {
+	go func() {
+		err := messageSubscriber.Start(ctx)
 		panic(err)
 	}()
 }

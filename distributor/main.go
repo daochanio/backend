@@ -8,6 +8,7 @@ import (
 
 	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/distributor/settings"
+	"github.com/daochanio/backend/distributor/subscribe"
 	"github.com/daochanio/backend/distributor/worker"
 	"go.uber.org/dig"
 )
@@ -33,9 +34,16 @@ func main() {
 	if err := container.Provide(worker.NewWorker); err != nil {
 		panic(err)
 	}
+	if err := container.Provide(subscribe.NewSubscriber); err != nil {
+		panic(err)
+	}
 
 	// start the app in a go routine
 	if err := container.Invoke(startWorker); err != nil {
+		panic(err)
+	}
+
+	if err := container.Invoke(startMessageSubscriber); err != nil {
 		panic(err)
 	}
 
@@ -49,11 +57,19 @@ func appName() string {
 	return "distributor"
 }
 
-func startWorker(ctx context.Context, worker *worker.Worker, logger common.Logger) {
+func startWorker(ctx context.Context, worker worker.Worker, logger common.Logger) {
 	go func() {
-		// blocking call to start the worker
 		if err := worker.Start(ctx); err != nil {
 			logger.Error(ctx).Err(err).Msg("worker stopped")
+			panic(err)
+		}
+	}()
+}
+
+func startMessageSubscriber(ctx context.Context, subscriber subscribe.Subscriber, logger common.Logger) {
+	go func() {
+		if err := subscriber.Start(ctx); err != nil {
+			logger.Error(ctx).Err(err).Msg("subscriber stopped")
 			panic(err)
 		}
 	}()

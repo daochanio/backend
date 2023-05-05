@@ -16,6 +16,7 @@ CREATE TABLE threads (
 	image_file_name TEXT NOT NULL,
 	image_url TEXT NOT NULL,
 	image_content_type TEXT NOT NULL,
+	votes BIGINT NOT NULL DEFAULT 0,
 	is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	deleted_at TIMESTAMP NULL DEFAULT NULL
@@ -39,6 +40,7 @@ CREATE TABLE comments (
 	image_file_name TEXT NOT NULL,
 	image_url TEXT NOT NULL,
 	image_content_type TEXT NOT NULL,
+	votes BIGINT NOT NULL DEFAULT 0,
 	is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	deleted_at TIMESTAMP NULL DEFAULT NULL

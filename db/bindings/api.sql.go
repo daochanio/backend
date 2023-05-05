@@ -11,10 +11,40 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const aggregateCommentVotes = `-- name: AggregateCommentVotes :exec
+UPDATE comments
+SET votes = (
+	SELECT COALESCE(SUM(vote), 0)
+	FROM comment_votes
+	WHERE comment_votes.comment_id = $1
+)
+WHERE comments.id = $1
+`
+
+func (q *Queries) AggregateCommentVotes(ctx context.Context, commentID int64) error {
+	_, err := q.db.Exec(ctx, aggregateCommentVotes, commentID)
+	return err
+}
+
+const aggregateThreadVotes = `-- name: AggregateThreadVotes :exec
+UPDATE threads
+SET votes = (
+	SELECT COALESCE(SUM(vote), 0)
+	FROM thread_votes
+	WHERE thread_votes.thread_id = $1
+)
+WHERE threads.id = $1
+`
+
+func (q *Queries) AggregateThreadVotes(ctx context.Context, threadID int64) error {
+	_, err := q.db.Exec(ctx, aggregateThreadVotes, threadID)
+	return err
+}
+
 const createComment = `-- name: CreateComment :one
 INSERT INTO comments (address, thread_id, replied_to_comment_id, content, image_file_name, image_url, image_content_type)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, thread_id, replied_to_comment_id, address, content, image_file_name, image_url, image_content_type, is_deleted, created_at, deleted_at
+RETURNING id, thread_id, replied_to_comment_id, address, content, image_file_name, image_url, image_content_type, votes, is_deleted, created_at, deleted_at
 `
 
 type CreateCommentParams struct {
@@ -47,6 +77,7 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (C
 		&i.ImageFileName,
 		&i.ImageUrl,
 		&i.ImageContentType,
+		&i.Votes,
 		&i.IsDeleted,
 		&i.CreatedAt,
 		&i.DeletedAt,
@@ -130,7 +161,7 @@ func (q *Queries) CreateOrUpdateUser(ctx context.Context, arg CreateOrUpdateUser
 const createThread = `-- name: CreateThread :one
 INSERT INTO threads (address, title, content, image_file_name, image_url, image_content_type)
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, address, title, content, image_file_name, image_url, image_content_type, is_deleted, created_at, deleted_at
+RETURNING id, address, title, content, image_file_name, image_url, image_content_type, votes, is_deleted, created_at, deleted_at
 `
 
 type CreateThreadParams struct {
@@ -160,6 +191,7 @@ func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (Thr
 		&i.ImageFileName,
 		&i.ImageUrl,
 		&i.ImageContentType,
+		&i.Votes,
 		&i.IsDeleted,
 		&i.CreatedAt,
 		&i.DeletedAt,
@@ -244,33 +276,14 @@ func (q *Queries) DeleteThread(ctx context.Context, id int64) (int64, error) {
 }
 
 const getComment = `-- name: GetComment :one
-SELECT
-	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.image_file_name, c.image_url, c.image_content_type, c.is_deleted, c.created_at, c.deleted_at,
-	SUM(COALESCE(cv.vote, 0)) as votes
+SELECT c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.image_file_name, c.image_url, c.image_content_type, c.votes, c.is_deleted, c.created_at, c.deleted_at
 FROM comments c
-LEFT JOIN comment_votes cv on c.id = cv.comment_id
 WHERE c.id = $1
-GROUP BY c.id
 `
 
-type GetCommentRow struct {
-	ID                 int64
-	ThreadID           int64
-	RepliedToCommentID pgtype.Int8
-	Address            string
-	Content            string
-	ImageFileName      string
-	ImageUrl           string
-	ImageContentType   string
-	IsDeleted          bool
-	CreatedAt          pgtype.Timestamp
-	DeletedAt          pgtype.Timestamp
-	Votes              int64
-}
-
-func (q *Queries) GetComment(ctx context.Context, id int64) (GetCommentRow, error) {
+func (q *Queries) GetComment(ctx context.Context, id int64) (Comment, error) {
 	row := q.db.QueryRow(ctx, getComment, id)
-	var i GetCommentRow
+	var i Comment
 	err := row.Scan(
 		&i.ID,
 		&i.ThreadID,
@@ -280,18 +293,17 @@ func (q *Queries) GetComment(ctx context.Context, id int64) (GetCommentRow, erro
 		&i.ImageFileName,
 		&i.ImageUrl,
 		&i.ImageContentType,
+		&i.Votes,
 		&i.IsDeleted,
 		&i.CreatedAt,
 		&i.DeletedAt,
-		&i.Votes,
 	)
 	return i, err
 }
 
 const getComments = `-- name: GetComments :many
 SELECT
-	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.image_file_name, c.image_url, c.image_content_type, c.is_deleted, c.created_at, c.deleted_at,
-	SUM(COALESCE(cv.vote, 0)) as votes,
+	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.image_file_name, c.image_url, c.image_content_type, c.votes, c.is_deleted, c.created_at, c.deleted_at,
 	r.id as r_id,
 	r.address as r_address,
 	r.content as r_content,
@@ -303,10 +315,8 @@ SELECT
 	r.deleted_at as r_deleted_at,
 	count(*) OVER() AS full_count
 FROM comments c
-LEFT JOIN comment_votes cv on c.id = cv.comment_id
 LEFT JOIN comments r on c.replied_to_comment_id = r.id
 WHERE c.thread_id = $1
-GROUP BY c.id, r.id
 ORDER BY c.created_at DESC
 OFFSET $2::bigint
 LIMIT $3::bigint
@@ -327,10 +337,10 @@ type GetCommentsRow struct {
 	ImageFileName      string
 	ImageUrl           string
 	ImageContentType   string
+	Votes              int64
 	IsDeleted          bool
 	CreatedAt          pgtype.Timestamp
 	DeletedAt          pgtype.Timestamp
-	Votes              int64
 	RID                pgtype.Int8
 	RAddress           pgtype.Text
 	RContent           pgtype.Text
@@ -361,10 +371,10 @@ func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]Get
 			&i.ImageFileName,
 			&i.ImageUrl,
 			&i.ImageContentType,
+			&i.Votes,
 			&i.IsDeleted,
 			&i.CreatedAt,
 			&i.DeletedAt,
-			&i.Votes,
 			&i.RID,
 			&i.RAddress,
 			&i.RContent,
@@ -387,33 +397,15 @@ func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]Get
 }
 
 const getThread = `-- name: GetThread :one
-SELECT
-	threads.id, threads.address, threads.title, threads.content, threads.image_file_name, threads.image_url, threads.image_content_type, threads.is_deleted, threads.created_at, threads.deleted_at,
-	SUM(COALESCE(thread_votes.vote, 0)) as votes
+SELECT threads.id, threads.address, threads.title, threads.content, threads.image_file_name, threads.image_url, threads.image_content_type, threads.votes, threads.is_deleted, threads.created_at, threads.deleted_at
 FROM threads
-LEFT JOIN thread_votes ON thread_votes.thread_id = threads.id
 WHERE threads.id = $1
 AND threads.is_deleted = FALSE
-GROUP BY threads.id
 `
 
-type GetThreadRow struct {
-	ID               int64
-	Address          string
-	Title            string
-	Content          string
-	ImageFileName    string
-	ImageUrl         string
-	ImageContentType string
-	IsDeleted        bool
-	CreatedAt        pgtype.Timestamp
-	DeletedAt        pgtype.Timestamp
-	Votes            int64
-}
-
-func (q *Queries) GetThread(ctx context.Context, id int64) (GetThreadRow, error) {
+func (q *Queries) GetThread(ctx context.Context, id int64) (Thread, error) {
 	row := q.db.QueryRow(ctx, getThread, id)
-	var i GetThreadRow
+	var i Thread
 	err := row.Scan(
 		&i.ID,
 		&i.Address,
@@ -422,53 +414,35 @@ func (q *Queries) GetThread(ctx context.Context, id int64) (GetThreadRow, error)
 		&i.ImageFileName,
 		&i.ImageUrl,
 		&i.ImageContentType,
+		&i.Votes,
 		&i.IsDeleted,
 		&i.CreatedAt,
 		&i.DeletedAt,
-		&i.Votes,
 	)
 	return i, err
 }
 
 const getThreads = `-- name: GetThreads :many
-SELECT
-  threads.id, threads.address, threads.title, threads.content, threads.image_file_name, threads.image_url, threads.image_content_type, threads.is_deleted, threads.created_at, threads.deleted_at,
-  SUM(COALESCE(thread_votes.vote, 0)) as votes
+SELECT threads.id, threads.address, threads.title, threads.content, threads.image_file_name, threads.image_url, threads.image_content_type, threads.votes, threads.is_deleted, threads.created_at, threads.deleted_at
 FROM threads
-LEFT JOIN thread_votes ON thread_votes.thread_id = threads.id
 WHERE threads.is_deleted = FALSE
-GROUP BY threads.id
 ORDER BY RANDOM()
 LIMIT $1::bigint
 `
-
-type GetThreadsRow struct {
-	ID               int64
-	Address          string
-	Title            string
-	Content          string
-	ImageFileName    string
-	ImageUrl         string
-	ImageContentType string
-	IsDeleted        bool
-	CreatedAt        pgtype.Timestamp
-	DeletedAt        pgtype.Timestamp
-	Votes            int64
-}
 
 // Order by random is not performant as we need to do a full table scan.
 // Move to TABLESAMPLE SYSTEM_ROWS(N) when performance becomes an issue.
 // Table sample is not random enough until the table gets big.
 // https://www.postgresql.org/docs/current/tsm-system-rows.html
-func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]GetThreadsRow, error) {
+func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]Thread, error) {
 	rows, err := q.db.Query(ctx, getThreads, dollar_1)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetThreadsRow
+	var items []Thread
 	for rows.Next() {
-		var i GetThreadsRow
+		var i Thread
 		if err := rows.Scan(
 			&i.ID,
 			&i.Address,
@@ -477,10 +451,10 @@ func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]GetThreadsR
 			&i.ImageFileName,
 			&i.ImageUrl,
 			&i.ImageContentType,
+			&i.Votes,
 			&i.IsDeleted,
 			&i.CreatedAt,
 			&i.DeletedAt,
-			&i.Votes,
 		); err != nil {
 			return nil, err
 		}

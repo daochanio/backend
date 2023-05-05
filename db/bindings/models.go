@@ -17,6 +17,7 @@ type Comment struct {
 	ImageFileName      string
 	ImageUrl           string
 	ImageContentType   string
+	Votes              int64
 	IsDeleted          bool
 	CreatedAt          pgtype.Timestamp
 	DeletedAt          pgtype.Timestamp
@@ -44,6 +45,7 @@ type Thread struct {
 	ImageFileName    string
 	ImageUrl         string
 	ImageContentType string
+	Votes            int64
 	IsDeleted        bool
 	CreatedAt        pgtype.Timestamp
 	DeletedAt        pgtype.Timestamp

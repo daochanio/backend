@@ -17,27 +17,26 @@ import (
 	"github.com/go-chi/cors"
 )
 
-type IHttpServer interface {
+type HttpServer interface {
 	Start(context.Context) error
 }
 
 type httpServer struct {
-	logger                   common.Logger
-	settings                 settings.Settings
-	getChallengeUseCase      *usecases.GetChallengeUseCase
-	verifyChallengeUseCase   *usecases.VerifyChallengeUseCase
-	verifyRateLimitUseCase   *usecases.VerifyRateLimitUseCase
-	createUserUseCase        *usecases.CreateUserUseCase
-	createThreadUseCase      *usecases.CreateThreadUseCase
-	getThreadUseCase         *usecases.GetThreadUseCase
-	getThreadsUseCase        *usecases.GetThreadsUseCase
-	deleteThreadUseCase      *usecases.DeleteThreadUseCase
-	createThreadVoteUseCase  *usecases.CreateThreadVoteUseCase
-	createCommentUseCase     *usecases.CreateCommentUseCase
-	getCommentsUseCase       *usecases.GetCommentsUseCase
-	deleteCommentUseCase     *usecases.DeleteCommentUseCase
-	createCommentVoteUseCase *usecases.CreateCommentVoteUseCase
-	uploadImageUseCase       *usecases.UploadImageUsecase
+	logger                 common.Logger
+	settings               settings.Settings
+	getChallengeUseCase    *usecases.GetChallengeUseCase
+	verifyChallengeUseCase *usecases.VerifyChallengeUseCase
+	verifyRateLimitUseCase *usecases.VerifyRateLimitUseCase
+	createUserUseCase      *usecases.CreateUserUseCase
+	createThreadUseCase    *usecases.CreateThreadUseCase
+	getThreadUseCase       *usecases.GetThreadUseCase
+	getThreadsUseCase      *usecases.GetThreadsUseCase
+	deleteThreadUseCase    *usecases.DeleteThreadUseCase
+	createVoteUseCase      *usecases.CreateVoteUseCase
+	createCommentUseCase   *usecases.CreateCommentUseCase
+	getCommentsUseCase     *usecases.GetCommentsUseCase
+	deleteCommentUseCase   *usecases.DeleteCommentUseCase
+	uploadImageUseCase     *usecases.UploadImageUsecase
 }
 
 func NewHttpServer(
@@ -51,12 +50,11 @@ func NewHttpServer(
 	getThreadUseCase *usecases.GetThreadUseCase,
 	getThreadsUseCase *usecases.GetThreadsUseCase,
 	deleteThreadUseCase *usecases.DeleteThreadUseCase,
-	createThreadVoteUseCase *usecases.CreateThreadVoteUseCase,
+	createVoteUseCase *usecases.CreateVoteUseCase,
 	createCommentUseCase *usecases.CreateCommentUseCase,
 	getCommentsUseCase *usecases.GetCommentsUseCase,
 	deleteCommentUseCase *usecases.DeleteCommentUseCase,
-	createCommentVoteUseCase *usecases.CreateCommentVoteUseCase,
-	uploadImageUseCase *usecases.UploadImageUsecase) IHttpServer {
+	uploadImageUseCase *usecases.UploadImageUsecase) HttpServer {
 	return &httpServer{
 		logger,
 		settings,
@@ -68,11 +66,10 @@ func NewHttpServer(
 		getThreadUseCase,
 		getThreadsUseCase,
 		deleteThreadUseCase,
-		createThreadVoteUseCase,
+		createVoteUseCase,
 		createCommentUseCase,
 		getCommentsUseCase,
 		deleteCommentUseCase,
-		createCommentVoteUseCase,
 		uploadImageUseCase,
 	}
 }
@@ -118,9 +115,9 @@ func (h *httpServer) Start(ctx context.Context) error {
 			r.Use(h.maxSize(5))
 
 			r.With(h.rateLimit("create:thread", 2, time.Minute*10)).Post("/threads", h.createThreadRoute)
-			r.With(h.rateLimit("vote:thread", 10, time.Minute)).Put("/threads/{threadId}/vote/{vote}", h.createThreadVoteRoute)
+			r.With(h.rateLimit("vote:thread", 10, time.Minute)).Put("/threads/{threadId}/votes/{value}", h.createThreadVoteRoute)
 			r.With(h.rateLimit("create:comment", 5, time.Minute*10)).Post("/threads/{threadId}/comments", h.createCommentRoute)
-			r.With(h.rateLimit("vote:comment", 10, time.Minute)).Put("/threads/{threadId}/comments/{commentId}/vote/{vote}", h.createCommentVoteRoute)
+			r.With(h.rateLimit("vote:comment", 10, time.Minute)).Put("/threads/{threadId}/comments/{commentId}/votes/{value}", h.createCommentVoteRoute)
 		})
 
 		// permissioned routes
@@ -186,18 +183,20 @@ func (h *httpServer) presentJSON(w http.ResponseWriter, r *http.Request, statusC
 			Count:  lastPage.Count,
 		}
 	}
-	err := json.NewEncoder(w).Encode(bodyJson{
+	if err := json.NewEncoder(w).Encode(bodyJson{
 		Data:     data,
 		NextPage: nextPage,
-	})
-	h.logger.Error(r.Context()).Err(err).Msg("error encoding json")
+	}); err != nil {
+		h.logger.Error(r.Context()).Err(err).Msg("error encoding json")
+	}
 }
 
 func (h *httpServer) presentText(w http.ResponseWriter, r *http.Request, statusCode int, text string) {
 	w.Header().Set("Content-Type", "text/plain")
 	h.presentStatus(w, r, statusCode)
-	_, err := w.Write([]byte(text))
-	h.logger.Error(r.Context()).Err(err).Msg("error writing text")
+	if _, err := w.Write([]byte(text)); err != nil {
+		h.logger.Error(r.Context()).Err(err).Msg("error writing text")
+	}
 }
 
 func (h *httpServer) presentStatus(w http.ResponseWriter, r *http.Request, statusCode int) {

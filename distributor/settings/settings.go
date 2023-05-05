@@ -8,10 +8,12 @@ import (
 
 type Settings interface {
 	Interval() time.Duration
+	StreamConnectionString() string
 }
 
 type settings struct {
-	interval time.Duration
+	interval              time.Duration
+	redisConnectionString string
 }
 
 func NewSettings() Settings {
@@ -22,10 +24,15 @@ func NewSettings() Settings {
 	interval := time.Duration(intervalMinutes) * time.Minute
 
 	return &settings{
-		interval,
+		interval:              interval,
+		redisConnectionString: os.Getenv("REDIS_CONNECTION_STRING"),
 	}
 }
 
 func (s *settings) Interval() time.Duration {
 	return s.interval
+}
+
+func (s *settings) StreamConnectionString() string {
+	return s.redisConnectionString
 }
