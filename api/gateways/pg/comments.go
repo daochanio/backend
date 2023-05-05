@@ -171,23 +171,28 @@ func (p *postgresGateway) DeleteComment(ctx context.Context, id int64) error {
 	return err
 }
 
-func (p *postgresGateway) UpVoteComment(ctx context.Context, id int64, address string) error {
-	return p.queries.CreateCommentUpVote(ctx, bindings.CreateCommentUpVoteParams{
-		CommentID: id,
-		Address:   address,
-	})
+func (p *postgresGateway) CreateCommentVote(ctx context.Context, vote entities.Vote) error {
+	switch vote.Value() {
+	case common.Upvote:
+		return p.queries.CreateCommentUpVote(ctx, bindings.CreateCommentUpVoteParams{
+			CommentID: vote.Id(),
+			Address:   vote.Address(),
+		})
+	case common.Downvote:
+		return p.queries.CreateCommentDownVote(ctx, bindings.CreateCommentDownVoteParams{
+			CommentID: vote.Id(),
+			Address:   vote.Address(),
+		})
+	case common.Unvote:
+		return p.queries.CreateCommentUnVote(ctx, bindings.CreateCommentUnVoteParams{
+			CommentID: vote.Id(),
+			Address:   vote.Address(),
+		})
+	default:
+		return errors.New("invalid vote value")
+	}
 }
 
-func (p *postgresGateway) DownVoteComment(ctx context.Context, id int64, address string) error {
-	return p.queries.CreateCommentDownVote(ctx, bindings.CreateCommentDownVoteParams{
-		CommentID: id,
-		Address:   address,
-	})
-}
-
-func (p *postgresGateway) UnVoteComment(ctx context.Context, id int64, address string) error {
-	return p.queries.CreateCommentUnVote(ctx, bindings.CreateCommentUnVoteParams{
-		CommentID: id,
-		Address:   address,
-	})
+func (p *postgresGateway) AggregateCommentVotes(ctx context.Context, commentId int64) error {
+	return p.queries.AggregateCommentVotes(ctx, commentId)
 }

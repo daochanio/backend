@@ -8,19 +8,24 @@ import (
 	"github.com/daochanio/backend/distributor/settings"
 )
 
-type Worker struct {
+type Worker interface {
+	Start(ctx context.Context) error
+	Distribute(ctx context.Context) error
+}
+
+type worker struct {
 	logger   common.Logger
 	settings settings.Settings
 }
 
-func NewWorker(logger common.Logger, settings settings.Settings) *Worker {
-	return &Worker{
+func NewWorker(logger common.Logger, settings settings.Settings) Worker {
+	return &worker{
 		logger,
 		settings,
 	}
 }
 
-func (d *Worker) Start(ctx context.Context) error {
+func (d *worker) Start(ctx context.Context) error {
 	d.logger.Info(ctx).Msg("starting worker")
 	for {
 		// wait until the next interval
@@ -45,6 +50,6 @@ func (d *Worker) Start(ctx context.Context) error {
 	}
 }
 
-func (d *Worker) Distribute(ctx context.Context) error {
+func (d *worker) Distribute(ctx context.Context) error {
 	return nil
 }

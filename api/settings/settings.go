@@ -8,6 +8,7 @@ type Settings interface {
 	Port() string
 	DbConnectionString() string
 	CacheConnectionString() string
+	StreamConnectionString() string
 	BlockchainURI() string
 	RealIPHeader() string
 	ImagePublicBaseURL() string
@@ -57,6 +58,10 @@ func (s *settings) DbConnectionString() string {
 }
 
 func (s *settings) CacheConnectionString() string {
+	return s.redisConnectionString
+}
+
+func (s *settings) StreamConnectionString() string {
 	return s.redisConnectionString
 }
 

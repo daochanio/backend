@@ -121,16 +121,17 @@ func (h *httpServer) createCommentVoteRoute(w http.ResponseWriter, r *http.Reque
 	ctx := r.Context()
 
 	id, err := strconv.ParseInt(chi.URLParam(r, "commentId"), 10, 64)
-	vote := chi.URLParam(r, "vote")
+	value := chi.URLParam(r, "value")
 
 	if err != nil {
 		h.presentBadRequest(w, r, err)
 	}
 
-	err = h.createCommentVoteUseCase.Execute(ctx, usecases.CreateCommentVoteInput{
-		CommentId: id,
-		Address:   ctx.Value(common.ContextKeyAddress).(string),
-		Vote:      common.VoteType(vote),
+	err = h.createVoteUseCase.Execute(ctx, usecases.CreateVoteInput{
+		Id:      id,
+		Address: ctx.Value(common.ContextKeyAddress).(string),
+		Value:   common.VoteValue(value),
+		Type:    common.CommentVote,
 	})
 
 	if err != nil {
