@@ -2,6 +2,7 @@ package subscribe
 
 import (
 	"context"
+	"time"
 
 	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/distributor/settings"
@@ -57,6 +58,7 @@ func (s *subscriber) Start(ctx context.Context) error {
 			Group:    group,
 			Consumer: consumer,
 			Streams:  []string{common.VoteStream, ">"},
+			Block:    time.Second * 10,
 		}).Result()
 
 		if err == redis.Nil {
