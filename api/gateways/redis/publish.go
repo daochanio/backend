@@ -20,7 +20,7 @@ func (r *redisGateway) PublishVote(ctx context.Context, vote entities.Vote) erro
 	message, err := json.Marshal(voteJson)
 
 	if err != nil {
-		return fmt.Errorf("error marshalling threadVoteJson: %w", err)
+		return fmt.Errorf("error marshalling vote message: %w", err)
 	}
 
 	return r.client.XAdd(ctx, &redis.XAddArgs{

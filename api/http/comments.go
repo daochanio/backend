@@ -159,7 +159,7 @@ type commentJson struct {
 	IsDeleted        bool         `json:"isDeleted"`
 	CreatedAt        time.Time    `json:"createdAt"`
 	DeletedAt        *time.Time   `json:"deletedAt,omitempty"` // empty if comment not deleted
-	Votes            int64        `json:"votes,omitempty"`     // empty if reply
+	Votes            int64        `json:"votes"`               // zero if reply
 }
 
 func toCommentsJson(comments []entities.Comment) []commentJson {
