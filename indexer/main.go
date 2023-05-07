@@ -7,11 +7,11 @@ import (
 	"syscall"
 
 	"github.com/daochanio/backend/common"
+	"github.com/daochanio/backend/indexer/controllers/index"
 	"github.com/daochanio/backend/indexer/gateways/ethereum"
 	"github.com/daochanio/backend/indexer/gateways/postgres"
 	"github.com/daochanio/backend/indexer/settings"
 	"github.com/daochanio/backend/indexer/usecases"
-	"github.com/daochanio/backend/indexer/worker"
 	"go.uber.org/dig"
 )
 
@@ -45,12 +45,12 @@ func main() {
 	if err := container.Provide(usecases.NewIndexTokenUseCase); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(worker.NewWorker); err != nil {
+	if err := container.Provide(index.NewIndexer); err != nil {
 		panic(err)
 	}
 
 	// start the app in a go routine
-	if err := container.Invoke(startWorker); err != nil {
+	if err := container.Invoke(startIndexer); err != nil {
 		panic(err)
 	}
 
@@ -64,11 +64,11 @@ func appName() string {
 	return "indexer"
 }
 
-func startWorker(ctx context.Context, worker *worker.Worker, logger common.Logger) {
+func startIndexer(ctx context.Context, indexer index.Indexer, logger common.Logger) {
 	go func() {
 		// blocking call to start the worker
-		if err := worker.Start(ctx); err != nil {
-			logger.Error(ctx).Err(err).Msg("worker stopped")
+		if err := indexer.Start(ctx); err != nil {
+			logger.Error(ctx).Err(err).Msg("indexer stopped")
 			panic(err)
 		}
 	}()

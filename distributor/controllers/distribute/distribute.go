@@ -1,4 +1,4 @@
-package worker
+package distribute
 
 import (
 	"context"
@@ -8,24 +8,23 @@ import (
 	"github.com/daochanio/backend/distributor/settings"
 )
 
-type Worker interface {
+type Distributor interface {
 	Start(ctx context.Context) error
-	Distribute(ctx context.Context) error
 }
 
-type worker struct {
+type distributor struct {
 	logger   common.Logger
 	settings settings.Settings
 }
 
-func NewWorker(logger common.Logger, settings settings.Settings) Worker {
-	return &worker{
+func NewDistributor(logger common.Logger, settings settings.Settings) Distributor {
+	return &distributor{
 		logger,
 		settings,
 	}
 }
 
-func (d *worker) Start(ctx context.Context) error {
+func (d *distributor) Start(ctx context.Context) error {
 	d.logger.Info(ctx).Msg("starting worker")
 	for {
 		// wait until the next interval
@@ -39,7 +38,7 @@ func (d *worker) Start(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, d.settings.Interval())
 
 		d.logger.Info(ctx).Msg("running distribution")
-		err := d.Distribute(ctx)
+		err := d.distribute(ctx)
 		if err != nil {
 			d.logger.Error(ctx).Err(err).Msg("distribution failed")
 		}
@@ -50,6 +49,6 @@ func (d *worker) Start(ctx context.Context) error {
 	}
 }
 
-func (d *worker) Distribute(ctx context.Context) error {
+func (d *distributor) distribute(ctx context.Context) error {
 	return nil
 }

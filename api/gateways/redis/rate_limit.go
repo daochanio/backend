@@ -3,7 +3,6 @@ package redis
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/go-redis/redis_rate/v10"
@@ -29,8 +28,4 @@ func (r *redisGateway) VerifyRateLimit(ctx context.Context, key string, rate int
 	}
 
 	return nil
-}
-
-func getFullKey(namespace string, keys ...string) string {
-	return fmt.Sprintf("%v:%v", namespace, strings.Join(keys, ":"))
 }

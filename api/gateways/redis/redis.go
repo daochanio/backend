@@ -1,6 +1,9 @@
 package redis
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/daochanio/backend/api/settings"
 	"github.com/daochanio/backend/common"
 	"github.com/go-redis/redis_rate/v10"
@@ -30,4 +33,8 @@ func NewGateway(settings settings.Settings, logger common.Logger) *redisGateway 
 		client:   client,
 		limiter:  limiter,
 	}
+}
+
+func getFullKey(namespace string, keys ...string) string {
+	return fmt.Sprintf("%v:%v", namespace, strings.Join(keys, ":"))
 }

@@ -7,9 +7,9 @@ import (
 	"syscall"
 
 	"github.com/daochanio/backend/common"
+	"github.com/daochanio/backend/distributor/controllers/distribute"
+	"github.com/daochanio/backend/distributor/controllers/subscribe"
 	"github.com/daochanio/backend/distributor/settings"
-	"github.com/daochanio/backend/distributor/subscribe"
-	"github.com/daochanio/backend/distributor/worker"
 	"go.uber.org/dig"
 )
 
@@ -31,7 +31,7 @@ func main() {
 	if err := container.Provide(settings.NewSettings); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(worker.NewWorker); err != nil {
+	if err := container.Provide(distribute.NewDistributor); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(subscribe.NewSubscriber); err != nil {
@@ -39,7 +39,7 @@ func main() {
 	}
 
 	// start the app in a go routine
-	if err := container.Invoke(startWorker); err != nil {
+	if err := container.Invoke(startDistributor); err != nil {
 		panic(err)
 	}
 
@@ -57,10 +57,10 @@ func appName() string {
 	return "distributor"
 }
 
-func startWorker(ctx context.Context, worker worker.Worker, logger common.Logger) {
+func startDistributor(ctx context.Context, distributor distribute.Distributor, logger common.Logger) {
 	go func() {
-		if err := worker.Start(ctx); err != nil {
-			logger.Error(ctx).Err(err).Msg("worker stopped")
+		if err := distributor.Start(ctx); err != nil {
+			logger.Error(ctx).Err(err).Msg("distributor stopped")
 			panic(err)
 		}
 	}()
