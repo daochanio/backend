@@ -5,17 +5,16 @@ import (
 	"fmt"
 
 	"github.com/daochanio/backend/api/entities"
-	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 )
 
 type CreateVoteUseCase struct {
-	dbGateway      gateways.DatabaseGateway
-	messageGateway gateways.MessageGateway
+	dbGateway      DatabaseGateway
+	messageGateway MessageGateway
 	logger         common.Logger
 }
 
-func NewCreateVoteUseCase(dbGateway gateways.DatabaseGateway, messageGateway gateways.MessageGateway, logger common.Logger) *CreateVoteUseCase {
+func NewCreateVoteUseCase(dbGateway DatabaseGateway, messageGateway MessageGateway, logger common.Logger) *CreateVoteUseCase {
 	return &CreateVoteUseCase{
 		dbGateway,
 		messageGateway,
@@ -37,17 +36,8 @@ func (u *CreateVoteUseCase) Execute(ctx context.Context, input CreateVoteInput) 
 
 	vote := entities.NewVote(input.Id, input.Address, input.Value, input.Type)
 
-	switch input.Type {
-	case common.ThreadVote:
-		if err := u.dbGateway.CreateThreadVote(ctx, vote); err != nil {
-			return err
-		}
-	case common.CommentVote:
-		if err := u.dbGateway.CreateCommentVote(ctx, vote); err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("invalid vote type: %v", input.Type)
+	if err := u.dbGateway.CreateVote(ctx, vote); err != nil {
+		return fmt.Errorf("error creating vote: %w", err)
 	}
 
 	if err := u.messageGateway.PublishVote(ctx, vote); err != nil {

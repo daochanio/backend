@@ -4,18 +4,17 @@ import (
 	"context"
 	"math/big"
 
-	cmn "github.com/daochanio/backend/common"
-	"github.com/daochanio/backend/indexer/gateways"
+	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/indexer/settings"
 )
 
 type IndexTokenUseCase struct {
-	logger            cmn.Logger
+	logger            common.Logger
 	settings          settings.Settings
-	blockchainGateway gateways.IBlockchainGateway
+	blockchainGateway BlockchainGateway
 }
 
-func NewIndexTokenUseCase(logger cmn.Logger, settings settings.Settings, blockchainGateway gateways.IBlockchainGateway) *IndexTokenUseCase {
+func NewIndexTokenUseCase(logger common.Logger, settings settings.Settings, blockchainGateway BlockchainGateway) *IndexTokenUseCase {
 	return &IndexTokenUseCase{
 		logger,
 		settings,

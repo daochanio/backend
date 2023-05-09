@@ -6,8 +6,8 @@ import (
 
 	com "github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/indexer/entities"
-	"github.com/daochanio/backend/indexer/gateways"
 	"github.com/daochanio/backend/indexer/settings"
+	"github.com/daochanio/backend/indexer/usecases"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -19,7 +19,7 @@ type ethereumGateway struct {
 	settings  settings.Settings
 }
 
-func NewEthereumGateway(logger com.Logger, settings settings.Settings) gateways.IBlockchainGateway {
+func NewEthereumGateway(logger com.Logger, settings settings.Settings) usecases.BlockchainGateway {
 	ethClient, err := ethclient.Dial(settings.BlockchainURI())
 	if err != nil {
 		panic(err)

@@ -4,17 +4,16 @@ import (
 	"context"
 
 	"github.com/daochanio/backend/api/entities"
-	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 )
 
 type CreateThreadUseCase struct {
 	logger       common.Logger
-	imageGateway gateways.ImageGateway
-	dbGateway    gateways.DatabaseGateway
+	imageGateway ImageGateway
+	dbGateway    DatabaseGateway
 }
 
-func NewCreateThreadUseCase(logger common.Logger, imageGateway gateways.ImageGateway, dbGateway gateways.DatabaseGateway) *CreateThreadUseCase {
+func NewCreateThreadUseCase(logger common.Logger, imageGateway ImageGateway, dbGateway DatabaseGateway) *CreateThreadUseCase {
 	return &CreateThreadUseCase{
 		logger,
 		imageGateway,

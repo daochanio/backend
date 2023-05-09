@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 )
 
 func NewVerifyRateLimitUseCase(
 	logger common.Logger,
-	cacheGateway gateways.CacheGateway,
+	cacheGateway CacheGateway,
 ) *VerifyRateLimitUseCase {
 	return &VerifyRateLimitUseCase{
 		logger,
@@ -21,7 +20,7 @@ func NewVerifyRateLimitUseCase(
 
 type VerifyRateLimitUseCase struct {
 	logger       common.Logger
-	cacheGateway gateways.CacheGateway
+	cacheGateway CacheGateway
 }
 
 type VerifyRateLimitInput struct {

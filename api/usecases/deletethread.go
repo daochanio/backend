@@ -4,15 +4,14 @@ import (
 	"context"
 	"errors"
 
-	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 )
 
 type DeleteThreadUseCase struct {
-	dbGateway gateways.DatabaseGateway
+	dbGateway DatabaseGateway
 }
 
-func NewDeleteThreadUseCase(dbGateway gateways.DatabaseGateway) *DeleteThreadUseCase {
+func NewDeleteThreadUseCase(dbGateway DatabaseGateway) *DeleteThreadUseCase {
 	return &DeleteThreadUseCase{
 		dbGateway,
 	}

@@ -7,17 +7,16 @@ import (
 	"strings"
 
 	"github.com/daochanio/backend/api/entities"
-	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 	"github.com/google/uuid"
 )
 
 type UploadImageUsecase struct {
 	logger       common.Logger
-	imageGateway gateways.ImageGateway
+	imageGateway ImageGateway
 }
 
-func NewUploadImageUsecase(logger common.Logger, imageGateway gateways.ImageGateway) *UploadImageUsecase {
+func NewUploadImageUsecase(logger common.Logger, imageGateway ImageGateway) *UploadImageUsecase {
 	return &UploadImageUsecase{
 		logger,
 		imageGateway,

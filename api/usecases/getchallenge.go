@@ -4,18 +4,17 @@ import (
 	"context"
 
 	"github.com/daochanio/backend/api/entities"
-	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 )
 
-func NewGetChallengeUseCase(cacheGateway gateways.CacheGateway) *GetChallengeUseCase {
+func NewGetChallengeUseCase(cacheGateway CacheGateway) *GetChallengeUseCase {
 	return &GetChallengeUseCase{
 		cacheGateway,
 	}
 }
 
 type GetChallengeUseCase struct {
-	cacheGateway gateways.CacheGateway
+	cacheGateway CacheGateway
 }
 
 type GetChallengeInput struct {

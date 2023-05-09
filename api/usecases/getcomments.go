@@ -4,15 +4,14 @@ import (
 	"context"
 
 	"github.com/daochanio/backend/api/entities"
-	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 )
 
 type GetCommentsUseCase struct {
-	dbGateway gateways.DatabaseGateway
+	dbGateway DatabaseGateway
 }
 
-func NewGetCommentsUseCase(dbGateway gateways.DatabaseGateway) *GetCommentsUseCase {
+func NewGetCommentsUseCase(dbGateway DatabaseGateway) *GetCommentsUseCase {
 	return &GetCommentsUseCase{
 		dbGateway,
 	}

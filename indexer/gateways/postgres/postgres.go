@@ -6,26 +6,17 @@ import (
 	"math/big"
 
 	"github.com/daochanio/backend/db/bindings"
-	"github.com/daochanio/backend/indexer/gateways"
-	"github.com/daochanio/backend/indexer/settings"
+	"github.com/daochanio/backend/indexer/usecases"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type postgresGateway struct {
-	settings settings.Settings
-	queries  *bindings.Queries
+	queries *bindings.Queries
 }
 
-func NewPostgresGateway(ctx context.Context, settings settings.Settings) gateways.IDatabaseGateway {
-	db, err := pgxpool.New(ctx, settings.DbConnectionString())
-	if err != nil {
-		panic(err)
-	}
-
+func NewPostgresGateway(ctx context.Context, db *pgxpool.Pool) usecases.DatabaseGateway {
 	queries := bindings.New(db)
-
 	return &postgresGateway{
-		settings,
 		queries,
 	}
 }

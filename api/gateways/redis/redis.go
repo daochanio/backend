@@ -17,16 +17,8 @@ type redisGateway struct {
 	limiter  *redis_rate.Limiter
 }
 
-func NewGateway(settings settings.Settings, logger common.Logger) *redisGateway {
-	opt, err := redis.ParseURL(settings.CacheConnectionString())
-
-	if err != nil {
-		panic(err)
-	}
-
-	client := redis.NewClient(opt)
+func NewGateway(settings settings.Settings, logger common.Logger, client *redis.Client) *redisGateway {
 	limiter := redis_rate.NewLimiter(client)
-
 	return &redisGateway{
 		settings: settings,
 		logger:   logger,

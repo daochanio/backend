@@ -25,7 +25,7 @@ func NewDistributor(logger common.Logger, settings settings.Settings) Distributo
 }
 
 func (d *distributor) Start(ctx context.Context) error {
-	d.logger.Info(ctx).Msg("starting worker")
+	d.logger.Info(ctx).Msg("starting distributor")
 	for {
 		// wait until the next interval
 		// i.e if the interval is 5 minutes and the current time is 12:03:45

@@ -3,15 +3,14 @@ package usecases
 import (
 	"context"
 
-	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 )
 
 type VerifyChallengeUseCase struct {
-	cacheGateway gateways.CacheGateway
+	cacheGateway CacheGateway
 }
 
-func NewVerifyChallengeUseCase(cacheGateway gateways.CacheGateway) *VerifyChallengeUseCase {
+func NewVerifyChallengeUseCase(cacheGateway CacheGateway) *VerifyChallengeUseCase {
 	return &VerifyChallengeUseCase{
 		cacheGateway,
 	}

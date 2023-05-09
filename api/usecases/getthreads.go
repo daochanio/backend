@@ -4,15 +4,14 @@ import (
 	"context"
 
 	"github.com/daochanio/backend/api/entities"
-	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 )
 
 type GetThreadsUseCase struct {
-	dbGateway gateways.DatabaseGateway
+	dbGateway DatabaseGateway
 }
 
-func NewGetThreadsUseCase(dbGateway gateways.DatabaseGateway) *GetThreadsUseCase {
+func NewGetThreadsUseCase(dbGateway DatabaseGateway) *GetThreadsUseCase {
 	return &GetThreadsUseCase{
 		dbGateway,
 	}

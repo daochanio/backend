@@ -4,15 +4,14 @@ import (
 	"context"
 	"errors"
 
-	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 )
 
 type DeleteCommentUseCase struct {
-	dbGateway gateways.DatabaseGateway
+	dbGateway DatabaseGateway
 }
 
-func NewDeleteCommentUseCase(dbGateway gateways.DatabaseGateway) *DeleteCommentUseCase {
+func NewDeleteCommentUseCase(dbGateway DatabaseGateway) *DeleteCommentUseCase {
 	return &DeleteCommentUseCase{
 		dbGateway,
 	}

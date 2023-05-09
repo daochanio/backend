@@ -28,7 +28,7 @@ func NewIndexer(logger common.Logger, settings settings.Settings, indexBlocksUse
 }
 
 func (i *indexer) Start(ctx context.Context) error {
-	i.logger.Info(ctx).Msg("starting worker")
+	i.logger.Info(ctx).Msg("starting indexer")
 	for {
 		err := i.indexBlocksUseCase.Execute(ctx)
 
