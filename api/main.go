@@ -25,6 +25,25 @@ import (
 )
 
 func main() {
+	container := newContainer()
+
+	// start the http controller inside a go routine
+	if err := container.Invoke(startHttpServer); err != nil {
+		panic(err)
+	}
+
+	// start the message subscriber inside a go routine
+	if err := container.Invoke(startMessageSubscriber); err != nil {
+		panic(err)
+	}
+
+	// blocking call in main go routine to await sigterm
+	if err := container.Invoke(awaitSigterm); err != nil {
+		panic(err)
+	}
+}
+
+func newContainer() *dig.Container {
 	container := dig.New()
 
 	if err := container.Provide(context.Background); err != nil {
@@ -54,7 +73,6 @@ func main() {
 	if err := container.Provide(pg.NewDatabaseGateway); err != nil {
 		panic(err)
 	}
-	// redis provides multiple interface implementations
 	if err := container.Provide(redis.NewGateway, dig.As(new(usecases.MessageGateway), new(usecases.CacheGateway))); err != nil {
 		panic(err)
 	}
@@ -112,21 +130,7 @@ func main() {
 	if err := container.Provide(subscribe.NewSubscriber); err != nil {
 		panic(err)
 	}
-
-	// start the http controller inside a go routine
-	if err := container.Invoke(startHttpServer); err != nil {
-		panic(err)
-	}
-
-	// start the message subscriber inside a go routine
-	if err := container.Invoke(startMessageSubscriber); err != nil {
-		panic(err)
-	}
-
-	// blocking call in main go routine to await sigterm
-	if err := container.Invoke(awaitSigterm); err != nil {
-		panic(err)
-	}
+	return container
 }
 
 func appName() string {
