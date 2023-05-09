@@ -12,6 +12,7 @@ import (
 	"github.com/daochanio/backend/indexer/gateways/postgres"
 	"github.com/daochanio/backend/indexer/settings"
 	"github.com/daochanio/backend/indexer/usecases"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/dig"
 )
 
@@ -31,6 +32,9 @@ func main() {
 		panic(err)
 	}
 	if err := container.Provide(settings.NewSettings); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(newPGPool); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(postgres.NewPostgresGateway); err != nil {
@@ -66,12 +70,27 @@ func appName() string {
 
 func startIndexer(ctx context.Context, indexer index.Indexer, logger common.Logger) {
 	go func() {
-		// blocking call to start the worker
+		// blocking call to start the indexer
 		if err := indexer.Start(ctx); err != nil {
 			logger.Error(ctx).Err(err).Msg("indexer stopped")
 			panic(err)
 		}
 	}()
+}
+
+func newPGPool(ctx context.Context, settings settings.Settings) *pgxpool.Pool {
+	config, err := pgxpool.ParseConfig(settings.DbConnectionString())
+
+	if err != nil {
+		panic(err)
+	}
+
+	db, err := pgxpool.NewWithConfig(ctx, config)
+	if err != nil {
+		panic(err)
+	}
+
+	return db
 }
 
 func awaitSigterm(ctx context.Context, logger common.Logger) {

@@ -26,17 +26,9 @@ type subscriber struct {
 	lastFlush             time.Time
 }
 
-func NewSubscriber(logger common.Logger, settings settings.Settings, commonSettings common.CommonSettings, aggregateVotesUseCase *usecases.AggregateVotesUseCase) Subscriber {
-	opt, err := redis.ParseURL(settings.StreamConnectionString())
-
-	if err != nil {
-		panic(err)
-	}
-
-	client := redis.NewClient(opt)
+func NewSubscriber(logger common.Logger, settings settings.Settings, client *redis.Client, commonSettings common.CommonSettings, aggregateVotesUseCase *usecases.AggregateVotesUseCase) Subscriber {
 	buffer := map[string]common.VoteMessage{}
 	lastFlush := time.Now()
-
 	return &subscriber{
 		logger,
 		settings,

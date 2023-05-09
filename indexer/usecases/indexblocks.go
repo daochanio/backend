@@ -6,15 +6,14 @@ import (
 	"math/big"
 
 	"github.com/daochanio/backend/common"
-	"github.com/daochanio/backend/indexer/gateways"
 	"github.com/daochanio/backend/indexer/settings"
 )
 
 type IndexBlocksUseCase struct {
 	logger            common.Logger
 	settings          settings.Settings
-	databaseGateway   gateways.IDatabaseGateway
-	blockchainGateway gateways.IBlockchainGateway
+	databaseGateway   DatabaseGateway
+	blockchainGateway BlockchainGateway
 	indexRepUseCase   *IndexTokenUseCase
 }
 
@@ -22,8 +21,8 @@ func NewIndexBlocksUseCase(
 	logger common.Logger,
 	settings settings.Settings,
 	indexRepUseCase *IndexTokenUseCase,
-	databaseGateway gateways.IDatabaseGateway,
-	blockchainGateway gateways.IBlockchainGateway) *IndexBlocksUseCase {
+	databaseGateway DatabaseGateway,
+	blockchainGateway BlockchainGateway) *IndexBlocksUseCase {
 	return &IndexBlocksUseCase{
 		logger,
 		settings,

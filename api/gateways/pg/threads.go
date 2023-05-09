@@ -116,29 +116,3 @@ func (p *postgresGateway) DeleteThread(ctx context.Context, id int64) error {
 
 	return err
 }
-
-func (p *postgresGateway) CreateThreadVote(ctx context.Context, vote entities.Vote) error {
-	switch vote.Value() {
-	case common.Upvote:
-		return p.queries.CreateThreadUpVote(ctx, bindings.CreateThreadUpVoteParams{
-			ThreadID: vote.Id(),
-			Address:  vote.Address(),
-		})
-	case common.Downvote:
-		return p.queries.CreateThreadDownVote(ctx, bindings.CreateThreadDownVoteParams{
-			ThreadID: vote.Id(),
-			Address:  vote.Address(),
-		})
-	case common.Unvote:
-		return p.queries.CreateThreadUnVote(ctx, bindings.CreateThreadUnVoteParams{
-			ThreadID: vote.Id(),
-			Address:  vote.Address(),
-		})
-	default:
-		return errors.New("invalid vote type")
-	}
-}
-
-func (p *postgresGateway) AggregateThreadVotes(ctx context.Context, threadId int64) error {
-	return p.queries.AggregateThreadVotes(ctx, threadId)
-}

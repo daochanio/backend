@@ -4,16 +4,15 @@ import (
 	"context"
 
 	"github.com/daochanio/backend/api/entities"
-	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 )
 
 type CreateCommentUseCase struct {
-	dbGateway    gateways.DatabaseGateway
-	imageGateway gateways.ImageGateway
+	dbGateway    DatabaseGateway
+	imageGateway ImageGateway
 }
 
-func NewCreateCommentUseCase(dbGateway gateways.DatabaseGateway, imageGateway gateways.ImageGateway) *CreateCommentUseCase {
+func NewCreateCommentUseCase(dbGateway DatabaseGateway, imageGateway ImageGateway) *CreateCommentUseCase {
 	return &CreateCommentUseCase{
 		dbGateway,
 		imageGateway,

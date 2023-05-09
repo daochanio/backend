@@ -5,30 +5,21 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/api/settings"
+	"github.com/daochanio/backend/api/usecases"
 	"github.com/daochanio/backend/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
 type ethereumGateway struct {
 	settings settings.Settings
 	logger   common.Logger
-	client   *ethclient.Client
 }
 
-func NewBlockchainGateway(ctx context.Context, settings settings.Settings, logger common.Logger) gateways.BlockchainGateway {
-	client, err := ethclient.DialContext(ctx, settings.BlockchainURI())
-
-	if err != nil {
-		panic(err)
-	}
-
+func NewBlockchainGateway(settings settings.Settings, logger common.Logger) usecases.BlockchainGateway {
 	return &ethereumGateway{
 		settings,
 		logger,
-		client,
 	}
 }
 

@@ -6,28 +6,25 @@ import (
 	"sync"
 
 	"github.com/daochanio/backend/api/entities"
-	"github.com/daochanio/backend/api/gateways"
 	"github.com/daochanio/backend/common"
 )
 
 type GetThreadUseCase struct {
-	dbGateway gateways.DatabaseGateway
+	dbGateway DatabaseGateway
 }
 
-func NewGetThreadUseCase(dbGateway gateways.DatabaseGateway) *GetThreadUseCase {
+func NewGetThreadUseCase(dbGateway DatabaseGateway) *GetThreadUseCase {
 	return &GetThreadUseCase{
 		dbGateway,
 	}
 }
 
-// get thread input
 type GetThreadInput struct {
 	ThreadId      int64 `validate:"gt=0"`
 	CommentOffset int64 `validate:"gte=0"`
 	CommentLimit  int64 `validate:"gt=0,lte=100"`
 }
 
-// Fetches a thread and its comments
 func (u *GetThreadUseCase) Execute(ctx context.Context, input GetThreadInput) (entities.Thread, int64, error) {
 	if err := common.ValidateStruct(input); err != nil {
 		return entities.Thread{}, -1, fmt.Errorf("invalid input: %w", err)
