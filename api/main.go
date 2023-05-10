@@ -171,7 +171,7 @@ func newPGPool(ctx context.Context, settings settings.Settings) *pgxpool.Pool {
 	}
 
 	config.MinConns = 10
-	config.MaxConns = 40
+	config.MaxConns = 100
 
 	db, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
