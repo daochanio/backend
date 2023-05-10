@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"runtime"
 	"time"
 
 	"github.com/daochanio/backend/api/entities"
@@ -46,7 +47,20 @@ func (p *postgresGateway) CreateThread(ctx context.Context, thread entities.Thre
 }
 
 func (p *postgresGateway) GetThreads(ctx context.Context, limit int64) ([]entities.Thread, error) {
+	t1 := time.Now()
 	threads, err := p.queries.GetThreads(ctx, limit)
+	p.logger.Info(ctx).Msgf("get threads duration %v", time.Since(t1))
+	numCPUs := runtime.NumCPU()
+	p.logger.Info(ctx).Msgf("num cpus %v", numCPUs)
+	stats := p.db.Stat()
+	p.logger.Info(ctx).Msgf("postgres pool stats before: total conns %v max conns %v new conns %v idle conns %v max idle destroy conns %v max lifetime destroy conns %v empty acquire conns %v",
+		stats.TotalConns(),
+		stats.MaxConns(),
+		stats.NewConnsCount(),
+		stats.IdleConns(),
+		stats.MaxIdleDestroyCount(),
+		stats.MaxLifetimeDestroyCount(),
+		stats.EmptyAcquireCount())
 
 	if err != nil {
 		return nil, err

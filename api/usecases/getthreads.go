@@ -2,7 +2,6 @@ package usecases
 
 import (
 	"context"
-	"time"
 
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/common"
@@ -30,9 +29,5 @@ func (u *GetThreadsUseCase) Execute(ctx context.Context, input GetThreadsInput) 
 		return nil, err
 	}
 
-	t1 := time.Now()
-	threads, err := u.dbGateway.GetThreads(ctx, input.Limit)
-	u.logger.Info(ctx).Msgf("get threads duration %v", time.Since(t1))
-
-	return threads, err
+	return u.dbGateway.GetThreads(ctx, input.Limit)
 }

@@ -11,6 +11,7 @@ import (
 type postgresGateway struct {
 	settings settings.Settings
 	logger   common.Logger
+	db       *pgxpool.Pool
 	queries  *bindings.Queries
 }
 
@@ -19,6 +20,7 @@ func NewDatabaseGateway(settings settings.Settings, logger common.Logger, db *pg
 	return &postgresGateway{
 		settings,
 		logger,
+		db,
 		queries,
 	}
 }
