@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"time"
 
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/common"
@@ -9,11 +10,13 @@ import (
 
 type GetThreadsUseCase struct {
 	dbGateway DatabaseGateway
+	logger    common.Logger
 }
 
-func NewGetThreadsUseCase(dbGateway DatabaseGateway) *GetThreadsUseCase {
+func NewGetThreadsUseCase(dbGateway DatabaseGateway, logger common.Logger) *GetThreadsUseCase {
 	return &GetThreadsUseCase{
 		dbGateway,
+		logger,
 	}
 }
 
@@ -27,5 +30,9 @@ func (u *GetThreadsUseCase) Execute(ctx context.Context, input GetThreadsInput) 
 		return nil, err
 	}
 
-	return u.dbGateway.GetThreads(ctx, input.Limit)
+	t1 := time.Now()
+	threads, err := u.dbGateway.GetThreads(ctx, input.Limit)
+	u.logger.Info(ctx).Msgf("get threads duration %v", time.Since(t1))
+
+	return threads, err
 }
