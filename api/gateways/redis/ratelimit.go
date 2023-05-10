@@ -3,7 +3,6 @@ package redis
 import (
 	"context"
 	"fmt"
-	"runtime"
 	"time"
 
 	"github.com/go-redis/redis_rate/v10"
@@ -21,8 +20,6 @@ func (r *redisGateway) VerifyRateLimit(ctx context.Context, key string, rate int
 		Burst:  rate,
 	})
 	r.logger.Info(ctx).Msgf("rate limit duration %v", time.Since(t1))
-	numCPUs := runtime.NumCPU()
-	r.logger.Info(ctx).Msgf("num cpus %v", numCPUs)
 	stats := r.client.PoolStats()
 	r.logger.Info(ctx).Msgf("redis pool stats after: %+v", stats)
 

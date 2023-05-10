@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -171,9 +170,8 @@ func newPGPool(ctx context.Context, settings settings.Settings) *pgxpool.Pool {
 		panic(err)
 	}
 
-	numCPU := runtime.NumCPU()
-	config.MinConns = int32(numCPU)
-	config.MaxConns = int32(numCPU) * 4
+	config.MinConns = 10
+	config.MaxConns = 40
 
 	db, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
@@ -190,9 +188,8 @@ func newRedisClient(settings settings.Settings) *goredis.Client {
 		panic(err)
 	}
 
-	numCPU := runtime.NumCPU()
-	opt.MinIdleConns = numCPU
-	opt.PoolSize = numCPU * 10
+	opt.MinIdleConns = 10
+	opt.PoolSize = 100
 
 	return goredis.NewClient(opt)
 }
