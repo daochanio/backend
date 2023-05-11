@@ -100,7 +100,7 @@ func (h *httpServer) Start(ctx context.Context) error {
 
 		// public routes
 		r.Group(func(r chi.Router) {
-			r.Use(h.rateLimit("public", 10000, time.Minute)) // TODO: Make this more restrictive
+			r.Use(h.rateLimit("public", 10000, time.Minute)) // TODO:  Make this more restrictive
 			r.Use(h.maxSize(1))
 
 			r.Put("/challenge", h.getChallengeRoute)
