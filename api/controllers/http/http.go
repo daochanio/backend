@@ -100,7 +100,7 @@ func (h *httpServer) Start(ctx context.Context) error {
 
 		// public routes
 		r.Group(func(r chi.Router) {
-			r.Use(h.rateLimit("public", 10000, time.Minute)) // TODO:  Make this more restrictive
+			r.Use(h.rateLimit("public", 10000, time.Minute)) // TODO:  Make rate limiting more restrictive
 			r.Use(h.maxSize(1))
 
 			r.Put("/challenge", h.getChallengeRoute)
@@ -115,7 +115,7 @@ func (h *httpServer) Start(ctx context.Context) error {
 			r.Use(h.maxSize(5))
 
 			r.With(h.rateLimit("create:thread", 2, time.Minute*10)).Post("/threads", h.createThreadRoute)
-			r.With(h.rateLimit("vote:thread", 10, time.Minute)).Put("/threads/{threadId}/votes/{value}", h.createThreadVoteRoute)
+			r.With(h.rateLimit("vote:thread", 10000, time.Minute)).Put("/threads/{threadId}/votes/{value}", h.createThreadVoteRoute) // TODO:  Make rate limiting more restrictive
 			r.With(h.rateLimit("create:comment", 5, time.Minute*10)).Post("/threads/{threadId}/comments", h.createCommentRoute)
 			r.With(h.rateLimit("vote:comment", 10, time.Minute)).Put("/threads/{threadId}/comments/{commentId}/votes/{value}", h.createCommentVoteRoute)
 		})
