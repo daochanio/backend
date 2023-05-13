@@ -73,6 +73,8 @@ func (s *subscriber) Start(ctx context.Context) error {
 // Reads messages from the streams starting by checking the pending messages that are unacknowledged
 // If there are no messages, block for 10 seconds
 func (s *subscriber) readMessages(ctx context.Context, group string, consumer string) ([]redis.XStream, error) {
+	time.Sleep(time.Second * 5)
+
 	for _, stream := range []string{common.VoteStream} {
 		messages, _, err := s.client.XAutoClaim(ctx, &redis.XAutoClaimArgs{
 			Stream:  stream,
@@ -86,6 +88,8 @@ func (s *subscriber) readMessages(ctx context.Context, group string, consumer st
 			return []redis.XStream{}, fmt.Errorf("error claiming pending messages from stream: %v %w", stream, err)
 		}
 
+		s.logger.Info(ctx).Msgf("claimed %v pending messages from stream %v group %v", len(messages), stream, group)
+
 		if len(messages) > 0 {
 			return []redis.XStream{{
 				Stream:   stream,
@@ -94,21 +98,23 @@ func (s *subscriber) readMessages(ctx context.Context, group string, consumer st
 		}
 	}
 
-	results, err := s.client.XReadGroup(ctx, &redis.XReadGroupArgs{
-		Group:    group,
-		Consumer: consumer,
-		Streams:  []string{common.VoteStream, ">"},
-		Block:    time.Second * 10,
-		Count:    100,
-	}).Result()
+	return []redis.XStream{}, nil
 
-	if err == redis.Nil {
-		return []redis.XStream{}, nil
-	}
+	// results, err := s.client.XReadGroup(ctx, &redis.XReadGroupArgs{
+	// 	Group:    group,
+	// 	Consumer: consumer,
+	// 	Streams:  []string{common.VoteStream, ">"},
+	// 	Block:    time.Second * 10,
+	// 	Count:    100,
+	// }).Result()
 
-	if err != nil {
-		return []redis.XStream{}, fmt.Errorf("error reading messages from streams: %w", err)
-	}
+	// if err == redis.Nil {
+	// 	return []redis.XStream{}, nil
+	// }
 
-	return results, err
+	// if err != nil {
+	// 	return []redis.XStream{}, fmt.Errorf("error reading messages from streams: %w", err)
+	// }
+
+	// return results, err
 }
