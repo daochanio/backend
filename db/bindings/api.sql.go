@@ -133,31 +133,6 @@ func (q *Queries) CreateCommentUpVote(ctx context.Context, arg CreateCommentUpVo
 	return err
 }
 
-const createOrUpdateUser = `-- name: CreateOrUpdateUser :one
-INSERT INTO users (address, ens_name)
-VALUES ($1, $2)
-ON CONFLICT (address) DO UPDATE SET ens_name = $2, updated_at = NOW()
-RETURNING address, ens_name, created_at, updated_at
-`
-
-type CreateOrUpdateUserParams struct {
-	Address string
-	EnsName pgtype.Text
-}
-
-// create/update user every time the sign-in
-func (q *Queries) CreateOrUpdateUser(ctx context.Context, arg CreateOrUpdateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, createOrUpdateUser, arg.Address, arg.EnsName)
-	var i User
-	err := row.Scan(
-		&i.Address,
-		&i.EnsName,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const createThread = `-- name: CreateThread :one
 INSERT INTO threads (address, title, content, image_file_name, image_url, image_content_type)
 VALUES ($1, $2, $3, $4, $5, $6)
@@ -464,4 +439,34 @@ func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]Thread, err
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateUser = `-- name: UpdateUser :exec
+UPDATE users
+SET
+	ens_name = $2,
+	updated_at = NOW()
+WHERE address = $1
+`
+
+type UpdateUserParams struct {
+	Address string
+	EnsName pgtype.Text
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
+	_, err := q.db.Exec(ctx, updateUser, arg.Address, arg.EnsName)
+	return err
+}
+
+const upsertUser = `-- name: UpsertUser :exec
+INSERT INTO users (address)
+VALUES ($1)
+ON CONFLICT (address) DO NOTHING
+`
+
+// upsert user every time they signin so we don't have to check if they exist
+func (q *Queries) UpsertUser(ctx context.Context, address string) error {
+	_, err := q.db.Exec(ctx, upsertUser, address)
+	return err
 }

@@ -24,10 +24,9 @@ type HttpServer interface {
 type httpServer struct {
 	logger                 common.Logger
 	settings               settings.Settings
-	getChallengeUseCase    *usecases.GetChallengeUseCase
+	signinUseCase          *usecases.SigninUseCase
 	verifyChallengeUseCase *usecases.VerifyChallengeUseCase
 	verifyRateLimitUseCase *usecases.VerifyRateLimitUseCase
-	createUserUseCase      *usecases.CreateUserUseCase
 	createThreadUseCase    *usecases.CreateThreadUseCase
 	getThreadUseCase       *usecases.GetThreadUseCase
 	getThreadsUseCase      *usecases.GetThreadsUseCase
@@ -42,10 +41,9 @@ type httpServer struct {
 func NewHttpServer(
 	logger common.Logger,
 	settings settings.Settings,
-	getChallengeUseCase *usecases.GetChallengeUseCase,
+	signinUseCase *usecases.SigninUseCase,
 	verifyChallengeUseCase *usecases.VerifyChallengeUseCase,
 	verifyRateLimitUseCase *usecases.VerifyRateLimitUseCase,
-	createUserUseCase *usecases.CreateUserUseCase,
 	createThreadUseCase *usecases.CreateThreadUseCase,
 	getThreadUseCase *usecases.GetThreadUseCase,
 	getThreadsUseCase *usecases.GetThreadsUseCase,
@@ -58,10 +56,9 @@ func NewHttpServer(
 	return &httpServer{
 		logger,
 		settings,
-		getChallengeUseCase,
+		signinUseCase,
 		verifyChallengeUseCase,
 		verifyRateLimitUseCase,
-		createUserUseCase,
 		createThreadUseCase,
 		getThreadUseCase,
 		getThreadsUseCase,
@@ -103,7 +100,7 @@ func (h *httpServer) Start(ctx context.Context) error {
 			r.Use(h.rateLimit("public", 10000, time.Minute)) // TODO:  Make rate limiting more restrictive
 			r.Use(h.maxSize(1))
 
-			r.Put("/challenge", h.getChallengeRoute)
+			r.Put("/signin", h.signinRoute)
 			r.Get("/threads", h.getThreadsRoute)
 			r.Get("/threads/{threadId}", h.getThreadByIdRoute)
 			r.Get("/threads/{threadId}/comments", h.getCommentsRoute)

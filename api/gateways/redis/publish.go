@@ -32,3 +32,24 @@ func (r *redisGateway) PublishVote(ctx context.Context, vote entities.Vote) erro
 		},
 	}).Err()
 }
+
+func (r *redisGateway) PublishSignin(ctx context.Context, address string) error {
+	voteJson := common.SigninMessage{
+		Address: address,
+	}
+
+	message, err := json.Marshal(voteJson)
+
+	if err != nil {
+		return fmt.Errorf("error marshalling signin message: %w", err)
+	}
+
+	return r.client.XAdd(ctx, &redis.XAddArgs{
+		Stream: common.SigninStream,
+		ID:     "*",
+		MaxLen: 10000,
+		Values: map[string]any{
+			"body": message,
+		},
+	}).Err()
+}

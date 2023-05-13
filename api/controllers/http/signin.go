@@ -8,17 +8,17 @@ import (
 	"github.com/daochanio/backend/api/usecases"
 )
 
-func (h *httpServer) getChallengeRoute(w http.ResponseWriter, r *http.Request) {
+func (h *httpServer) signinRoute(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var body challengeJsonRequest
+	var body signinJsonRequest
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		h.presentBadRequest(w, r, err)
 		return
 	}
 
-	challenge, err := h.getChallengeUseCase.Execute(ctx, &usecases.GetChallengeInput{
+	challenge, err := h.signinUseCase.Execute(ctx, usecases.SigninUseCaseInput{
 		Address: body.Address,
 	})
 
@@ -30,7 +30,7 @@ func (h *httpServer) getChallengeRoute(w http.ResponseWriter, r *http.Request) {
 	h.presentJSON(w, r, http.StatusOK, toChallengeJson(challenge), nil)
 }
 
-type challengeJsonRequest struct {
+type signinJsonRequest struct {
 	Address string `json:"address"`
 }
 

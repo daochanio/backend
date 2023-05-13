@@ -1,9 +1,15 @@
--- create/update user every time the sign-in
--- name: CreateOrUpdateUser :one
-INSERT INTO users (address, ens_name)
-VALUES ($1, $2)
-ON CONFLICT (address) DO UPDATE SET ens_name = $2, updated_at = NOW()
-RETURNING *;
+-- upsert user every time they signin so we don't have to check if they exist
+-- name: UpsertUser :exec
+INSERT INTO users (address)
+VALUES ($1)
+ON CONFLICT (address) DO NOTHING;
+
+-- name: UpdateUser :exec
+UPDATE users
+SET
+	ens_name = $2,
+	updated_at = NOW()
+WHERE address = $1;
 
 -- name: CreateThread :one
 INSERT INTO threads (address, title, content, image_file_name, image_url, image_content_type)

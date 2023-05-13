@@ -82,16 +82,13 @@ func newContainer() *dig.Container {
 	if err := container.Provide(ethereum.NewBlockchainGateway); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(usecases.NewCreateUserUseCase); err != nil {
-		panic(err)
-	}
 	if err := container.Provide(usecases.NewVerifyRateLimitUseCase); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(usecases.NewVerifyChallengeUseCase); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(usecases.NewGetChallengeUseCase); err != nil {
+	if err := container.Provide(usecases.NewSigninUseCase); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(usecases.NewGetThreadUseCase); err != nil {
@@ -122,6 +119,9 @@ func newContainer() *dig.Container {
 		panic(err)
 	}
 	if err := container.Provide(usecases.NewAggregateVotesUseCase); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewHydrateUserUseCase); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(http.NewHttpServer); err != nil {
