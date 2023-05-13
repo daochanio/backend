@@ -21,7 +21,7 @@ func (h *httpServer) authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		err := h.verifyChallengeUseCase.Execute(ctx, &usecases.VerifyChallengeInput{
+		err := h.authenticateUseCase.Execute(ctx, &usecases.AuthenticateInput{
 			Address: address,
 			SigHex:  token[1],
 		})

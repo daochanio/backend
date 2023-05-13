@@ -85,7 +85,7 @@ func newContainer() *dig.Container {
 	if err := container.Provide(usecases.NewVerifyRateLimitUseCase); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(usecases.NewVerifyChallengeUseCase); err != nil {
+	if err := container.Provide(usecases.NewAuthenticateUseCase); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(usecases.NewSigninUseCase); err != nil {

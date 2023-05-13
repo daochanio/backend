@@ -25,7 +25,7 @@ type httpServer struct {
 	logger                 common.Logger
 	settings               settings.Settings
 	signinUseCase          *usecases.SigninUseCase
-	verifyChallengeUseCase *usecases.VerifyChallengeUseCase
+	authenticateUseCase    *usecases.AuthenticateUseCase
 	verifyRateLimitUseCase *usecases.VerifyRateLimitUseCase
 	createThreadUseCase    *usecases.CreateThreadUseCase
 	getThreadUseCase       *usecases.GetThreadUseCase
@@ -42,7 +42,7 @@ func NewHttpServer(
 	logger common.Logger,
 	settings settings.Settings,
 	signinUseCase *usecases.SigninUseCase,
-	verifyChallengeUseCase *usecases.VerifyChallengeUseCase,
+	authenticateUseCase *usecases.AuthenticateUseCase,
 	verifyRateLimitUseCase *usecases.VerifyRateLimitUseCase,
 	createThreadUseCase *usecases.CreateThreadUseCase,
 	getThreadUseCase *usecases.GetThreadUseCase,
@@ -57,7 +57,7 @@ func NewHttpServer(
 		logger,
 		settings,
 		signinUseCase,
-		verifyChallengeUseCase,
+		authenticateUseCase,
 		verifyRateLimitUseCase,
 		createThreadUseCase,
 		getThreadUseCase,
