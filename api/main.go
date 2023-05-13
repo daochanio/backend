@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -188,8 +189,12 @@ func newRedisClient(settings settings.Settings) *goredis.Client {
 		panic(err)
 	}
 
+	opt.DialTimeout = 10 * time.Second
 	opt.MinIdleConns = 10
 	opt.PoolSize = 100
+	// timeouts are handled through request context
+	opt.ReadTimeout = -1
+	opt.WriteTimeout = -1
 
 	return goredis.NewClient(opt)
 }
