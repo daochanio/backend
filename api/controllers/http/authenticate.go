@@ -21,7 +21,7 @@ func (h *httpServer) authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		err := h.verifyChallengeUseCase.Execute(ctx, &usecases.VerifyChallengeInput{
+		err := h.authenticateUseCase.Execute(ctx, &usecases.AuthenticateInput{
 			Address: address,
 			SigHex:  token[1],
 		})
@@ -31,16 +31,7 @@ func (h *httpServer) authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		user, err := h.createUserUseCase.Execute(ctx, &usecases.CreateUserInput{
-			Address: address,
-		})
-
-		if err != nil {
-			h.presentBadRequest(w, r, err)
-			return
-		}
-
-		ctx = context.WithValue(ctx, common.ContextKeyAddress, user.Address())
+		ctx = context.WithValue(ctx, common.ContextKeyAddress, address)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

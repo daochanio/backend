@@ -14,7 +14,8 @@ type DatabaseGateway interface {
 	GetComments(ctx context.Context, threadId int64, offset int64, limit int64) ([]entities.Comment, int64, error)
 	GetCommentById(ctx context.Context, commentId int64) (entities.Comment, error)
 
-	CreateOrUpdateUser(ctx context.Context, address string, ensName *string) (entities.User, error)
+	UpsertUser(ctx context.Context, address string) error
+	UpdateUser(ctx context.Context, address string, ensName *string) error
 	CreateComment(ctx context.Context, comment entities.Comment, repliedToCommentId *int64) (entities.Comment, error)
 	CreateThread(ctx context.Context, thread entities.Thread) (entities.Thread, error)
 	CreateVote(ctx context.Context, vote entities.Vote) error
@@ -30,6 +31,7 @@ type CacheGateway interface {
 }
 
 type MessageGateway interface {
+	PublishSignin(ctx context.Context, address string) error
 	PublishVote(ctx context.Context, vote entities.Vote) error
 }
 

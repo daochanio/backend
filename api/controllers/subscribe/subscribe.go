@@ -22,12 +22,18 @@ type subscriber struct {
 	commonSettings        common.CommonSettings
 	client                *redis.Client
 	aggregateVotesUseCase *usecases.AggregateVotesUseCase
-	buffer                map[string]common.VoteMessage
+	hydrateUserUseCase    *usecases.HydrateUserUseCase
+	messageBuffer         map[string]*bufferMessage
 	lastFlush             time.Time
 }
 
-func NewSubscriber(logger common.Logger, settings settings.Settings, client *redis.Client, commonSettings common.CommonSettings, aggregateVotesUseCase *usecases.AggregateVotesUseCase) Subscriber {
-	buffer := map[string]common.VoteMessage{}
+type bufferMessage struct {
+	message any
+	stream  common.Stream
+}
+
+func NewSubscriber(logger common.Logger, settings settings.Settings, client *redis.Client, commonSettings common.CommonSettings, aggregateVotesUseCase *usecases.AggregateVotesUseCase, hydrateUserUseCase *usecases.HydrateUserUseCase) Subscriber {
+	buffer := map[string]*bufferMessage{}
 	lastFlush := time.Now()
 	return &subscriber{
 		logger,
@@ -35,41 +41,64 @@ func NewSubscriber(logger common.Logger, settings settings.Settings, client *red
 		commonSettings,
 		client,
 		aggregateVotesUseCase,
+		hydrateUserUseCase,
 		buffer,
 		lastFlush,
 	}
 }
 
 // Subscribe to the vote stream and read incoming votes
-// Buffer comments/thread ids of votes as having "dirty" vote counts.
+// Buffer successive messages with the same key to minimize work
+// I.e buffering on votes is to avoid excessive writes on the same column for hot threads/comments
 // Flush the buffer at a certain length threshold or past a certain number of seconds.
-// Buffering is to avoid excessive writes on the same column for hot threads/comments
 // TODO: Could make this more efficient by having the vote aggregation usecase batch update instead of one by one
 func (s *subscriber) Start(ctx context.Context) error {
 	group := s.commonSettings.Appname()
 	consumer := s.commonSettings.Hostname()
 
+	_ = s.client.XGroupCreateMkStream(ctx, common.SigninStream, group, "$").Err()
 	_ = s.client.XGroupCreateMkStream(ctx, common.VoteStream, group, "$").Err()
 
 	for {
-		if len(s.buffer) > 1000 || (time.Since(s.lastFlush) > time.Second*15 && len(s.buffer) > 0) {
-			s.logger.Info(ctx).Msgf("flushing buffer with %v dirty comments/threads", len(s.buffer))
+		if len(s.messageBuffer) > 1000 || (time.Since(s.lastFlush) > time.Second*15 && len(s.messageBuffer) > 0) {
+			s.logger.Info(ctx).Msgf("flushing buffer with size %v", len(s.messageBuffer))
 			s.lastFlush = time.Now()
-			for key, voteMessage := range s.buffer {
-				if err := s.aggregateVotesUseCase.Execute(ctx, usecases.AggregateVotesInput{
-					Id:   voteMessage.Id,
-					Type: voteMessage.Type,
-				}); err != nil {
-					s.logger.Error(ctx).Err(err).Msgf("error aggregating votes for %v %v", voteMessage.Type, voteMessage.Id)
+			for key, bufferMessage := range s.messageBuffer {
+				switch bufferMessage.stream {
+				case common.VoteStream:
+					{
+						voteMessage := bufferMessage.message.(common.VoteMessage)
+						s.logger.Info(ctx).Msgf("aggregating votes for %v %v", voteMessage.Type, voteMessage.Id)
+						if err := s.aggregateVotesUseCase.Execute(ctx, usecases.AggregateVotesInput{
+							Id:   voteMessage.Id,
+							Type: voteMessage.Type,
+						}); err != nil {
+							s.logger.Error(ctx).Err(err).Msgf("error aggregating votes for %v %v", voteMessage.Type, voteMessage.Id)
+						}
+					}
+				case common.SigninStream:
+					{
+						signinMessage := bufferMessage.message.(common.SigninMessage)
+						s.logger.Info(ctx).Msgf("hydrating user info for %v", signinMessage.Address)
+						if err := s.hydrateUserUseCase.Execute(ctx, usecases.HydrateUserUseCaseInput{
+							Address: signinMessage.Address,
+						}); err != nil {
+							s.logger.Error(ctx).Err(err).Msgf("error hydrating user %v", signinMessage.Address)
+						}
+					}
+				default:
+					{
+						s.logger.Error(ctx).Msgf("inavlid stream %v", bufferMessage.stream)
+					}
 				}
-				delete(s.buffer, key)
+				delete(s.messageBuffer, key)
 			}
 		}
 
 		results, err := s.client.XReadGroup(ctx, &redis.XReadGroupArgs{
 			Group:    group,
 			Consumer: consumer,
-			Streams:  []string{common.VoteStream, ">"},
+			Streams:  []string{common.SigninStream, common.VoteStream, ">", ">"},
 			Block:    time.Second * 10,
 		}).Result()
 
@@ -84,11 +113,31 @@ func (s *subscriber) Start(ctx context.Context) error {
 
 		for _, result := range results {
 			for _, message := range result.Messages {
-				if voteMessage, err := s.parseMessage(ctx, result.Stream, message); err != nil {
-					s.logger.Error(ctx).Err(err).Msgf("error parsing message: %v %v %v", result.Stream, message.ID, message.Values)
-				} else {
-					key := fmt.Sprintf("%v:%v", voteMessage.Type, voteMessage.Id)
-					s.buffer[key] = voteMessage
+				switch result.Stream {
+				case common.SigninStream:
+					{
+						var signinMessage common.SigninMessage
+						if err := parseMessage(ctx, message, &signinMessage); err != nil {
+							s.logger.Error(ctx).Err(err).Msgf("error processing message: %v %v %v", result.Stream, message.ID, message.Values)
+						}
+						s.messageBuffer[signinMessage.Address] = &bufferMessage{
+							message: signinMessage,
+							stream:  result.Stream,
+						}
+					}
+				case common.VoteStream:
+					{
+						var voteMessage common.VoteMessage
+						if err := parseMessage(ctx, message, &voteMessage); err != nil {
+							s.logger.Error(ctx).Err(err).Msgf("error processing message: %v %v %v", result.Stream, message.ID, message.Values)
+						}
+						s.messageBuffer[fmt.Sprintf("%v:%v", voteMessage.Type, voteMessage.Id)] = &bufferMessage{
+							message: voteMessage,
+							stream:  result.Stream,
+						}
+					}
+				default:
+					s.logger.Error(ctx).Msgf("invalid stream: %v", result.Stream)
 				}
 
 				if err := s.client.XAck(ctx, result.Stream, group, message.ID).Err(); err != nil {
@@ -99,16 +148,11 @@ func (s *subscriber) Start(ctx context.Context) error {
 	}
 }
 
-func (s *subscriber) parseMessage(ctx context.Context, stream string, message redis.XMessage) (common.VoteMessage, error) {
-	if stream != common.VoteStream {
-		return common.VoteMessage{}, fmt.Errorf("invalid stream: %v", stream)
-	}
-
+func parseMessage[T any](ctx context.Context, message redis.XMessage, result *T) error {
 	body := []byte(message.Values["body"].(string))
-	var voteMessage common.VoteMessage
-	if err := json.Unmarshal(body, &voteMessage); err != nil {
-		return common.VoteMessage{}, fmt.Errorf("error unmarshalling vote message: %v %w", message, err)
+	if err := json.Unmarshal(body, result); err != nil {
+		return fmt.Errorf("error unmarshalling message: %v %w", message, err)
 	}
 
-	return voteMessage, nil
+	return nil
 }

@@ -30,8 +30,6 @@ func (u *AggregateVotesUseCase) Execute(ctx context.Context, input AggregateVote
 		return err
 	}
 
-	u.logger.Info(ctx).Msgf("aggregating votes for %v %v", input.Type, input.Id)
-
 	if err := u.databaseGateway.AggregateVotes(ctx, input.Id, input.Type); err != nil {
 		u.logger.Warn(ctx).Err(err).Msgf("error aggregating thread votes for %v %v", input.Id, input.Type)
 	}

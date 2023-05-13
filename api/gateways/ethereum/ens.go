@@ -2,6 +2,7 @@ package ethereum
 
 import (
 	"context"
+	"fmt"
 
 	cmn "github.com/daochanio/backend/common"
 	"github.com/ethereum/go-ethereum/common"
@@ -13,7 +14,7 @@ func (e *ethereumGateway) GetNameFromAddress(ctx context.Context, address string
 	client, err := ethclient.DialContext(ctx, e.settings.BlockchainURI())
 
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("failed to dial blockchain: %w", err)
 	}
 
 	return cmn.FunctionRetrier(ctx, func() (string, error) {

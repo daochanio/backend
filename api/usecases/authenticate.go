@@ -6,22 +6,22 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-type VerifyChallengeUseCase struct {
+type AuthenticateUseCase struct {
 	cacheGateway CacheGateway
 }
 
-func NewVerifyChallengeUseCase(cacheGateway CacheGateway) *VerifyChallengeUseCase {
-	return &VerifyChallengeUseCase{
+func NewAuthenticateUseCase(cacheGateway CacheGateway) *AuthenticateUseCase {
+	return &AuthenticateUseCase{
 		cacheGateway,
 	}
 }
 
-type VerifyChallengeInput struct {
+type AuthenticateInput struct {
 	Address string `validate:"eth_addr"`
 	SigHex  string `validate:"hexadecimal,min=1"`
 }
 
-func (u *VerifyChallengeUseCase) Execute(ctx context.Context, input *VerifyChallengeInput) error {
+func (u *AuthenticateUseCase) Execute(ctx context.Context, input *AuthenticateInput) error {
 	if err := common.ValidateStruct(input); err != nil {
 		return err
 	}

@@ -21,7 +21,7 @@ func FunctionRetrier[T any](ctx context.Context, fn func() (T, error)) (result T
 	for {
 		select {
 		case <-ctx.Done():
-			return result, fmt.Errorf("exceeded context deadline: %w", err)
+			return result, fmt.Errorf("context done: %w", err)
 		default:
 			if tries >= MAX_RETRIES {
 				return result, fmt.Errorf("exceeded max retries: %w", err)
