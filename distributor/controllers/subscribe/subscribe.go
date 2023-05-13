@@ -77,7 +77,7 @@ func (s *subscriber) readMessages(ctx context.Context, group string, consumer st
 		messages, _, err := s.client.XAutoClaim(ctx, &redis.XAutoClaimArgs{
 			Stream:  stream,
 			Group:   group,
-			Start:   "0",
+			Start:   "0-0",
 			MinIdle: time.Minute * 15,
 			Count:   1000, // pending entries list has a max size of 1000
 		}).Result()
