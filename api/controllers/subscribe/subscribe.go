@@ -119,7 +119,7 @@ func (s *subscriber) readMessages(ctx context.Context, group string, consumer st
 			Stream:  stream,
 			Group:   group,
 			Start:   "0-0",
-			MinIdle: time.Minute * 15,
+			MinIdle: time.Minute * 5,
 			Count:   1000, // pending entries list has a max size of 1000
 		}).Result()
 
