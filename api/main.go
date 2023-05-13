@@ -191,7 +191,7 @@ func newRedisClient(settings settings.Settings) *goredis.Client {
 
 	opt.DialTimeout = 10 * time.Second
 	opt.MinIdleConns = 10
-	opt.PoolSize = 1000
+	opt.PoolSize = 100
 	// timeouts are handled through request context
 	opt.ReadTimeout = -1
 	opt.WriteTimeout = -1
