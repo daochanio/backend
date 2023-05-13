@@ -2,6 +2,7 @@ package subscribe
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/daochanio/backend/common"
@@ -54,16 +55,7 @@ func (s *subscriber) Start(ctx context.Context) error {
 	_ = s.client.XGroupCreateMkStream(ctx, common.VoteStream, group, "$").Err()
 
 	for {
-		results, err := s.client.XReadGroup(ctx, &redis.XReadGroupArgs{
-			Group:    group,
-			Consumer: consumer,
-			Streams:  []string{common.VoteStream, ">"},
-			Block:    time.Second * 10,
-		}).Result()
-
-		if err == redis.Nil {
-			continue
-		}
+		results, err := s.readMessages(ctx, group, consumer)
 
 		if err != nil {
 			s.logger.Error(ctx).Err(err).Msg("error reading messages from streams")
@@ -73,11 +65,50 @@ func (s *subscriber) Start(ctx context.Context) error {
 		for _, result := range results {
 			for _, message := range result.Messages {
 				s.logger.Info(ctx).Msgf("received message: %v %v %v", result.Stream, message.ID, message.Values)
-
-				if err := s.client.XAck(ctx, result.Stream, group, message.ID).Err(); err != nil {
-					s.logger.Error(ctx).Err(err).Msgf("error acknowledging message: %v %v %v", result.Stream, message.ID, message.Values)
-				}
 			}
 		}
 	}
+}
+
+// readMessages reads messages from the streams starting by checking the pending messages that are unacknowledged
+// If there are no messages, block for 10 seconds
+func (s *subscriber) readMessages(ctx context.Context, group string, consumer string) ([]redis.XStream, error) {
+	for _, stream := range []string{common.VoteStream} {
+		messages, _, err := s.client.XAutoClaim(ctx, &redis.XAutoClaimArgs{
+			Stream:  stream,
+			Group:   group,
+			Start:   "0",
+			MinIdle: time.Minute * 15,
+			Count:   100,
+		}).Result()
+
+		if err != nil && err != redis.Nil {
+			return []redis.XStream{}, fmt.Errorf("error claiming pending messages from stream: %v %w", stream, err)
+		}
+
+		if len(messages) > 0 {
+			return []redis.XStream{{
+				Stream:   stream,
+				Messages: messages,
+			}}, nil
+		}
+	}
+
+	results, err := s.client.XReadGroup(ctx, &redis.XReadGroupArgs{
+		Group:    group,
+		Consumer: consumer,
+		Streams:  []string{common.VoteStream, ">"},
+		Block:    time.Second * 10,
+		Count:    100,
+	}).Result()
+
+	if err == redis.Nil {
+		return []redis.XStream{}, nil
+	}
+
+	if err != nil {
+		return []redis.XStream{}, err
+	}
+
+	return results, err
 }
