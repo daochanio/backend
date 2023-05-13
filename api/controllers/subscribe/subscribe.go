@@ -128,6 +128,8 @@ func (s *subscriber) readMessages(ctx context.Context, group string, consumer st
 		}
 
 		if len(messages) > 0 {
+			s.logger.Info(ctx).Msgf("claimed %v pending messages from stream %v group %v", len(messages), stream, group)
+
 			return []redis.XStream{{
 				Stream:   stream,
 				Messages: messages,
