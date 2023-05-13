@@ -65,6 +65,10 @@ func (s *subscriber) Start(ctx context.Context) error {
 		for _, result := range results {
 			for _, message := range result.Messages {
 				s.logger.Info(ctx).Msgf("received message: %v %v %v", result.Stream, message.ID, message.Values)
+
+				if err := s.client.XAck(ctx, result.Stream, group, message.ID).Err(); err != nil {
+					s.logger.Error(ctx).Err(err).Msgf("error acknowledging message: %v %v %v", result.Stream, message.ID, message.Values)
+				}
 			}
 		}
 	}
