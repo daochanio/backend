@@ -3,8 +3,8 @@ package common
 type Stream = string
 
 const (
-	SigninStream Stream = "signins"
-	VoteStream   Stream = "votes"
+	SigninStream Stream = "signin"
+	VoteStream   Stream = "vote"
 )
 
 type VoteMessage struct {

@@ -60,7 +60,7 @@ func (s *subscriber) Start(ctx context.Context) error {
 	_ = s.client.XGroupCreateMkStream(ctx, common.VoteStream, group, "$").Err()
 
 	for {
-		if len(s.messageBuffer) > 1000 || (time.Since(s.lastFlush) > time.Second*60 && len(s.messageBuffer) > 0) {
+		if len(s.messageBuffer) > 1000 || (time.Since(s.lastFlush) > time.Second*15 && len(s.messageBuffer) > 0) {
 			s.logger.Info(ctx).Msgf("flushing buffer with size %v", len(s.messageBuffer))
 			s.lastFlush = time.Now()
 			for key, bufferMessage := range s.messageBuffer {
