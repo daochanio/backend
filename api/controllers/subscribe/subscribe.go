@@ -111,7 +111,7 @@ func (s *subscriber) flushBuffer(ctx context.Context) {
 	}
 }
 
-// readMessages reads messages from the streams starting by checking the pending messages that are unacknowledged
+// Reads messages from the streams starting by checking the pending messages that are unacknowledged
 // If there are no messages, block for 10 seconds
 func (s *subscriber) readMessages(ctx context.Context, group string, consumer string) ([]redis.XStream, error) {
 	for _, stream := range []string{common.SigninStream, common.VoteStream} {
@@ -120,7 +120,7 @@ func (s *subscriber) readMessages(ctx context.Context, group string, consumer st
 			Group:   group,
 			Start:   "0",
 			MinIdle: time.Minute * 15,
-			Count:   100,
+			Count:   1000, // pending entries list has a max size of 1000
 		}).Result()
 
 		if err != nil && err != redis.Nil {
