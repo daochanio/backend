@@ -19,7 +19,7 @@ type ethereumGateway struct {
 	settings  settings.Settings
 }
 
-func NewEthereumGateway(logger com.Logger, settings settings.Settings) usecases.BlockchainGateway {
+func NewEthereumGateway(logger com.Logger, settings settings.Settings) usecases.Blockchain {
 	ethClient, err := ethclient.Dial(settings.BlockchainURI())
 	if err != nil {
 		panic(err)

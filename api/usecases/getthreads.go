@@ -7,14 +7,14 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-type GetThreadsUseCase struct {
-	dbGateway DatabaseGateway
-	logger    common.Logger
+type GetThreads struct {
+	database Database
+	logger   common.Logger
 }
 
-func NewGetThreadsUseCase(dbGateway DatabaseGateway, logger common.Logger) *GetThreadsUseCase {
-	return &GetThreadsUseCase{
-		dbGateway,
+func NewGetThreadsUseCase(database Database, logger common.Logger) *GetThreads {
+	return &GetThreads{
+		database,
 		logger,
 	}
 }
@@ -24,10 +24,10 @@ type GetThreadsInput struct {
 }
 
 // Threads returned are random and thus the concept of pages/offset/count is not relevant
-func (u *GetThreadsUseCase) Execute(ctx context.Context, input GetThreadsInput) ([]entities.Thread, error) {
+func (u *GetThreads) Execute(ctx context.Context, input GetThreadsInput) ([]entities.Thread, error) {
 	if err := common.ValidateStruct(input); err != nil {
 		return nil, err
 	}
 
-	return u.dbGateway.GetThreads(ctx, input.Limit)
+	return u.database.GetThreads(ctx, input.Limit)
 }

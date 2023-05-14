@@ -7,13 +7,13 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-type DeleteCommentUseCase struct {
-	dbGateway DatabaseGateway
+type DeleteComment struct {
+	database Database
 }
 
-func NewDeleteCommentUseCase(dbGateway DatabaseGateway) *DeleteCommentUseCase {
-	return &DeleteCommentUseCase{
-		dbGateway,
+func NewDeleteCommentUseCase(database Database) *DeleteComment {
+	return &DeleteComment{
+		database,
 	}
 }
 
@@ -22,12 +22,12 @@ type DeleteCommentInput struct {
 	DeleterAddress string `validate:"eth_addr"`
 }
 
-func (u *DeleteCommentUseCase) Execute(ctx context.Context, input DeleteCommentInput) error {
+func (u *DeleteComment) Execute(ctx context.Context, input DeleteCommentInput) error {
 	if err := common.ValidateStruct(input); err != nil {
 		return err
 	}
 
-	comment, err := u.dbGateway.GetCommentById(ctx, input.Id)
+	comment, err := u.database.GetCommentById(ctx, input.Id)
 
 	if err != nil {
 		return err
@@ -37,5 +37,5 @@ func (u *DeleteCommentUseCase) Execute(ctx context.Context, input DeleteCommentI
 		return errors.New("comment does not belong to the user")
 	}
 
-	return u.dbGateway.DeleteComment(ctx, input.Id)
+	return u.database.DeleteComment(ctx, input.Id)
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/daochanio/backend/api/controllers/http"
 	"github.com/daochanio/backend/api/controllers/subscribe"
 	"github.com/daochanio/backend/api/gateways/ethereum"
-	"github.com/daochanio/backend/api/gateways/pg"
+	"github.com/daochanio/backend/api/gateways/postgres"
 	"github.com/daochanio/backend/api/gateways/redis"
 	"github.com/daochanio/backend/api/gateways/s3"
 	"github.com/daochanio/backend/api/settings"
@@ -34,7 +34,7 @@ func main() {
 	}
 
 	// start the message subscriber inside a go routine
-	if err := container.Invoke(startMessageSubscriber); err != nil {
+	if err := container.Invoke(startSubscriber); err != nil {
 		panic(err)
 	}
 
@@ -65,16 +65,16 @@ func newContainer() *dig.Container {
 	if err := container.Provide(newS3Client); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(newPGPool); err != nil {
+	if err := container.Provide(newPostgresPool); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(newRedisClient); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(pg.NewDatabaseGateway); err != nil {
+	if err := container.Provide(postgres.NewDatabaseGateway); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(redis.NewGateway, dig.As(new(usecases.MessageGateway), new(usecases.CacheGateway))); err != nil {
+	if err := container.Provide(redis.NewGateway, dig.As(new(usecases.Stream), new(usecases.Cache))); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(s3.NewImageGateway); err != nil {
@@ -145,9 +145,9 @@ func startHttpServer(ctx context.Context, httpServer http.HttpServer) {
 	}()
 }
 
-func startMessageSubscriber(ctx context.Context, messageSubscriber subscribe.Subscriber) {
+func startSubscriber(ctx context.Context, subscriber subscribe.Subscriber) {
 	go func() {
-		err := messageSubscriber.Start(ctx)
+		err := subscriber.Start(ctx)
 		panic(err)
 	}()
 }
@@ -164,7 +164,7 @@ func newS3Client(settings settings.Settings) *goS3.S3 {
 	return goS3.New(sess)
 }
 
-func newPGPool(ctx context.Context, settings settings.Settings) *pgxpool.Pool {
+func newPostgresPool(ctx context.Context, settings settings.Settings) *pgxpool.Pool {
 	config, err := pgxpool.ParseConfig(settings.DbConnectionString())
 
 	if err != nil {

@@ -29,7 +29,7 @@ func (h *httpServer) getThreadByIdRoute(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	thread, count, err := h.getThreadUseCase.Execute(r.Context(), usecases.GetThreadInput{
+	thread, count, err := h.getThread.Execute(r.Context(), usecases.GetThreadInput{
 		ThreadId:      id,
 		CommentOffset: page.Offset,
 		CommentLimit:  page.Limit,
@@ -58,7 +58,7 @@ func (h *httpServer) getThreadsRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	threads, err := h.getThreadsUseCase.Execute(r.Context(), usecases.GetThreadsInput{
+	threads, err := h.getThreads.Execute(r.Context(), usecases.GetThreadsInput{
 		Limit: page.Limit,
 	})
 
@@ -79,7 +79,7 @@ func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	thread, err := h.createThreadUseCase.Execute(ctx, usecases.CreateThreadInput{
+	thread, err := h.createThread.Execute(ctx, usecases.CreateThreadInput{
 		Address:       ctx.Value(common.ContextKeyAddress).(string),
 		Title:         body.Title,
 		ImageFileName: body.ImageFileName,
@@ -102,7 +102,7 @@ func (h *httpServer) deleteThreadRoute(w http.ResponseWriter, r *http.Request) {
 		h.presentBadRequest(w, r, err)
 	}
 
-	err = h.deleteThreadUseCase.Execute(ctx, usecases.DeleteThreadInput{
+	err = h.deleteThread.Execute(ctx, usecases.DeleteThreadInput{
 		ThreadId:       id,
 		DeleterAddress: ctx.Value(common.ContextKeyAddress).(string),
 	})
@@ -129,7 +129,7 @@ func (h *httpServer) createThreadVoteRoute(w http.ResponseWriter, r *http.Reques
 		h.presentBadRequest(w, r, err)
 	}
 
-	err = h.createVoteUseCase.Execute(ctx, usecases.CreateVoteInput{
+	err = h.createVote.Execute(ctx, usecases.CreateVoteInput{
 		Id:      id,
 		Address: ctx.Value(common.ContextKeyAddress).(string),
 		Value:   common.VoteValue(value),

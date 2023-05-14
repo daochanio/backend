@@ -11,15 +11,15 @@ import (
 	"github.com/google/uuid"
 )
 
-type UploadImageUsecase struct {
-	logger       common.Logger
-	imageGateway ImageGateway
+type UploadImage struct {
+	logger common.Logger
+	images Images
 }
 
-func NewUploadImageUsecase(logger common.Logger, imageGateway ImageGateway) *UploadImageUsecase {
-	return &UploadImageUsecase{
+func NewUploadImageUsecase(logger common.Logger, images Images) *UploadImage {
+	return &UploadImage{
 		logger,
-		imageGateway,
+		images,
 	}
 }
 
@@ -28,7 +28,7 @@ type UploadImageInput struct {
 	Bytes       *[]byte `validate:"required"`
 }
 
-func (u *UploadImageUsecase) Execute(ctx context.Context, input UploadImageInput) (entities.Image, error) {
+func (u *UploadImage) Execute(ctx context.Context, input UploadImageInput) (entities.Image, error) {
 	if err := common.ValidateStruct(input); err != nil {
 		return entities.Image{}, err
 	}
@@ -42,5 +42,5 @@ func (u *UploadImageUsecase) Execute(ctx context.Context, input UploadImageInput
 
 	fileName := fmt.Sprintf("%s.%s", id, ext[1])
 
-	return u.imageGateway.UploadImage(ctx, fileName, input.ContentType, input.Bytes)
+	return u.images.UploadImage(ctx, fileName, input.ContentType, input.Bytes)
 }

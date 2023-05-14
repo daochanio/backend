@@ -10,7 +10,7 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-func (h *httpServer) authenticate(next http.Handler) http.Handler {
+func (h *httpServer) authenticator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		address := r.Header.Get("X-Address")
@@ -21,7 +21,7 @@ func (h *httpServer) authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		err := h.authenticateUseCase.Execute(ctx, &usecases.AuthenticateInput{
+		err := h.authenticate.Execute(ctx, &usecases.AuthenticateInput{
 			Address: address,
 			SigHex:  token[1],
 		})

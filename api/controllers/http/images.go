@@ -26,7 +26,7 @@ func (h *httpServer) uploadImageRoute(w http.ResponseWriter, r *http.Request) {
 
 	contentType := http.DetectContentType(bytes)
 
-	image, err := h.uploadImageUseCase.Execute(r.Context(), usecases.UploadImageInput{
+	image, err := h.uploadImage.Execute(r.Context(), usecases.UploadImageInput{
 		Bytes:       &bytes,
 		ContentType: contentType,
 	})

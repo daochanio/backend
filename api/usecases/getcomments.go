@@ -7,13 +7,13 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-type GetCommentsUseCase struct {
-	dbGateway DatabaseGateway
+type GetComments struct {
+	database Database
 }
 
-func NewGetCommentsUseCase(dbGateway DatabaseGateway) *GetCommentsUseCase {
-	return &GetCommentsUseCase{
-		dbGateway,
+func NewGetCommentsUseCase(database Database) *GetComments {
+	return &GetComments{
+		database,
 	}
 }
 
@@ -23,10 +23,10 @@ type GetCommentsInput struct {
 	Limit    int64 `validate:"gt=0,lte=100"`
 }
 
-func (u *GetCommentsUseCase) Execute(ctx context.Context, input GetCommentsInput) ([]entities.Comment, int64, error) {
+func (u *GetComments) Execute(ctx context.Context, input GetCommentsInput) ([]entities.Comment, int64, error) {
 	if err := common.ValidateStruct(input); err != nil {
 		return nil, -1, err
 	}
 
-	return u.dbGateway.GetComments(ctx, input.ThreadId, input.Offset, input.Limit)
+	return u.database.GetComments(ctx, input.ThreadId, input.Offset, input.Limit)
 }

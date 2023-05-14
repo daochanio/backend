@@ -16,7 +16,7 @@ type ethereumGateway struct {
 	logger   common.Logger
 }
 
-func NewBlockchainGateway(settings settings.Settings, logger common.Logger) usecases.BlockchainGateway {
+func NewBlockchainGateway(settings settings.Settings, logger common.Logger) usecases.Blockchain {
 	return &ethereumGateway{
 		settings,
 		logger,

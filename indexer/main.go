@@ -46,7 +46,7 @@ func main() {
 	if err := container.Provide(usecases.NewIndexBlocksUseCase); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(usecases.NewIndexTokenUseCase); err != nil {
+	if err := container.Provide(usecases.NewIndexReputationUseCase); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(index.NewIndexer); err != nil {

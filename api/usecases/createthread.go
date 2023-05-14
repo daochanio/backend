@@ -7,17 +7,17 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-type CreateThreadUseCase struct {
-	logger       common.Logger
-	imageGateway ImageGateway
-	dbGateway    DatabaseGateway
+type CreateThread struct {
+	logger   common.Logger
+	images   Images
+	database Database
 }
 
-func NewCreateThreadUseCase(logger common.Logger, imageGateway ImageGateway, dbGateway DatabaseGateway) *CreateThreadUseCase {
-	return &CreateThreadUseCase{
+func NewCreateThreadUseCase(logger common.Logger, images Images, database Database) *CreateThread {
+	return &CreateThread{
 		logger,
-		imageGateway,
-		dbGateway,
+		images,
+		database,
 	}
 }
 
@@ -28,12 +28,12 @@ type CreateThreadInput struct {
 	ImageFileName string `validate:"max=100"`
 }
 
-func (u *CreateThreadUseCase) Execute(ctx context.Context, input CreateThreadInput) (entities.Thread, error) {
+func (u *CreateThread) Execute(ctx context.Context, input CreateThreadInput) (entities.Thread, error) {
 	if err := common.ValidateStruct(input); err != nil {
 		return entities.Thread{}, err
 	}
 
-	image, err := u.imageGateway.GetImageByFileName(ctx, input.ImageFileName)
+	image, err := u.images.GetImageByFileName(ctx, input.ImageFileName)
 
 	if err != nil {
 		return entities.Thread{}, err
@@ -46,5 +46,5 @@ func (u *CreateThreadUseCase) Execute(ctx context.Context, input CreateThreadInp
 		Image:   image,
 	})
 
-	return u.dbGateway.CreateThread(ctx, thread)
+	return u.database.CreateThread(ctx, thread)
 }

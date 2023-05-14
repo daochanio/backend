@@ -7,13 +7,13 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-type DeleteThreadUseCase struct {
-	dbGateway DatabaseGateway
+type DeleteThread struct {
+	database Database
 }
 
-func NewDeleteThreadUseCase(dbGateway DatabaseGateway) *DeleteThreadUseCase {
-	return &DeleteThreadUseCase{
-		dbGateway,
+func NewDeleteThreadUseCase(database Database) *DeleteThread {
+	return &DeleteThread{
+		database,
 	}
 }
 
@@ -22,12 +22,12 @@ type DeleteThreadInput struct {
 	DeleterAddress string `validate:"eth_addr"`
 }
 
-func (u *DeleteThreadUseCase) Execute(ctx context.Context, input DeleteThreadInput) error {
+func (u *DeleteThread) Execute(ctx context.Context, input DeleteThreadInput) error {
 	if err := common.ValidateStruct(input); err != nil {
 		return err
 	}
 
-	thread, err := u.dbGateway.GetThreadById(ctx, input.ThreadId)
+	thread, err := u.database.GetThreadById(ctx, input.ThreadId)
 
 	if err != nil {
 		return err
@@ -37,5 +37,5 @@ func (u *DeleteThreadUseCase) Execute(ctx context.Context, input DeleteThreadInp
 		return errors.New("thread does not belong to the user")
 	}
 
-	return u.dbGateway.DeleteThread(ctx, input.ThreadId)
+	return u.database.DeleteThread(ctx, input.ThreadId)
 }

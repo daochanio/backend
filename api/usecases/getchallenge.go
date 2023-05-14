@@ -7,26 +7,26 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-func NewGetChallengeUseCase(cacheGateway CacheGateway) *GetChallengeUseCase {
-	return &GetChallengeUseCase{
+func NewGetChallengeUseCase(cacheGateway Cache) *GetChallenge {
+	return &GetChallenge{
 		cacheGateway,
 	}
 }
 
-type GetChallengeUseCase struct {
-	cacheGateway CacheGateway
+type GetChallenge struct {
+	cache Cache
 }
 
 type GetChallengeInput struct {
 	Address string `validate:"eth_addr"`
 }
 
-func (u *GetChallengeUseCase) Execute(ctx context.Context, input *GetChallengeInput) (entities.Challenge, error) {
+func (u *GetChallenge) Execute(ctx context.Context, input *GetChallengeInput) (entities.Challenge, error) {
 	if err := common.ValidateStruct(input); err != nil {
 		return entities.Challenge{}, err
 	}
 
-	challenge, err := u.cacheGateway.GetChallengeByAddress(ctx, input.Address)
+	challenge, err := u.cache.GetChallengeByAddress(ctx, input.Address)
 
 	if err == nil {
 		return challenge, nil
@@ -34,7 +34,7 @@ func (u *GetChallengeUseCase) Execute(ctx context.Context, input *GetChallengeIn
 
 	newChallenge := entities.GenerateChallenge(input.Address)
 
-	err = u.cacheGateway.SaveChallenge(ctx, newChallenge)
+	err = u.cache.SaveChallenge(ctx, newChallenge)
 
 	return newChallenge, err
 }

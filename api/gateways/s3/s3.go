@@ -19,7 +19,7 @@ type s3Gateway struct {
 	client   *s3.S3
 }
 
-func NewImageGateway(logger common.Logger, settings settings.Settings, client *s3.S3) usecases.ImageGateway {
+func NewImageGateway(logger common.Logger, settings settings.Settings, client *s3.S3) usecases.Images {
 	return &s3Gateway{
 		logger,
 		settings,

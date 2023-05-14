@@ -7,27 +7,27 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-type SigninUseCase struct {
-	logger          common.Logger
-	databaseGateway DatabaseGateway
-	cacheGateway    CacheGateway
-	messageGateway  MessageGateway
+type Signin struct {
+	logger   common.Logger
+	database Database
+	cache    Cache
+	stream   Stream
 }
 
-type SigninUseCaseInput struct {
+type SigninInput struct {
 	Address string `validate:"eth_addr"`
 }
 
-func NewSigninUseCase(logger common.Logger, databaseGateway DatabaseGateway, cacheGateway CacheGateway, messageGateway MessageGateway) *SigninUseCase {
-	return &SigninUseCase{
+func NewSigninUseCase(logger common.Logger, database Database, cache Cache, stream Stream) *Signin {
+	return &Signin{
 		logger,
-		databaseGateway,
-		cacheGateway,
-		messageGateway,
+		database,
+		cache,
+		stream,
 	}
 }
 
-func (u *SigninUseCase) Execute(ctx context.Context, input SigninUseCaseInput) (entities.Challenge, error) {
+func (u *Signin) Execute(ctx context.Context, input SigninInput) (entities.Challenge, error) {
 	if err := common.ValidateStruct(input); err != nil {
 		return entities.Challenge{}, err
 	}
@@ -47,8 +47,8 @@ func (u *SigninUseCase) Execute(ctx context.Context, input SigninUseCaseInput) (
 	return challenge, err
 }
 
-func (u *SigninUseCase) getChallenge(ctx context.Context, address string) (entities.Challenge, error) {
-	challenge, err := u.cacheGateway.GetChallengeByAddress(ctx, address)
+func (u *Signin) getChallenge(ctx context.Context, address string) (entities.Challenge, error) {
+	challenge, err := u.cache.GetChallengeByAddress(ctx, address)
 
 	if err == nil {
 		return challenge, nil
@@ -56,17 +56,17 @@ func (u *SigninUseCase) getChallenge(ctx context.Context, address string) (entit
 
 	newChallenge := entities.GenerateChallenge(address)
 
-	err = u.cacheGateway.SaveChallenge(ctx, newChallenge)
+	err = u.cache.SaveChallenge(ctx, newChallenge)
 
 	return newChallenge, err
 }
 
-func (u *SigninUseCase) upsertUser(ctx context.Context, address string) error {
-	err := u.databaseGateway.UpsertUser(ctx, address)
+func (u *Signin) upsertUser(ctx context.Context, address string) error {
+	err := u.database.UpsertUser(ctx, address)
 
 	if err != nil {
 		return err
 	}
 
-	return u.messageGateway.PublishSignin(ctx, address)
+	return u.stream.PublishSignin(ctx, address)
 }

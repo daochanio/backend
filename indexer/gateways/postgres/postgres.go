@@ -14,7 +14,7 @@ type postgresGateway struct {
 	queries *bindings.Queries
 }
 
-func NewPostgresGateway(ctx context.Context, db *pgxpool.Pool) usecases.DatabaseGateway {
+func NewPostgresGateway(ctx context.Context, db *pgxpool.Pool) usecases.Database {
 	queries := bindings.New(db)
 	return &postgresGateway{
 		queries,

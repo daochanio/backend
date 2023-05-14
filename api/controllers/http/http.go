@@ -22,52 +22,52 @@ type HttpServer interface {
 }
 
 type httpServer struct {
-	logger                 common.Logger
-	settings               settings.Settings
-	signinUseCase          *usecases.SigninUseCase
-	authenticateUseCase    *usecases.AuthenticateUseCase
-	verifyRateLimitUseCase *usecases.VerifyRateLimitUseCase
-	createThreadUseCase    *usecases.CreateThreadUseCase
-	getThreadUseCase       *usecases.GetThreadUseCase
-	getThreadsUseCase      *usecases.GetThreadsUseCase
-	deleteThreadUseCase    *usecases.DeleteThreadUseCase
-	createVoteUseCase      *usecases.CreateVoteUseCase
-	createCommentUseCase   *usecases.CreateCommentUseCase
-	getCommentsUseCase     *usecases.GetCommentsUseCase
-	deleteCommentUseCase   *usecases.DeleteCommentUseCase
-	uploadImageUseCase     *usecases.UploadImageUsecase
+	logger        common.Logger
+	settings      settings.Settings
+	signin        *usecases.Signin
+	authenticate  *usecases.Authenticate
+	rateLimit     *usecases.RateLimit
+	createThread  *usecases.CreateThread
+	getThread     *usecases.GetThread
+	getThreads    *usecases.GetThreads
+	deleteThread  *usecases.DeleteThread
+	createVote    *usecases.CreateVote
+	createComment *usecases.CreateComment
+	getComments   *usecases.GetComments
+	deleteComment *usecases.DeleteComment
+	uploadImage   *usecases.UploadImage
 }
 
 func NewHttpServer(
 	logger common.Logger,
 	settings settings.Settings,
-	signinUseCase *usecases.SigninUseCase,
-	authenticateUseCase *usecases.AuthenticateUseCase,
-	verifyRateLimitUseCase *usecases.VerifyRateLimitUseCase,
-	createThreadUseCase *usecases.CreateThreadUseCase,
-	getThreadUseCase *usecases.GetThreadUseCase,
-	getThreadsUseCase *usecases.GetThreadsUseCase,
-	deleteThreadUseCase *usecases.DeleteThreadUseCase,
-	createVoteUseCase *usecases.CreateVoteUseCase,
-	createCommentUseCase *usecases.CreateCommentUseCase,
-	getCommentsUseCase *usecases.GetCommentsUseCase,
-	deleteCommentUseCase *usecases.DeleteCommentUseCase,
-	uploadImageUseCase *usecases.UploadImageUsecase) HttpServer {
+	signin *usecases.Signin,
+	authenticate *usecases.Authenticate,
+	rateLimit *usecases.RateLimit,
+	createThread *usecases.CreateThread,
+	getThread *usecases.GetThread,
+	getThreads *usecases.GetThreads,
+	deleteThread *usecases.DeleteThread,
+	createVote *usecases.CreateVote,
+	createComment *usecases.CreateComment,
+	getComments *usecases.GetComments,
+	deleteComment *usecases.DeleteComment,
+	uploadImage *usecases.UploadImage) HttpServer {
 	return &httpServer{
 		logger,
 		settings,
-		signinUseCase,
-		authenticateUseCase,
-		verifyRateLimitUseCase,
-		createThreadUseCase,
-		getThreadUseCase,
-		getThreadsUseCase,
-		deleteThreadUseCase,
-		createVoteUseCase,
-		createCommentUseCase,
-		getCommentsUseCase,
-		deleteCommentUseCase,
-		uploadImageUseCase,
+		signin,
+		authenticate,
+		rateLimit,
+		createThread,
+		getThread,
+		getThreads,
+		deleteThread,
+		createVote,
+		createComment,
+		getComments,
+		deleteComment,
+		uploadImage,
 	}
 }
 
@@ -97,7 +97,7 @@ func (h *httpServer) Start(ctx context.Context) error {
 
 		// public routes
 		r.Group(func(r chi.Router) {
-			r.Use(h.rateLimit("public", 10000, time.Minute)) // TODO:  Make rate limiting more restrictive
+			r.Use(h.rateLimiter("public", 10000, time.Minute)) // TODO:  Make rate limiting more restrictive
 			r.Use(h.maxSize(1))
 
 			r.Put("/signin", h.signinRoute)
@@ -108,19 +108,19 @@ func (h *httpServer) Start(ctx context.Context) error {
 
 		// authenticated routes
 		r.Group(func(r chi.Router) {
-			r.Use(h.authenticate)
+			r.Use(h.authenticator)
 			r.Use(h.maxSize(5))
 
-			r.With(h.rateLimit("create:thread", 2, time.Minute*10)).Post("/threads", h.createThreadRoute)
-			r.With(h.rateLimit("vote:thread", 10000, time.Minute)).Put("/threads/{threadId}/votes/{value}", h.createThreadVoteRoute) // TODO:  Make rate limiting more restrictive
-			r.With(h.rateLimit("create:comment", 5, time.Minute*10)).Post("/threads/{threadId}/comments", h.createCommentRoute)
-			r.With(h.rateLimit("vote:comment", 10, time.Minute)).Put("/threads/{threadId}/comments/{commentId}/votes/{value}", h.createCommentVoteRoute)
+			r.With(h.rateLimiter("create:thread", 2, time.Minute*10)).Post("/threads", h.createThreadRoute)
+			r.With(h.rateLimiter("vote:thread", 10000, time.Minute)).Put("/threads/{threadId}/votes/{value}", h.createThreadVoteRoute) // TODO:  Make rate limiting more restrictive
+			r.With(h.rateLimiter("create:comment", 5, time.Minute*10)).Post("/threads/{threadId}/comments", h.createCommentRoute)
+			r.With(h.rateLimiter("vote:comment", 10, time.Minute)).Put("/threads/{threadId}/comments/{commentId}/votes/{value}", h.createCommentVoteRoute)
 		})
 
 		// permissioned routes
 		r.Group(func(r chi.Router) {
-			r.Use(h.authenticate) // TODO: Make this require moderator+ permission
-			r.Use(h.rateLimit("permissioned", 10, time.Second))
+			r.Use(h.authenticator) // TODO: Make this require moderator+ permission
+			r.Use(h.rateLimiter("permissioned", 10, time.Second))
 			r.Use(h.maxSize(1))
 
 			r.Delete("/threads/{threadId}", h.deleteThreadRoute)
@@ -129,8 +129,8 @@ func (h *httpServer) Start(ctx context.Context) error {
 
 		// image route
 		r.Group(func(r chi.Router) {
-			r.Use(h.authenticate)
-			r.Use(h.rateLimit("create:image", 7, time.Minute*10)) // should encompass creating images for threads and comments
+			r.Use(h.authenticator)
+			r.Use(h.rateLimiter("create:image", 7, time.Minute*10)) // should encompass creating images for threads and comments
 			r.Use(h.maxSize(3 * 1024))
 
 			r.Post("/images", h.uploadImageRoute)
