@@ -1,4 +1,4 @@
-package pg
+package postgres
 
 import (
 	"github.com/daochanio/backend/api/settings"
@@ -15,7 +15,7 @@ type postgresGateway struct {
 	queries  *bindings.Queries
 }
 
-func NewDatabaseGateway(settings settings.Settings, logger common.Logger, db *pgxpool.Pool) usecases.DatabaseGateway {
+func NewDatabaseGateway(settings settings.Settings, logger common.Logger, db *pgxpool.Pool) usecases.Database {
 	queries := bindings.New(db)
 	return &postgresGateway{
 		settings,

@@ -29,7 +29,7 @@ func (h *httpServer) getCommentsRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	comments, count, err := h.getCommentsUseCase.Execute(r.Context(), usecases.GetCommentsInput{
+	comments, count, err := h.getComments.Execute(r.Context(), usecases.GetCommentsInput{
 		ThreadId: threadId,
 		Offset:   page.Offset,
 		Limit:    page.Limit,
@@ -74,7 +74,7 @@ func (h *httpServer) createCommentRoute(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	comment, err := h.createCommentUseCase.Execute(ctx, usecases.CreateCommentInput{
+	comment, err := h.createComment.Execute(ctx, usecases.CreateCommentInput{
 		RepliedToCommentId: repliedToCommentId,
 		ThreadId:           threadId,
 		Address:            ctx.Value(common.ContextKeyAddress).(string),
@@ -99,7 +99,7 @@ func (h *httpServer) deleteCommentRoute(w http.ResponseWriter, r *http.Request) 
 		h.presentBadRequest(w, r, err)
 	}
 
-	err = h.deleteCommentUseCase.Execute(ctx, usecases.DeleteCommentInput{
+	err = h.deleteComment.Execute(ctx, usecases.DeleteCommentInput{
 		Id:             id,
 		DeleterAddress: ctx.Value(common.ContextKeyAddress).(string),
 	})
@@ -127,7 +127,7 @@ func (h *httpServer) createCommentVoteRoute(w http.ResponseWriter, r *http.Reque
 		h.presentBadRequest(w, r, err)
 	}
 
-	err = h.createVoteUseCase.Execute(ctx, usecases.CreateVoteInput{
+	err = h.createVote.Execute(ctx, usecases.CreateVoteInput{
 		Id:      id,
 		Address: ctx.Value(common.ContextKeyAddress).(string),
 		Value:   common.VoteValue(value),

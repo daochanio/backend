@@ -9,13 +9,13 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-type GetThreadUseCase struct {
-	dbGateway DatabaseGateway
+type GetThread struct {
+	database Database
 }
 
-func NewGetThreadUseCase(dbGateway DatabaseGateway) *GetThreadUseCase {
-	return &GetThreadUseCase{
-		dbGateway,
+func NewGetThreadUseCase(database Database) *GetThread {
+	return &GetThread{
+		database,
 	}
 }
 
@@ -25,7 +25,7 @@ type GetThreadInput struct {
 	CommentLimit  int64 `validate:"gt=0,lte=100"`
 }
 
-func (u *GetThreadUseCase) Execute(ctx context.Context, input GetThreadInput) (entities.Thread, int64, error) {
+func (u *GetThread) Execute(ctx context.Context, input GetThreadInput) (entities.Thread, int64, error) {
 	if err := common.ValidateStruct(input); err != nil {
 		return entities.Thread{}, -1, fmt.Errorf("invalid input: %w", err)
 	}
@@ -41,11 +41,11 @@ func (u *GetThreadUseCase) Execute(ctx context.Context, input GetThreadInput) (e
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		thread, threadErr = u.dbGateway.GetThreadById(ctx, input.ThreadId)
+		thread, threadErr = u.database.GetThreadById(ctx, input.ThreadId)
 	}()
 	go func() {
 		defer wg.Done()
-		comments, commentsCount, commentsErr = u.dbGateway.GetComments(ctx, input.ThreadId, input.CommentOffset, input.CommentLimit)
+		comments, commentsCount, commentsErr = u.database.GetComments(ctx, input.ThreadId, input.CommentOffset, input.CommentLimit)
 	}()
 	wg.Wait()
 

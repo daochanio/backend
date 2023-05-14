@@ -21,8 +21,8 @@ type subscriber struct {
 	settings              settings.Settings
 	commonSettings        common.CommonSettings
 	client                *redis.Client
-	aggregateVotesUseCase *usecases.AggregateVotesUseCase
-	hydrateUserUseCase    *usecases.HydrateUserUseCase
+	aggregateVotesUseCase *usecases.AggregateVotes
+	hydrateUserUseCase    *usecases.HydrateUser
 	messageBuffer         map[string]*bufferMessage
 	lastFlush             time.Time
 }
@@ -32,7 +32,7 @@ type bufferMessage struct {
 	stream  common.Stream
 }
 
-func NewSubscriber(logger common.Logger, settings settings.Settings, client *redis.Client, commonSettings common.CommonSettings, aggregateVotesUseCase *usecases.AggregateVotesUseCase, hydrateUserUseCase *usecases.HydrateUserUseCase) Subscriber {
+func NewSubscriber(logger common.Logger, settings settings.Settings, client *redis.Client, commonSettings common.CommonSettings, aggregateVotesUseCase *usecases.AggregateVotes, hydrateUserUseCase *usecases.HydrateUser) Subscriber {
 	buffer := map[string]*bufferMessage{}
 	lastFlush := time.Now()
 	return &subscriber{
@@ -96,7 +96,7 @@ func (s *subscriber) flushBuffer(ctx context.Context) {
 			{
 				signinMessage := bufferMessage.message.(common.SigninMessage)
 				s.logger.Info(ctx).Msgf("hydrating user info for %v", signinMessage.Address)
-				if err := s.hydrateUserUseCase.Execute(ctx, usecases.HydrateUserUseCaseInput{
+				if err := s.hydrateUserUseCase.Execute(ctx, usecases.HydrateUserInput{
 					Address: signinMessage.Address,
 				}); err != nil {
 					s.logger.Error(ctx).Err(err).Msgf("error hydrating user %v", signinMessage.Address)

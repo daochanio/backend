@@ -8,22 +8,22 @@ import (
 	"github.com/daochanio/backend/indexer/settings"
 )
 
-type IndexTokenUseCase struct {
+type IndexReputation struct {
 	logger            common.Logger
 	settings          settings.Settings
-	blockchainGateway BlockchainGateway
+	blockchainGateway Blockchain
 }
 
-func NewIndexTokenUseCase(logger common.Logger, settings settings.Settings, blockchainGateway BlockchainGateway) *IndexTokenUseCase {
-	return &IndexTokenUseCase{
+func NewIndexReputationUseCase(logger common.Logger, settings settings.Settings, blockchainGateway Blockchain) *IndexReputation {
+	return &IndexReputation{
 		logger,
 		settings,
 		blockchainGateway,
 	}
 }
 
-func (u *IndexTokenUseCase) Execute(ctx context.Context, fromBlock *big.Int, toBlock *big.Int) error {
-	u.logger.Info(ctx).Msgf("indexing token events from block %d to block %d", fromBlock, toBlock)
+func (u *IndexReputation) Execute(ctx context.Context, fromBlock *big.Int, toBlock *big.Int) error {
+	u.logger.Info(ctx).Msgf("indexing reputation events from block %d to block %d", fromBlock, toBlock)
 
 	events, err := u.blockchainGateway.GetTokenEvents(ctx, fromBlock, toBlock)
 

@@ -18,7 +18,7 @@ func (h *httpServer) signinRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	challenge, err := h.signinUseCase.Execute(ctx, usecases.SigninUseCaseInput{
+	challenge, err := h.signin.Execute(ctx, usecases.SigninInput{
 		Address: body.Address,
 	})
 

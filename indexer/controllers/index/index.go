@@ -14,23 +14,23 @@ type Indexer interface {
 }
 
 type indexer struct {
-	logger             common.Logger
-	settings           settings.Settings
-	indexBlocksUseCase *usecases.IndexBlocksUseCase
+	logger      common.Logger
+	settings    settings.Settings
+	indexBlocks *usecases.IndexBlocks
 }
 
-func NewIndexer(logger common.Logger, settings settings.Settings, indexBlocksUseCase *usecases.IndexBlocksUseCase) Indexer {
+func NewIndexer(logger common.Logger, settings settings.Settings, indexBlocks *usecases.IndexBlocks) Indexer {
 	return &indexer{
 		logger,
 		settings,
-		indexBlocksUseCase,
+		indexBlocks,
 	}
 }
 
 func (i *indexer) Start(ctx context.Context) error {
 	i.logger.Info(ctx).Msg("starting indexer")
 	for {
-		err := i.indexBlocksUseCase.Execute(ctx)
+		err := i.indexBlocks.Execute(ctx)
 
 		// sleep a bit if we didn't index anything to avoid spamming the blockchain or to recover from transient errors
 		if err != nil {

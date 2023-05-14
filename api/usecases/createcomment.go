@@ -7,15 +7,15 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-type CreateCommentUseCase struct {
-	dbGateway    DatabaseGateway
-	imageGateway ImageGateway
+type CreateComment struct {
+	database Database
+	images   Images
 }
 
-func NewCreateCommentUseCase(dbGateway DatabaseGateway, imageGateway ImageGateway) *CreateCommentUseCase {
-	return &CreateCommentUseCase{
-		dbGateway,
-		imageGateway,
+func NewCreateCommentUseCase(database Database, images Images) *CreateComment {
+	return &CreateComment{
+		database,
+		images,
 	}
 }
 
@@ -27,12 +27,12 @@ type CreateCommentInput struct {
 	ImageFileName      string `validate:"max=100"`
 }
 
-func (u *CreateCommentUseCase) Execute(ctx context.Context, input CreateCommentInput) (entities.Comment, error) {
+func (u *CreateComment) Execute(ctx context.Context, input CreateCommentInput) (entities.Comment, error) {
 	if err := common.ValidateStruct(input); err != nil {
 		return entities.Comment{}, err
 	}
 
-	image, err := u.imageGateway.GetImageByFileName(ctx, input.ImageFileName)
+	image, err := u.images.GetImageByFileName(ctx, input.ImageFileName)
 
 	if err != nil {
 		return entities.Comment{}, err
@@ -45,5 +45,5 @@ func (u *CreateCommentUseCase) Execute(ctx context.Context, input CreateCommentI
 		Image:    image,
 	})
 
-	return u.dbGateway.CreateComment(ctx, comment, input.RepliedToCommentId)
+	return u.database.CreateComment(ctx, comment, input.RepliedToCommentId)
 }
