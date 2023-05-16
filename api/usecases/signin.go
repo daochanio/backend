@@ -2,63 +2,76 @@ package usecases
 
 import (
 	"context"
+	"fmt"
+	"time"
 
-	"github.com/daochanio/backend/api/entities"
+	"github.com/daochanio/backend/api/settings"
 	"github.com/daochanio/backend/common"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type Signin struct {
 	logger   common.Logger
+	settings settings.Settings
 	database Database
 	cache    Cache
 	stream   Stream
 }
 
 type SigninInput struct {
-	Address string `validate:"eth_addr"`
+	Address   string `validate:"eth_addr"`
+	Signature string `validate:"hexadecimal,min=1"`
 }
 
-func NewSigninUseCase(logger common.Logger, database Database, cache Cache, stream Stream) *Signin {
+func NewSigninUseCase(logger common.Logger, settings settings.Settings, database Database, cache Cache, stream Stream) *Signin {
 	return &Signin{
 		logger,
+		settings,
 		database,
 		cache,
 		stream,
 	}
 }
 
-func (u *Signin) Execute(ctx context.Context, input SigninInput) (entities.Challenge, error) {
+func (u *Signin) Execute(ctx context.Context, input SigninInput) (string, error) {
 	if err := common.ValidateStruct(input); err != nil {
-		return entities.Challenge{}, err
+		return "", err
 	}
 
-	challenge, err := u.getChallenge(ctx, input.Address)
+	token, err := u.verifySignature(ctx, input.Address, input.Signature)
 
 	if err != nil {
-		return entities.Challenge{}, err
+		return "", fmt.Errorf("invalid signature %w", err)
 	}
 
 	err = u.upsertUser(ctx, input.Address)
 
 	if err != nil {
-		return entities.Challenge{}, err
+		return "", fmt.Errorf("failed to upsert user %w", err)
 	}
 
-	return challenge, err
+	return token, err
 }
 
-func (u *Signin) getChallenge(ctx context.Context, address string) (entities.Challenge, error) {
+func (u *Signin) verifySignature(ctx context.Context, address string, signature string) (string, error) {
 	challenge, err := u.cache.GetChallengeByAddress(ctx, address)
 
-	if err == nil {
-		return challenge, nil
+	if err != nil {
+		return "", err
 	}
 
-	newChallenge := entities.GenerateChallenge(address)
+	if err := challenge.Verify(signature); err != nil {
+		return "", err
+	}
 
-	err = u.cache.SaveChallenge(ctx, newChallenge)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"iss": "api.daochan.io",
+		"sub": address,
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(time.Hour * 24 * 7).Unix(),
+	})
 
-	return newChallenge, err
+	return token.SignedString([]byte(u.settings.JWTSecret()))
 }
 
 func (u *Signin) upsertUser(ctx context.Context, address string) error {

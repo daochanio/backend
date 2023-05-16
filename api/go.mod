@@ -11,8 +11,8 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/redis/go-redis/v9 v9.0.3
-	go.uber.org/dig v1.16.1
 	github.com/wealdtech/go-ens/v3 v3.5.5
+	go.uber.org/dig v1.16.1
 )
 
 require (
@@ -28,6 +28,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.12.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
+	github.com/golang-jwt/jwt/v5 v5.0.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/holiman/uint256 v1.2.0 // indirect
 	github.com/ipfs/go-cid v0.2.0 // indirect
