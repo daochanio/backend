@@ -19,6 +19,6 @@ func (e *ethereumGateway) GetNameFromAddress(ctx context.Context, address string
 
 	return cmn.FunctionRetrier(ctx, func() (string, error) {
 		name, err := ens.ReverseResolve(client, common.HexToAddress(address))
-		return name, e.tryWrapRetryable(ctx, "get ens name from address", err)
+		return name, e.tryWrapRetryable(ctx, "failed to get ens name", err)
 	})
 }

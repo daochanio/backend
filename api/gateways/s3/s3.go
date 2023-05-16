@@ -34,7 +34,7 @@ func (g *s3Gateway) UploadImage(ctx context.Context, fileName string, contentTyp
 		Key:          &fileName,
 		Body:         bytes.NewReader(*data),
 		ContentType:  &contentType,
-		CacheControl: aws.String("max-age=2592000"), // 30 days
+		CacheControl: aws.String("max-age=31536000"), // 1yr
 	})
 
 	if err != nil {

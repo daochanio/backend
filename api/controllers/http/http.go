@@ -24,6 +24,7 @@ type HttpServer interface {
 type httpServer struct {
 	logger        common.Logger
 	settings      settings.Settings
+	getChallenge  *usecases.GetChallenge
 	signin        *usecases.Signin
 	authenticate  *usecases.Authenticate
 	rateLimit     *usecases.RateLimit
@@ -41,6 +42,7 @@ type httpServer struct {
 func NewHttpServer(
 	logger common.Logger,
 	settings settings.Settings,
+	getChallenge *usecases.GetChallenge,
 	signin *usecases.Signin,
 	authenticate *usecases.Authenticate,
 	rateLimit *usecases.RateLimit,
@@ -56,6 +58,7 @@ func NewHttpServer(
 	return &httpServer{
 		logger,
 		settings,
+		getChallenge,
 		signin,
 		authenticate,
 		rateLimit,
@@ -100,10 +103,18 @@ func (h *httpServer) Start(ctx context.Context) error {
 			r.Use(h.rateLimiter("public", 20, time.Minute))
 			r.Use(h.maxSize(1))
 
-			r.Put("/signin", h.signinRoute)
 			r.Get("/threads", h.getThreadsRoute)
 			r.Get("/threads/{threadId}", h.getThreadByIdRoute)
 			r.Get("/threads/{threadId}/comments", h.getCommentsRoute)
+		})
+
+		// signin routes
+		r.Group(func(r chi.Router) {
+			r.Use(h.rateLimiter("signin", 5, time.Minute))
+			r.Use(h.maxSize(1))
+
+			r.Get("/signin/{address}", h.getChallengeRoute)
+			r.Post("/signin/{address}", h.putChallengeRoute)
 		})
 
 		// authenticated routes

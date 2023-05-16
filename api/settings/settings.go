@@ -9,6 +9,7 @@ type Settings interface {
 	DbConnectionString() string
 	CacheConnectionString() string
 	StreamConnectionString() string
+	JWTSecret() string
 	BlockchainURI() string
 	RealIPHeader() string
 	ImagePublicBaseURL() string
@@ -23,6 +24,7 @@ type settings struct {
 	port                  string
 	pgConnectionString    string
 	redisConnectionString string
+	jwtSecret             string
 	blockchainURI         string
 	realIPHeader          string
 	imagePublicBaseURL    string
@@ -38,6 +40,7 @@ func NewSettings() Settings {
 		port:                  os.Getenv("PORT"),
 		pgConnectionString:    os.Getenv("PG_CONNECTION_STRING"),
 		redisConnectionString: os.Getenv("REDIS_CONNECTION_STRING"),
+		jwtSecret:             os.Getenv("JWT_SECRET"),
 		blockchainURI:         os.Getenv("BLOCKCHAIN_URI"),
 		realIPHeader:          os.Getenv("REAL_IP_HEADER"),
 		imagePublicBaseURL:    os.Getenv("IMAGE_PUBLIC_BASE_URL"),
@@ -63,6 +66,10 @@ func (s *settings) CacheConnectionString() string {
 
 func (s *settings) StreamConnectionString() string {
 	return s.redisConnectionString
+}
+
+func (s *settings) JWTSecret() string {
+	return s.jwtSecret
 }
 
 func (s *settings) BlockchainURI() string {

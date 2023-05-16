@@ -13,7 +13,6 @@ import (
 func (h *httpServer) authenticator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		address := r.Header.Get("X-Address")
 		token := strings.Split(r.Header.Get("Authorization"), " ")
 
 		if len(token) != 2 || token[0] != "Bearer" {
@@ -21,9 +20,8 @@ func (h *httpServer) authenticator(next http.Handler) http.Handler {
 			return
 		}
 
-		err := h.authenticate.Execute(ctx, &usecases.AuthenticateInput{
-			Address: address,
-			SigHex:  token[1],
+		address, err := h.authenticate.Execute(ctx, &usecases.AuthenticateInput{
+			Token: token[1],
 		})
 
 		if err != nil {
