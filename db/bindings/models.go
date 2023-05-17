@@ -8,6 +8,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Challenge struct {
+	Address   string
+	Message   string
+	ExpiresAt int64
+}
+
 type Comment struct {
 	ID                 int64
 	ThreadID           int64

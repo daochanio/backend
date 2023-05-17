@@ -32,7 +32,8 @@ type bufferMessage struct {
 	stream  common.Stream
 }
 
-func NewSubscriber(logger common.Logger, settings settings.Settings, client *redis.Client, commonSettings common.CommonSettings, aggregateVotesUseCase *usecases.AggregateVotes, hydrateUserUseCase *usecases.HydrateUser) Subscriber {
+func NewSubscriber(logger common.Logger, settings settings.Settings, commonSettings common.CommonSettings, aggregateVotesUseCase *usecases.AggregateVotes, hydrateUserUseCase *usecases.HydrateUser) Subscriber {
+	client := redis.NewClient(settings.GlobalRedisOptions())
 	buffer := map[string]*bufferMessage{}
 	lastFlush := time.Now()
 	return &subscriber{

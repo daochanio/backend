@@ -7,14 +7,14 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-func NewGetChallengeUseCase(cacheGateway Cache) *GetChallenge {
+func NewGetChallengeUseCase(database Database) *GetChallenge {
 	return &GetChallenge{
-		cacheGateway,
+		database,
 	}
 }
 
 type GetChallenge struct {
-	cache Cache
+	database Database
 }
 
 type GetChallengeInput struct {
@@ -26,7 +26,7 @@ func (u *GetChallenge) Execute(ctx context.Context, input *GetChallengeInput) (e
 		return entities.Challenge{}, err
 	}
 
-	challenge, err := u.cache.GetChallengeByAddress(ctx, input.Address)
+	challenge, err := u.database.GetChallengeByAddress(ctx, input.Address)
 
 	if err == nil {
 		return challenge, nil
@@ -34,7 +34,7 @@ func (u *GetChallenge) Execute(ctx context.Context, input *GetChallengeInput) (e
 
 	newChallenge := entities.GenerateChallenge(input.Address)
 
-	err = u.cache.SaveChallenge(ctx, newChallenge)
+	err = u.database.SaveChallenge(ctx, newChallenge)
 
 	return newChallenge, err
 }

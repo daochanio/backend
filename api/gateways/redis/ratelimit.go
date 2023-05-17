@@ -12,7 +12,7 @@ import (
 // it is more memory efficient than the fixed/sliding window algorithm
 // but it is not as precise and may surprise people when first configuring the rate/period
 // as it can allow up to 2x the rate limit in a single period
-func (r *redisGateway) VerifyRateLimit(ctx context.Context, key string, rate int, period time.Duration) error {
+func (r *redisCacheGateway) VerifyRateLimit(ctx context.Context, key string, rate int, period time.Duration) error {
 	res, err := r.limiter.Allow(ctx, key, redis_rate.Limit{
 		Rate:   rate,
 		Period: period,

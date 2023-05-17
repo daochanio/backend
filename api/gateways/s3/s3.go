@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/api/settings"
@@ -19,7 +20,12 @@ type s3Gateway struct {
 	client   *s3.S3
 }
 
-func NewImageGateway(logger common.Logger, settings settings.Settings, client *s3.S3) usecases.Images {
+func NewImageGateway(logger common.Logger, settings settings.Settings) usecases.Images {
+	sess, err := session.NewSession(settings.S3Config())
+	if err != nil {
+		panic(err)
+	}
+	client := s3.New(sess)
 	return &s3Gateway{
 		logger,
 		settings,
@@ -65,5 +71,5 @@ func (g *s3Gateway) GetImageByFileName(ctx context.Context, fileName string) (en
 }
 
 func (g *s3Gateway) getImageUrl(fileName string) string {
-	return fmt.Sprintf("%s/%s", g.settings.ImagePublicBaseURL(), fileName)
+	return fmt.Sprintf("%s/%s", g.settings.StaticPublicBaseURL(), fileName)
 }

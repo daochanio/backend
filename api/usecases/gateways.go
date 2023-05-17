@@ -9,6 +9,9 @@ import (
 )
 
 type Database interface {
+	GetChallengeByAddress(ctx context.Context, address string) (entities.Challenge, error)
+	SaveChallenge(ctx context.Context, challenge entities.Challenge) error
+
 	GetThreads(ctx context.Context, limit int64) ([]entities.Thread, error)
 	GetThreadById(ctx context.Context, threadId int64) (entities.Thread, error)
 	GetComments(ctx context.Context, threadId int64, offset int64, limit int64) ([]entities.Comment, int64, error)
@@ -25,8 +28,6 @@ type Database interface {
 }
 
 type Cache interface {
-	GetChallengeByAddress(ctx context.Context, address string) (entities.Challenge, error)
-	SaveChallenge(ctx context.Context, challenge entities.Challenge) error
 	VerifyRateLimit(ctx context.Context, key string, rate int, period time.Duration) error
 }
 
