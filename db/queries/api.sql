@@ -11,6 +11,17 @@ SET
 	updated_at = NOW()
 WHERE address = $1;
 
+-- name: GetChallenge :one
+SELECT *
+FROM challenges
+WHERE address = $1;
+
+-- name: UpdateChallenge :exec
+INSERT INTO challenges (address, message, expires_at)
+VALUES ($1, $2, $3)
+ON CONFLICT (address) DO UPDATE
+SET message = $2, expires_at = $3;
+
 -- name: CreateThread :one
 INSERT INTO threads (address, title, content, image_file_name, image_url, image_content_type)
 VALUES ($1, $2, $3, $4, $5, $6)

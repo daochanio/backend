@@ -14,7 +14,6 @@ type Signin struct {
 	logger   common.Logger
 	settings settings.Settings
 	database Database
-	cache    Cache
 	stream   Stream
 }
 
@@ -23,12 +22,11 @@ type SigninInput struct {
 	Signature string `validate:"hexadecimal,min=1"`
 }
 
-func NewSigninUseCase(logger common.Logger, settings settings.Settings, database Database, cache Cache, stream Stream) *Signin {
+func NewSigninUseCase(logger common.Logger, settings settings.Settings, database Database, stream Stream) *Signin {
 	return &Signin{
 		logger,
 		settings,
 		database,
-		cache,
 		stream,
 	}
 }
@@ -44,7 +42,7 @@ func (u *Signin) Execute(ctx context.Context, input SigninInput) (string, error)
 		return "", fmt.Errorf("invalid signature %w", err)
 	}
 
-	err = u.upsertUser(ctx, input.Address)
+	err = u.updateUser(ctx, input.Address)
 
 	if err != nil {
 		return "", fmt.Errorf("failed to upsert user %w", err)
@@ -54,7 +52,7 @@ func (u *Signin) Execute(ctx context.Context, input SigninInput) (string, error)
 }
 
 func (u *Signin) verifySignature(ctx context.Context, address string, signature string) (string, error) {
-	challenge, err := u.cache.GetChallengeByAddress(ctx, address)
+	challenge, err := u.database.GetChallengeByAddress(ctx, address)
 
 	if err != nil {
 		return "", err
@@ -74,7 +72,7 @@ func (u *Signin) verifySignature(ctx context.Context, address string, signature 
 	return token.SignedString([]byte(u.settings.JWTSecret()))
 }
 
-func (u *Signin) upsertUser(ctx context.Context, address string) error {
+func (u *Signin) updateUser(ctx context.Context, address string) error {
 	err := u.database.UpsertUser(ctx, address)
 
 	if err != nil {

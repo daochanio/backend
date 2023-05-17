@@ -10,7 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func (r *redisGateway) PublishVote(ctx context.Context, vote entities.Vote) error {
+func (r *redisStreamGateway) PublishVote(ctx context.Context, vote entities.Vote) error {
 	voteJson := common.VoteMessage{
 		Id:      vote.Id(),
 		Address: vote.Address(),
@@ -33,7 +33,7 @@ func (r *redisGateway) PublishVote(ctx context.Context, vote entities.Vote) erro
 	}).Err()
 }
 
-func (r *redisGateway) PublishSignin(ctx context.Context, address string) error {
+func (r *redisStreamGateway) PublishSignin(ctx context.Context, address string) error {
 	voteJson := common.SigninMessage{
 		Address: address,
 	}

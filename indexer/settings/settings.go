@@ -3,10 +3,12 @@ package settings
 import (
 	"os"
 	"strconv"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Settings interface {
-	DbConnectionString() string
+	PostgresConfig() *pgxpool.Config
 	BlockchainURI() string
 	TokenAddress() string
 	GovernorAddress() string
@@ -16,7 +18,7 @@ type Settings interface {
 }
 
 type settings struct {
-	dbConnectionString string
+	pgConnectionString string
 	blockchainURI      string
 	tokenAddress       string
 	governorAddress    string
@@ -37,7 +39,7 @@ func NewSettings() Settings {
 	}
 
 	return &settings{
-		dbConnectionString: os.Getenv("PG_CONNECTION_STRING"),
+		pgConnectionString: os.Getenv("PG_CONNECTION_STRING"),
 		blockchainURI:      os.Getenv("BLOCKCHAIN_URI"),
 		tokenAddress:       os.Getenv("TOKEN_ADDRESS"),
 		governorAddress:    os.Getenv("GOVERNOR_ADDRESS"),
@@ -47,8 +49,13 @@ func NewSettings() Settings {
 	}
 }
 
-func (s *settings) DbConnectionString() string {
-	return s.dbConnectionString
+func (s *settings) PostgresConfig() *pgxpool.Config {
+	config, err := pgxpool.ParseConfig(s.pgConnectionString)
+
+	if err != nil {
+		panic(err)
+	}
+	return config
 }
 
 func (s *settings) BlockchainURI() string {

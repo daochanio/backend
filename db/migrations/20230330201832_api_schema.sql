@@ -8,6 +8,12 @@ CREATE TABLE users (
 	updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE challenges (
+	address VARCHAR(42) PRIMARY KEY,
+	message VARCHAR(255) NOT NULL,
+	expires_at BIGINT NOT NULL
+);
+
 CREATE TABLE threads (
 	id BIGSERIAL PRIMARY KEY,
 	address VARCHAR(42) NOT NULL REFERENCES users(address),

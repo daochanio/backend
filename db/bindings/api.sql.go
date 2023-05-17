@@ -250,6 +250,19 @@ func (q *Queries) DeleteThread(ctx context.Context, id int64) (int64, error) {
 	return thread_id, err
 }
 
+const getChallenge = `-- name: GetChallenge :one
+SELECT address, message, expires_at
+FROM challenges
+WHERE address = $1
+`
+
+func (q *Queries) GetChallenge(ctx context.Context, address string) (Challenge, error) {
+	row := q.db.QueryRow(ctx, getChallenge, address)
+	var i Challenge
+	err := row.Scan(&i.Address, &i.Message, &i.ExpiresAt)
+	return i, err
+}
+
 const getComment = `-- name: GetComment :one
 SELECT c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.image_file_name, c.image_url, c.image_content_type, c.votes, c.is_deleted, c.created_at, c.deleted_at
 FROM comments c
@@ -439,6 +452,24 @@ func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]Thread, err
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateChallenge = `-- name: UpdateChallenge :exec
+INSERT INTO challenges (address, message, expires_at)
+VALUES ($1, $2, $3)
+ON CONFLICT (address) DO UPDATE
+SET message = $2, expires_at = $3
+`
+
+type UpdateChallengeParams struct {
+	Address   string
+	Message   string
+	ExpiresAt int64
+}
+
+func (q *Queries) UpdateChallenge(ctx context.Context, arg UpdateChallengeParams) error {
+	_, err := q.db.Exec(ctx, updateChallenge, arg.Address, arg.Message, arg.ExpiresAt)
+	return err
 }
 
 const updateUser = `-- name: UpdateUser :exec
