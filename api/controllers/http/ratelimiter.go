@@ -12,18 +12,17 @@ func (h *httpServer) rateLimiter(namespace string, rate int, period time.Duratio
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			// TODO: Re-enable rate limiter
-			_ = h.rateLimit.Execute(ctx, &usecases.RateLimitInput{
+			err := h.rateLimit.Execute(ctx, &usecases.RateLimitInput{
 				Namespace: namespace,
 				IpAddress: r.RemoteAddr,
 				Rate:      rate,
 				Period:    period,
 			})
 
-			// if err != nil {
-			// 	h.presentTooManyRequests(w, r, err)
-			// 	return
-			// }
+			if err != nil {
+				h.presentTooManyRequests(w, r, err)
+				return
+			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
