@@ -174,10 +174,10 @@ func (h *httpServer) presentUnathorized(w http.ResponseWriter, r *http.Request, 
 	h.presentJSON(w, r, http.StatusUnauthorized, toErrJson("unathorized"), nil)
 }
 
-func (h *httpServer) presentTooManyRequests(w http.ResponseWriter, r *http.Request, err error) {
-	h.logger.Warn(r.Context()).Err(err).Msg("too many requests")
-	h.presentJSON(w, r, http.StatusTooManyRequests, toErrJson("too many requests"), nil)
-}
+// func (h *httpServer) presentTooManyRequests(w http.ResponseWriter, r *http.Request, err error) {
+// 	h.logger.Warn(r.Context()).Err(err).Msg("too many requests")
+// 	h.presentJSON(w, r, http.StatusTooManyRequests, toErrJson("too many requests"), nil)
+// }
 
 func (h *httpServer) presentJSON(w http.ResponseWriter, r *http.Request, statusCode int, data any, lastPage *pageJson) {
 	w.Header().Set("Content-Type", "application/json")
