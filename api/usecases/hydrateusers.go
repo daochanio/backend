@@ -44,6 +44,9 @@ func (u *HydrateUsers) Execute(ctx context.Context, input HydrateUsersInput) {
 			ensName = &name
 		}
 
-		u.database.UpdateUser(ctx, address, ensName)
+		err = u.database.UpdateUser(ctx, address, ensName)
+		if err != nil {
+			u.logger.Error(ctx).Err(err).Msgf("error hydrating user %v", address)
+		}
 	}
 }
