@@ -89,15 +89,17 @@ const createCommentDownVote = `-- name: CreateCommentDownVote :exec
 INSERT INTO comment_votes (address, comment_id, vote)
 VALUES ($1, $2, -1)
 ON CONFLICT (address, comment_id) DO UPDATE SET vote = -1, updated_at = NOW()
+WHERE comment_votes.updated_at < TO_TIMESTAMP($3)
 `
 
 type CreateCommentDownVoteParams struct {
-	Address   string
-	CommentID int64
+	Address     string
+	CommentID   int64
+	ToTimestamp float64
 }
 
 func (q *Queries) CreateCommentDownVote(ctx context.Context, arg CreateCommentDownVoteParams) error {
-	_, err := q.db.Exec(ctx, createCommentDownVote, arg.Address, arg.CommentID)
+	_, err := q.db.Exec(ctx, createCommentDownVote, arg.Address, arg.CommentID, arg.ToTimestamp)
 	return err
 }
 
@@ -105,15 +107,17 @@ const createCommentUnVote = `-- name: CreateCommentUnVote :exec
 INSERT INTO comment_votes (address, comment_id, vote)
 VALUES ($1, $2, 0)
 ON CONFLICT (address, comment_id) DO UPDATE SET vote = 0, updated_at = NOW()
+WHERE comment_votes.updated_at < TO_TIMESTAMP($3)
 `
 
 type CreateCommentUnVoteParams struct {
-	Address   string
-	CommentID int64
+	Address     string
+	CommentID   int64
+	ToTimestamp float64
 }
 
 func (q *Queries) CreateCommentUnVote(ctx context.Context, arg CreateCommentUnVoteParams) error {
-	_, err := q.db.Exec(ctx, createCommentUnVote, arg.Address, arg.CommentID)
+	_, err := q.db.Exec(ctx, createCommentUnVote, arg.Address, arg.CommentID, arg.ToTimestamp)
 	return err
 }
 
@@ -121,15 +125,17 @@ const createCommentUpVote = `-- name: CreateCommentUpVote :exec
 INSERT INTO comment_votes (address, comment_id, vote)
 VALUES ($1, $2, 1)
 ON CONFLICT (address, comment_id) DO UPDATE SET vote = 1, updated_at = NOW()
+WHERE comment_votes.updated_at < TO_TIMESTAMP($3)
 `
 
 type CreateCommentUpVoteParams struct {
-	Address   string
-	CommentID int64
+	Address     string
+	CommentID   int64
+	ToTimestamp float64
 }
 
 func (q *Queries) CreateCommentUpVote(ctx context.Context, arg CreateCommentUpVoteParams) error {
-	_, err := q.db.Exec(ctx, createCommentUpVote, arg.Address, arg.CommentID)
+	_, err := q.db.Exec(ctx, createCommentUpVote, arg.Address, arg.CommentID, arg.ToTimestamp)
 	return err
 }
 
@@ -175,18 +181,22 @@ func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (Thr
 }
 
 const createThreadDownVote = `-- name: CreateThreadDownVote :exec
+
 INSERT INTO thread_votes (address, thread_id, vote)
 VALUES ($1, $2, -1)
 ON CONFLICT (address, thread_id) DO UPDATE SET vote = -1, updated_at = NOW()
+WHERE thread_votes.updated_at < TO_TIMESTAMP($3)
 `
 
 type CreateThreadDownVoteParams struct {
-	Address  string
-	ThreadID int64
+	Address     string
+	ThreadID    int64
+	ToTimestamp float64
 }
 
+// only update the vote if the incoming vote is newer than the current vote
 func (q *Queries) CreateThreadDownVote(ctx context.Context, arg CreateThreadDownVoteParams) error {
-	_, err := q.db.Exec(ctx, createThreadDownVote, arg.Address, arg.ThreadID)
+	_, err := q.db.Exec(ctx, createThreadDownVote, arg.Address, arg.ThreadID, arg.ToTimestamp)
 	return err
 }
 
@@ -194,15 +204,17 @@ const createThreadUnVote = `-- name: CreateThreadUnVote :exec
 INSERT INTO thread_votes (address, thread_id, vote)
 VALUES ($1, $2, 0)
 ON CONFLICT (address, thread_id) DO UPDATE SET vote = 0, updated_at = NOW()
+WHERE thread_votes.updated_at < TO_TIMESTAMP($3)
 `
 
 type CreateThreadUnVoteParams struct {
-	Address  string
-	ThreadID int64
+	Address     string
+	ThreadID    int64
+	ToTimestamp float64
 }
 
 func (q *Queries) CreateThreadUnVote(ctx context.Context, arg CreateThreadUnVoteParams) error {
-	_, err := q.db.Exec(ctx, createThreadUnVote, arg.Address, arg.ThreadID)
+	_, err := q.db.Exec(ctx, createThreadUnVote, arg.Address, arg.ThreadID, arg.ToTimestamp)
 	return err
 }
 
@@ -210,15 +222,17 @@ const createThreadUpVote = `-- name: CreateThreadUpVote :exec
 INSERT INTO thread_votes (address, thread_id, vote)
 VALUES ($1, $2, 1)
 ON CONFLICT (address, thread_id) DO UPDATE SET vote = 1, updated_at = NOW()
+WHERE thread_votes.updated_at < TO_TIMESTAMP($3)
 `
 
 type CreateThreadUpVoteParams struct {
-	Address  string
-	ThreadID int64
+	Address     string
+	ThreadID    int64
+	ToTimestamp float64
 }
 
 func (q *Queries) CreateThreadUpVote(ctx context.Context, arg CreateThreadUpVoteParams) error {
-	_, err := q.db.Exec(ctx, createThreadUpVote, arg.Address, arg.ThreadID)
+	_, err := q.db.Exec(ctx, createThreadUpVote, arg.Address, arg.ThreadID, arg.ToTimestamp)
 	return err
 }
 

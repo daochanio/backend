@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
+	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/api/settings"
 	"github.com/daochanio/backend/api/usecases"
 	"github.com/daochanio/backend/common"
@@ -22,19 +24,19 @@ type subscriber struct {
 	commonSettings        common.CommonSettings
 	client                *redis.Client
 	aggregateVotesUseCase *usecases.AggregateVotes
-	hydrateUserUseCase    *usecases.HydrateUser
-	messageBuffer         map[string]*bufferMessage
+	hydrateUserUseCase    *usecases.HydrateUsers
+	messageBuffer         *[]bufferMessage
 	lastFlush             time.Time
 }
 
 type bufferMessage struct {
-	message any
-	stream  common.Stream
+	message redis.XMessage
+	stream  redis.XStream
 }
 
-func NewSubscriber(logger common.Logger, settings settings.Settings, commonSettings common.CommonSettings, aggregateVotesUseCase *usecases.AggregateVotes, hydrateUserUseCase *usecases.HydrateUser) Subscriber {
+func NewSubscriber(logger common.Logger, settings settings.Settings, commonSettings common.CommonSettings, aggregateVotesUseCase *usecases.AggregateVotes, hydrateUsersUseCase *usecases.HydrateUsers) Subscriber {
 	client := redis.NewClient(settings.GlobalRedisOptions())
-	buffer := map[string]*bufferMessage{}
+	buffer := &[]bufferMessage{}
 	lastFlush := time.Now()
 	return &subscriber{
 		logger,
@@ -42,7 +44,7 @@ func NewSubscriber(logger common.Logger, settings settings.Settings, commonSetti
 		commonSettings,
 		client,
 		aggregateVotesUseCase,
-		hydrateUserUseCase,
+		hydrateUsersUseCase,
 		buffer,
 		lastFlush,
 	}
@@ -50,10 +52,13 @@ func NewSubscriber(logger common.Logger, settings settings.Settings, commonSetti
 
 // Subscribe to the vote stream and read incoming votes
 // Buffer successive messages with the same key to minimize work
-// I.e buffering on votes is to avoid excessive writes on the same column for hot threads/comments
-// Flush the buffer at a certain length threshold or past a certain number of seconds.
-// TODO: if we receive a sigterm and there are messages in the buffer, flush the buffer before exiting
-// TODO: Could make this more efficient by processing buffered messages in batches instead of one by one
+// I.e buffering on votes is to avoid excessive writes on the same column for hot threads/comments or a bad actor writing the same vote over and over.
+// Either scenario would cause a lot of write contention on a single row.
+// We flush the buffer at a certain length or past a certain number of seconds.
+// We can't assume that the messages we are reading in order, since streams are processed in parallel from multiple distributed processes.
+// Example: autoclaiming a vote message from the PEL that Node 1 failed to process but is older than a message that Node 2 is currently processing.
+//
+// TODO: If we receive a sigterm and there are messages in the buffer, flush the buffer and ensure it finishes before exiting
 func (s *subscriber) Start(ctx context.Context) error {
 	group := s.commonSettings.Appname()
 	consumer := s.commonSettings.Hostname()
@@ -62,7 +67,7 @@ func (s *subscriber) Start(ctx context.Context) error {
 	_ = s.client.XGroupCreateMkStream(ctx, common.VoteStream, group, "$").Err()
 
 	for {
-		if len(s.messageBuffer) >= 1000 || (time.Since(s.lastFlush) > time.Second*15 && len(s.messageBuffer) > 0) {
+		if len(*s.messageBuffer) >= 1000 || (time.Since(s.lastFlush) > time.Second*15 && len(*s.messageBuffer) > 0) {
 			s.flushBuffer(ctx)
 		}
 
@@ -74,41 +79,6 @@ func (s *subscriber) Start(ctx context.Context) error {
 		}
 
 		s.bufferMessages(ctx, group, results)
-	}
-}
-
-func (s *subscriber) flushBuffer(ctx context.Context) {
-	s.logger.Info(ctx).Msgf("flushing buffer with size %v", len(s.messageBuffer))
-	s.lastFlush = time.Now()
-	for key, bufferMessage := range s.messageBuffer {
-		switch bufferMessage.stream {
-		case common.VoteStream:
-			{
-				voteMessage := bufferMessage.message.(common.VoteMessage)
-				s.logger.Info(ctx).Msgf("aggregating votes for %v %v", voteMessage.Type, voteMessage.Id)
-				if err := s.aggregateVotesUseCase.Execute(ctx, usecases.AggregateVotesInput{
-					Id:   voteMessage.Id,
-					Type: voteMessage.Type,
-				}); err != nil {
-					s.logger.Error(ctx).Err(err).Msgf("error aggregating votes for %v %v", voteMessage.Type, voteMessage.Id)
-				}
-			}
-		case common.SigninStream:
-			{
-				signinMessage := bufferMessage.message.(common.SigninMessage)
-				s.logger.Info(ctx).Msgf("hydrating user info for %v", signinMessage.Address)
-				if err := s.hydrateUserUseCase.Execute(ctx, usecases.HydrateUserInput{
-					Address: signinMessage.Address,
-				}); err != nil {
-					s.logger.Error(ctx).Err(err).Msgf("error hydrating user %v", signinMessage.Address)
-				}
-			}
-		default:
-			{
-				s.logger.Error(ctx).Msgf("inavlid stream %v", bufferMessage.stream)
-			}
-		}
-		delete(s.messageBuffer, key)
 	}
 }
 
@@ -160,38 +130,63 @@ func (s *subscriber) readMessages(ctx context.Context, group string, consumer st
 func (s *subscriber) bufferMessages(ctx context.Context, group string, results []redis.XStream) {
 	for _, result := range results {
 		for _, message := range result.Messages {
-			switch result.Stream {
-			case common.SigninStream:
-				{
-					var signinMessage common.SigninMessage
-					if err := parseMessage(ctx, message, &signinMessage); err != nil {
-						s.logger.Error(ctx).Err(err).Msgf("error processing message: %v %v %v", result.Stream, message.ID, message.Values)
-					}
-					s.messageBuffer[signinMessage.Address] = &bufferMessage{
-						message: signinMessage,
-						stream:  result.Stream,
-					}
-				}
-			case common.VoteStream:
-				{
-					var voteMessage common.VoteMessage
-					if err := parseMessage(ctx, message, &voteMessage); err != nil {
-						s.logger.Error(ctx).Err(err).Msgf("error processing message: %v %v %v", result.Stream, message.ID, message.Values)
-					}
-					s.messageBuffer[fmt.Sprintf("%v:%v", voteMessage.Type, voteMessage.Id)] = &bufferMessage{
-						message: voteMessage,
-						stream:  result.Stream,
-					}
-				}
-			default:
-				s.logger.Error(ctx).Msgf("invalid stream: %v", result.Stream)
-			}
-
+			messageBuffer := append(*s.messageBuffer, bufferMessage{
+				message: message,
+				stream:  result,
+			})
+			s.messageBuffer = &messageBuffer
 			if err := s.client.XAck(ctx, result.Stream, group, message.ID).Err(); err != nil {
 				s.logger.Error(ctx).Err(err).Msgf("error acknowledging message: %v %v %v", result.Stream, message.ID, message.Values)
 			}
 		}
 	}
+}
+
+func (s *subscriber) flushBuffer(ctx context.Context) {
+	s.logger.Info(ctx).Msgf("flushing buffer with size %v", len(*s.messageBuffer))
+	userAddresses := []string{}
+	votes := []entities.Vote{}
+	for _, bufferMessage := range *s.messageBuffer {
+		stream := bufferMessage.stream.Stream
+		message := bufferMessage.message
+		switch stream {
+		case common.VoteStream:
+			{
+				var voteMessage common.VoteMessage
+				if err := parseMessage(ctx, message, &voteMessage); err != nil {
+					s.logger.Error(ctx).Err(err).Msgf("error parsing vote message: %v %v %v", stream, message.ID, message.Values)
+					continue
+				}
+				vote := entities.NewVote(voteMessage.Id, voteMessage.Address, voteMessage.Value, voteMessage.Type, voteMessage.UpdatedAt)
+				votes = append(votes, vote)
+			}
+		case common.SigninStream:
+			{
+				var signinMessage common.SigninMessage
+				if err := parseMessage(ctx, message, &signinMessage); err != nil {
+					s.logger.Error(ctx).Err(err).Msgf("error parsing signin message: %v %v %v", stream, message.ID, message.Values)
+					continue
+				}
+				userAddresses = append(userAddresses, signinMessage.Address)
+			}
+		default:
+			{
+				s.logger.Error(ctx).Msgf("inavlid stream %v", bufferMessage.stream)
+			}
+		}
+	}
+
+	// wipe buffer/lastFlush regardless of success/failure of below processing to avoid memory leaks from an infinitely growing buffer
+	s.lastFlush = time.Now()
+	s.messageBuffer = &[]bufferMessage{}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go s.aggregateVotes(ctx, &wg, votes)
+	go s.hydrateUsers(ctx, &wg, userAddresses)
+
+	wg.Wait()
 }
 
 func parseMessage[T any](ctx context.Context, message redis.XMessage, result *T) error {
@@ -201,4 +196,28 @@ func parseMessage[T any](ctx context.Context, message redis.XMessage, result *T)
 	}
 
 	return nil
+}
+
+func (s *subscriber) aggregateVotes(ctx context.Context, wg *sync.WaitGroup, votes []entities.Vote) {
+	defer wg.Done()
+
+	if len(votes) == 0 {
+		return
+	}
+
+	s.aggregateVotesUseCase.Execute(ctx, usecases.AggregateVotesInput{
+		Votes: votes,
+	})
+}
+
+func (s *subscriber) hydrateUsers(ctx context.Context, wg *sync.WaitGroup, addresses []string) {
+	defer wg.Done()
+
+	if len(addresses) == 0 {
+		return
+	}
+
+	s.hydrateUserUseCase.Execute(ctx, usecases.HydrateUsersInput{
+		Addresses: addresses,
+	})
 }

@@ -12,9 +12,11 @@ import (
 
 func (r *redisStreamGateway) PublishVote(ctx context.Context, vote entities.Vote) error {
 	voteJson := common.VoteMessage{
-		Id:      vote.Id(),
-		Address: vote.Address(),
-		Type:    vote.Type(),
+		Id:        vote.Id(),
+		Address:   vote.Address(),
+		Type:      vote.Type(),
+		Value:     vote.Value(),
+		UpdatedAt: vote.UpdatedAt(),
 	}
 
 	message, err := json.Marshal(voteJson)

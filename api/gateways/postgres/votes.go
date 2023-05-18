@@ -15,18 +15,21 @@ func (g *postgresGateway) CreateVote(ctx context.Context, vote entities.Vote) er
 		switch vote.Value() {
 		case common.Upvote:
 			return g.queries.CreateThreadUpVote(ctx, bindings.CreateThreadUpVoteParams{
-				ThreadID: vote.Id(),
-				Address:  vote.Address(),
+				ThreadID:    vote.Id(),
+				Address:     vote.Address(),
+				ToTimestamp: float64(vote.UpdatedAt()),
 			})
 		case common.Downvote:
 			return g.queries.CreateThreadDownVote(ctx, bindings.CreateThreadDownVoteParams{
-				ThreadID: vote.Id(),
-				Address:  vote.Address(),
+				ThreadID:    vote.Id(),
+				Address:     vote.Address(),
+				ToTimestamp: float64(vote.UpdatedAt()),
 			})
 		case common.Unvote:
 			return g.queries.CreateThreadUnVote(ctx, bindings.CreateThreadUnVoteParams{
-				ThreadID: vote.Id(),
-				Address:  vote.Address(),
+				ThreadID:    vote.Id(),
+				Address:     vote.Address(),
+				ToTimestamp: float64(vote.UpdatedAt()),
 			})
 		default:
 			return fmt.Errorf("invalid vote value %v", vote.Value())
@@ -35,18 +38,21 @@ func (g *postgresGateway) CreateVote(ctx context.Context, vote entities.Vote) er
 		switch vote.Value() {
 		case common.Upvote:
 			return g.queries.CreateCommentUpVote(ctx, bindings.CreateCommentUpVoteParams{
-				CommentID: vote.Id(),
-				Address:   vote.Address(),
+				CommentID:   vote.Id(),
+				Address:     vote.Address(),
+				ToTimestamp: float64(vote.UpdatedAt()),
 			})
 		case common.Downvote:
 			return g.queries.CreateCommentDownVote(ctx, bindings.CreateCommentDownVoteParams{
-				CommentID: vote.Id(),
-				Address:   vote.Address(),
+				CommentID:   vote.Id(),
+				Address:     vote.Address(),
+				ToTimestamp: float64(vote.UpdatedAt()),
 			})
 		case common.Unvote:
 			return g.queries.CreateCommentUnVote(ctx, bindings.CreateCommentUnVoteParams{
-				CommentID: vote.Id(),
-				Address:   vote.Address(),
+				CommentID:   vote.Id(),
+				Address:     vote.Address(),
+				ToTimestamp: float64(vote.UpdatedAt()),
 			})
 		default:
 			return fmt.Errorf("invalid vote value %v", vote.Value())

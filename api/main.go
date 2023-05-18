@@ -112,7 +112,7 @@ func newContainer() *dig.Container {
 	if err := container.Provide(usecases.NewAggregateVotesUseCase); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(usecases.NewHydrateUserUseCase); err != nil {
+	if err := container.Provide(usecases.NewHydrateUsersUseCase); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(http.NewHttpServer); err != nil {

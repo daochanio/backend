@@ -89,32 +89,38 @@ RETURNING id as comment_id;
 -- name: CreateThreadUpVote :exec
 INSERT INTO thread_votes (address, thread_id, vote)
 VALUES ($1, $2, 1)
-ON CONFLICT (address, thread_id) DO UPDATE SET vote = 1, updated_at = NOW();
+ON CONFLICT (address, thread_id) DO UPDATE SET vote = 1, updated_at = NOW()
+WHERE thread_votes.updated_at < TO_TIMESTAMP($3); -- only update the vote if the incoming vote is newer than the current vote
 
 -- name: CreateThreadDownVote :exec
 INSERT INTO thread_votes (address, thread_id, vote)
 VALUES ($1, $2, -1)
-ON CONFLICT (address, thread_id) DO UPDATE SET vote = -1, updated_at = NOW();
+ON CONFLICT (address, thread_id) DO UPDATE SET vote = -1, updated_at = NOW()
+WHERE thread_votes.updated_at < TO_TIMESTAMP($3);
 
 -- name: CreateThreadUnVote :exec
 INSERT INTO thread_votes (address, thread_id, vote)
 VALUES ($1, $2, 0)
-ON CONFLICT (address, thread_id) DO UPDATE SET vote = 0, updated_at = NOW();
+ON CONFLICT (address, thread_id) DO UPDATE SET vote = 0, updated_at = NOW()
+WHERE thread_votes.updated_at < TO_TIMESTAMP($3);
 
 -- name: CreateCommentUpVote :exec
 INSERT INTO comment_votes (address, comment_id, vote)
 VALUES ($1, $2, 1)
-ON CONFLICT (address, comment_id) DO UPDATE SET vote = 1, updated_at = NOW();
+ON CONFLICT (address, comment_id) DO UPDATE SET vote = 1, updated_at = NOW()
+WHERE comment_votes.updated_at < TO_TIMESTAMP($3);
 
 -- name: CreateCommentDownVote :exec
 INSERT INTO comment_votes (address, comment_id, vote)
 VALUES ($1, $2, -1)
-ON CONFLICT (address, comment_id) DO UPDATE SET vote = -1, updated_at = NOW();
+ON CONFLICT (address, comment_id) DO UPDATE SET vote = -1, updated_at = NOW()
+WHERE comment_votes.updated_at < TO_TIMESTAMP($3);
 
 -- name: CreateCommentUnVote :exec
 INSERT INTO comment_votes (address, comment_id, vote)
 VALUES ($1, $2, 0)
-ON CONFLICT (address, comment_id) DO UPDATE SET vote = 0, updated_at = NOW();
+ON CONFLICT (address, comment_id) DO UPDATE SET vote = 0, updated_at = NOW()
+WHERE comment_votes.updated_at < TO_TIMESTAMP($3);
 
 -- name: AggregateThreadVotes :exec
 UPDATE threads
