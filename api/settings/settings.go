@@ -82,7 +82,7 @@ func (s *settings) RegionalRedisOptions() *redis.Options {
 }
 
 func (s *settings) GlobalRedisOptions() *redis.Options {
-	return s.buildRedisConfig(s.redisCacheConnectionString)
+	return s.buildRedisConfig(s.redisStreamConnectionString)
 }
 
 func (s *settings) buildRedisConfig(connStr string) *redis.Options {
