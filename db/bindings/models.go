@@ -66,8 +66,12 @@ type ThreadVote struct {
 }
 
 type User struct {
-	Address   string
-	EnsName   pgtype.Text
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	Address              string
+	EnsName              pgtype.Text
+	CreatedAt            pgtype.Timestamp
+	UpdatedAt            pgtype.Timestamp
+	Reputation           int64
+	EnsAvatarFileName    pgtype.Text
+	EnsAvatarUrl         pgtype.Text
+	EnsAvatarContentType pgtype.Text
 }

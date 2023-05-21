@@ -142,7 +142,7 @@ func (h *httpServer) Start(ctx context.Context) error {
 		r.Group(func(r chi.Router) {
 			r.Use(h.authenticator)
 			r.Use(h.rateLimiter("create:image", 7, time.Minute*10)) // should encompass creating images for threads and comments
-			r.Use(h.maxSize(3 * 1024))
+			r.Use(h.maxSize(5 * 1024))
 
 			r.Post("/images", h.uploadImageRoute)
 		})
@@ -216,6 +216,7 @@ func (h *httpServer) presentStatus(w http.ResponseWriter, r *http.Request, statu
 func (h *httpServer) logEvent(w http.ResponseWriter, r *http.Request, statusCode int) {
 	ctx := r.Context()
 	t1 := ctx.Value(common.ContextKeyRequestStartTime).(time.Time)
+	routeCtx := chi.RouteContext(ctx)
 	var event common.LogEvent
 	if statusCode >= 500 {
 		event = h.logger.Error(ctx)
@@ -230,6 +231,7 @@ func (h *httpServer) logEvent(w http.ResponseWriter, r *http.Request, statusCode
 	}{
 		{Key: "method", Value: r.Method},
 		{Key: "path", Value: r.URL.Path},
+		{Key: "pattern", Value: fmt.Sprintf("%v %v", routeCtx.RouteMethod, routeCtx.RoutePattern())},
 		{Key: "resptime", Value: time.Since(t1).String()},
 		{Key: "statuscode", Value: fmt.Sprint(statusCode)},
 		{Key: "remoteaddr", Value: r.RemoteAddr},

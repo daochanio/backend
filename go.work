@@ -6,4 +6,5 @@ use (
 	./distributor
 	./indexer
 	./db
+	./ethereum
 )

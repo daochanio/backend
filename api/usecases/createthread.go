@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/common"
@@ -9,14 +10,14 @@ import (
 
 type CreateThread struct {
 	logger   common.Logger
-	images   Images
+	storage  Storage
 	database Database
 }
 
-func NewCreateThreadUseCase(logger common.Logger, images Images, database Database) *CreateThread {
+func NewCreateThreadUseCase(logger common.Logger, storage Storage, database Database) *CreateThread {
 	return &CreateThread{
 		logger,
-		images,
+		storage,
 		database,
 	}
 }
@@ -33,17 +34,21 @@ func (u *CreateThread) Execute(ctx context.Context, input CreateThreadInput) (en
 		return entities.Thread{}, err
 	}
 
-	image, err := u.images.GetImageByFileName(ctx, input.ImageFileName)
+	image, err := u.storage.GetImageByFileName(ctx, input.ImageFileName)
 
 	if err != nil {
 		return entities.Thread{}, err
+	}
+
+	if image == nil {
+		return entities.Thread{}, fmt.Errorf("image not found %w", common.ErrNotFound)
 	}
 
 	thread := entities.NewThread(entities.ThreadParams{
 		Address: input.Address,
 		Title:   input.Title,
 		Content: input.Content,
-		Image:   image,
+		Image:   *image,
 	})
 
 	return u.database.CreateThread(ctx, thread)

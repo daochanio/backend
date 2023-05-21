@@ -8,6 +8,9 @@ ON CONFLICT (address) DO NOTHING;
 UPDATE users
 SET
 	ens_name = $2,
+	ens_avatar_file_name = $3,
+	ens_avatar_url = $4,
+	ens_avatar_content_type = $5,
 	updated_at = NOW()
 WHERE address = $1;
 

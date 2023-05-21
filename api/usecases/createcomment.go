@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/common"
@@ -9,13 +10,13 @@ import (
 
 type CreateComment struct {
 	database Database
-	images   Images
+	storage  Storage
 }
 
-func NewCreateCommentUseCase(database Database, images Images) *CreateComment {
+func NewCreateCommentUseCase(database Database, storage Storage) *CreateComment {
 	return &CreateComment{
 		database,
-		images,
+		storage,
 	}
 }
 
@@ -32,17 +33,21 @@ func (u *CreateComment) Execute(ctx context.Context, input CreateCommentInput) (
 		return entities.Comment{}, err
 	}
 
-	image, err := u.images.GetImageByFileName(ctx, input.ImageFileName)
+	image, err := u.storage.GetImageByFileName(ctx, input.ImageFileName)
 
 	if err != nil {
 		return entities.Comment{}, err
+	}
+
+	if image == nil {
+		return entities.Comment{}, fmt.Errorf("image not found %w", common.ErrNotFound)
 	}
 
 	comment := entities.NewComment(entities.CommentParams{
 		ThreadId: input.ThreadId,
 		Address:  input.Address,
 		Content:  input.Content,
-		Image:    image,
+		Image:    *image,
 	})
 
 	return u.database.CreateComment(ctx, comment, input.RepliedToCommentId)
