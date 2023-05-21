@@ -12,16 +12,14 @@ import (
 )
 
 type ethereumGateway struct {
-	settings   settings.Settings
-	logger     common.Logger
-	httpClient common.HttpClient
+	settings settings.Settings
+	logger   common.Logger
 }
 
-func NewBlockchainGateway(settings settings.Settings, logger common.Logger, httpClient common.HttpClient) usecases.Blockchain {
+func NewBlockchainGateway(settings settings.Settings, logger common.Logger) usecases.Blockchain {
 	return &ethereumGateway{
 		settings,
 		logger,
-		httpClient,
 	}
 }
 

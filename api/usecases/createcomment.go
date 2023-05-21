@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/common"
@@ -39,7 +40,7 @@ func (u *CreateComment) Execute(ctx context.Context, input CreateCommentInput) (
 	}
 
 	if image == nil {
-		return entities.Comment{}, common.ErrNotFound
+		return entities.Comment{}, fmt.Errorf("image not found %w", common.ErrNotFound)
 	}
 
 	comment := entities.NewComment(entities.CommentParams{

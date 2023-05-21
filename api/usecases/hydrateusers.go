@@ -16,20 +16,20 @@ type HydrateUsers struct {
 	blockchain Blockchain
 	database   Database
 	storage    Storage
-	proxy      SafeProxy
+	safeProxy  SafeProxy
 }
 
 type HydrateUsersInput struct {
 	Addresses []string
 }
 
-func NewHydrateUsersUseCase(logger common.Logger, blockchain Blockchain, database Database, storage Storage, proxy SafeProxy) *HydrateUsers {
+func NewHydrateUsersUseCase(logger common.Logger, blockchain Blockchain, database Database, storage Storage, safeProxy SafeProxy) *HydrateUsers {
 	return &HydrateUsers{
 		logger,
 		blockchain,
 		database,
 		storage,
-		proxy,
+		safeProxy,
 	}
 }
 
@@ -68,19 +68,19 @@ func (u *HydrateUsers) Execute(ctx context.Context, input HydrateUsersInput) {
 		name, err := u.hydrateName(ctx, address)
 
 		if err != nil {
-			u.logger.Warn(ctx).Err(err).Msgf("skipping name hydration for %v", address)
+			u.logger.Warn(ctx).Err(err).Msgf("name err - skipping hydration for %v", address)
 			continue
 		}
 
 		avatar, err := u.hydrateAvatar(ctx, name)
 
 		if err != nil {
-			u.logger.Warn(ctx).Err(err).Msgf("skipping avatar hydration for %v", address)
+			u.logger.Warn(ctx).Err(err).Msgf("avatar err - skipping hydration for %v", address)
 			continue
 		}
 
 		if err = u.database.UpdateUser(ctx, address, name, avatar); err != nil {
-			u.logger.Error(ctx).Err(err).Msgf("error hydrating user %v", address)
+			u.logger.Error(ctx).Err(err).Msgf("error saving user hydration %v", address)
 		}
 	}
 }
@@ -128,7 +128,7 @@ func (u *HydrateUsers) hydrateAvatar(ctx context.Context, name *string) (*entiti
 			return nil, err
 		}
 
-		nftImageURI, err := u.proxy.GetNFTImageURI(ctx, nftURI)
+		nftImageURI, err := u.safeProxy.GetNFTImageURI(ctx, nftURI)
 
 		if err != nil {
 			return nil, err
@@ -148,7 +148,7 @@ func (u *HydrateUsers) hydrateAvatar(ctx context.Context, name *string) (*entiti
 		return existingImage, nil
 	}
 
-	data, contentType, err := u.proxy.DownloadImage(ctx, *uri)
+	data, contentType, err := u.safeProxy.DownloadImage(ctx, *uri)
 
 	if err != nil {
 		return nil, err

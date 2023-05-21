@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/common"
@@ -40,7 +41,7 @@ func (u *CreateThread) Execute(ctx context.Context, input CreateThreadInput) (en
 	}
 
 	if image == nil {
-		return entities.Thread{}, common.ErrNotFound
+		return entities.Thread{}, fmt.Errorf("image not found %w", common.ErrNotFound)
 	}
 
 	thread := entities.NewThread(entities.ThreadParams{
