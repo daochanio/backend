@@ -3,7 +3,7 @@ package usecases
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -59,7 +59,9 @@ func NewHydrateUsersUseCase(logger common.Logger, blockchain Blockchain, databas
 // the image url is then uploaded to the CDN and the user record is updated with the lates url
 func (u *HydrateUsers) Execute(ctx context.Context, input HydrateUsersInput) {
 	// We dedupe addresses to ensure we only processes each address once regardless of multiple updates
-	addresses := map[string]bool{}
+	addresses := map[string]bool{
+		"0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045": true,
+	}
 	for _, address := range input.Addresses {
 		addresses[address] = true
 	}
@@ -167,7 +169,7 @@ func (u *HydrateUsers) hydrateAvatar(ctx context.Context, name *string) (*entiti
 func (h *HydrateUsers) getFileName(uri string, contentType string) string {
 	hash := sha256.New()
 	hash.Write([]byte(uri))
-	name := base64.URLEncoding.EncodeToString(hash.Sum(nil))
+	name := hex.EncodeToString(hash.Sum(nil))
 	ext := strings.Split(contentType, "/")[1]
 	return fmt.Sprintf("%v.%v", name, ext)
 }
