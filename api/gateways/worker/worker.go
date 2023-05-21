@@ -52,6 +52,16 @@ func (w *worker) DownloadImage(ctx context.Context, uri string) (*[]byte, string
 	return &data, contentType, nil
 }
 
+type nftMetadata struct {
+	Name        string                    `json:"name"`
+	Description string                    `json:"description"`
+	Image       string                    `json:"image"`
+	ImageURL    string                    `json:"image_url"`
+	ImageData   string                    `json:"image_data"`
+	Attributes  *[]map[string]interface{} `json:"attributes"`
+	Properties  *map[string]interface{}   `json:"properties"`
+}
+
 func (w *worker) GetNFTImageURI(ctx context.Context, uri string) (string, error) {
 	resp, err := w.safeProxy(ctx, uri)
 
@@ -70,13 +80,15 @@ func (w *worker) GetNFTImageURI(ctx context.Context, uri string) (string, error)
 		return metadata.Image, nil
 	} else if metadata.ImageURL != "" {
 		return metadata.ImageURL, nil
+	} else if metadata.ImageData != "" {
+		return metadata.ImageData, nil
 	}
 
 	return "", errors.New("failed to detect nft image uri")
 }
 
 func (w *worker) safeProxy(ctx context.Context, uri string) (*http.Response, error) {
-	url := w.settings.IPFSGatewayURI(uri)
+	url := w.parseURI(uri)
 	proxyURL := fmt.Sprintf("%s/proxy?url=%s", w.settings.WokerURI(), url)
 
 	resp, err := w.httpClient.Do(ctx, "GET", proxyURL, nil, nil)
@@ -88,11 +100,18 @@ func (w *worker) safeProxy(ctx context.Context, uri string) (*http.Response, err
 	return resp, nil
 }
 
-type nftMetadata struct {
-	Name        string                    `json:"name"`
-	Description string                    `json:"description"`
-	Image       string                    `json:"image"`
-	ImageURL    string                    `json:"image_url"`
-	Attributes  *[]map[string]interface{} `json:"attributes"`
-	Properties  *map[string]interface{}   `json:"properties"`
+func (w *worker) parseURI(uri string) string {
+	if suffix, ok := strings.CutPrefix(uri, "ipfs://"); ok {
+		if !strings.HasPrefix(suffix, "ipfs/") {
+			suffix = fmt.Sprintf("ipfs/%s", suffix)
+		}
+		return fmt.Sprintf("%s/%s", w.settings.IPFSGatewayURI(), suffix)
+	}
+	if suffix, ok := strings.CutPrefix(uri, "ipns://"); ok {
+		if !strings.HasPrefix(suffix, "ipns/") {
+			suffix = fmt.Sprintf("ipns/%s", suffix)
+		}
+		return fmt.Sprintf("%s/%s", w.settings.IPFSGatewayURI(), suffix)
+	}
+	return uri
 }

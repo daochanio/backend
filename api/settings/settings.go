@@ -23,7 +23,7 @@ type Settings interface {
 	ImageBucket() string
 	BlockchainURI() string
 	RealIPHeader() string
-	IPFSGatewayURI(uri string) string
+	IPFSGatewayURI() string
 	WokerURI() string
 }
 
@@ -133,14 +133,8 @@ func (s *settings) ImageBucket() string {
 	return s.imageBucket
 }
 
-func (s *settings) IPFSGatewayURI(uri string) string {
-	if suffix, ok := strings.CutPrefix(uri, "ipfs://"); ok {
-		if !strings.HasPrefix(suffix, "ipfs/") {
-			suffix = fmt.Sprintf("ipfs/%s", suffix)
-		}
-		return fmt.Sprintf("%s/%s", s.ipfsGatewayURI, suffix)
-	}
-	return uri
+func (s *settings) IPFSGatewayURI() string {
+	return s.ipfsGatewayURI
 }
 
 func (s *settings) WokerURI() string {
