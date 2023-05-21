@@ -9,13 +9,13 @@ import (
 
 type CreateComment struct {
 	database Database
-	images   Images
+	storage  Storage
 }
 
-func NewCreateCommentUseCase(database Database, images Images) *CreateComment {
+func NewCreateCommentUseCase(database Database, storage Storage) *CreateComment {
 	return &CreateComment{
 		database,
-		images,
+		storage,
 	}
 }
 
@@ -32,7 +32,7 @@ func (u *CreateComment) Execute(ctx context.Context, input CreateCommentInput) (
 		return entities.Comment{}, err
 	}
 
-	image, err := u.images.GetImageByFileName(ctx, input.ImageFileName)
+	image, err := u.storage.GetImageByFileName(ctx, input.ImageFileName)
 
 	if err != nil {
 		return entities.Comment{}, err

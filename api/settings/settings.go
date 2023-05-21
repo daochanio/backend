@@ -23,6 +23,8 @@ type Settings interface {
 	ImageBucket() string
 	BlockchainURI() string
 	RealIPHeader() string
+	IPFSGatewayURI(uri string) string
+	WokerURI() string
 }
 
 type settings struct {
@@ -39,6 +41,8 @@ type settings struct {
 	staticURL                   string
 	staticRegion                string
 	imageBucket                 string
+	ipfsGatewayURI              string
+	workerURI                   string
 }
 
 func NewSettings() Settings {
@@ -58,6 +62,8 @@ func NewSettings() Settings {
 		staticURL:                   os.Getenv("STATIC_URL"),
 		staticRegion:                os.Getenv("STATIC_REGION"),
 		imageBucket:                 os.Getenv("IMAGE_BUCKET"),
+		ipfsGatewayURI:              os.Getenv("IPFS_GATEWAY_URI"),
+		workerURI:                   os.Getenv("WORKER_URI"),
 	}
 }
 
@@ -125,4 +131,18 @@ func (s *settings) StaticPublicBaseURL() string {
 
 func (s *settings) ImageBucket() string {
 	return s.imageBucket
+}
+
+func (s *settings) IPFSGatewayURI(uri string) string {
+	if suffix, ok := strings.CutPrefix(uri, "ipfs://"); ok {
+		if !strings.HasPrefix(suffix, "ipfs/") {
+			suffix = fmt.Sprintf("ipfs/%s", suffix)
+		}
+		return fmt.Sprintf("%s/%s", s.ipfsGatewayURI, suffix)
+	}
+	return uri
+}
+
+func (s *settings) WokerURI() string {
+	return s.workerURI
 }

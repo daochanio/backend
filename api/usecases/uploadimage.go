@@ -12,14 +12,14 @@ import (
 )
 
 type UploadImage struct {
-	logger common.Logger
-	images Images
+	logger  common.Logger
+	storage Storage
 }
 
-func NewUploadImageUsecase(logger common.Logger, images Images) *UploadImage {
+func NewUploadImageUsecase(logger common.Logger, storage Storage) *UploadImage {
 	return &UploadImage{
 		logger,
-		images,
+		storage,
 	}
 }
 
@@ -42,5 +42,5 @@ func (u *UploadImage) Execute(ctx context.Context, input UploadImageInput) (enti
 
 	fileName := fmt.Sprintf("%s.%s", id, ext[1])
 
-	return u.images.UploadImage(ctx, fileName, input.ContentType, input.Bytes)
+	return u.storage.UploadImage(ctx, fileName, input.ContentType, input.Bytes)
 }

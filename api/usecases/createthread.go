@@ -9,14 +9,14 @@ import (
 
 type CreateThread struct {
 	logger   common.Logger
-	images   Images
+	storage  Storage
 	database Database
 }
 
-func NewCreateThreadUseCase(logger common.Logger, images Images, database Database) *CreateThread {
+func NewCreateThreadUseCase(logger common.Logger, storage Storage, database Database) *CreateThread {
 	return &CreateThread{
 		logger,
-		images,
+		storage,
 		database,
 	}
 }
@@ -33,7 +33,7 @@ func (u *CreateThread) Execute(ctx context.Context, input CreateThreadInput) (en
 		return entities.Thread{}, err
 	}
 
-	image, err := u.images.GetImageByFileName(ctx, input.ImageFileName)
+	image, err := u.storage.GetImageByFileName(ctx, input.ImageFileName)
 
 	if err != nil {
 		return entities.Thread{}, err

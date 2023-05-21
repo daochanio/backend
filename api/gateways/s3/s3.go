@@ -2,6 +2,7 @@ package s3
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 
@@ -20,7 +21,7 @@ type s3Gateway struct {
 	client   *s3.S3
 }
 
-func NewImageGateway(logger common.Logger, settings settings.Settings) usecases.Images {
+func NewStorageGateway(logger common.Logger, settings settings.Settings) usecases.Storage {
 	sess, err := session.NewSession(settings.S3Config())
 	if err != nil {
 		panic(err)
@@ -34,20 +35,40 @@ func NewImageGateway(logger common.Logger, settings settings.Settings) usecases.
 }
 
 func (g *s3Gateway) UploadImage(ctx context.Context, fileName string, contentType string, data *[]byte) (entities.Image, error) {
+	if data == nil {
+		return entities.Image{}, fmt.Errorf("invalid image data")
+	}
+
+	var buf bytes.Buffer
+	writer := gzip.NewWriter(&buf)
+	_, err := writer.Write(*data)
+
+	if err != nil {
+		return entities.Image{}, fmt.Errorf("failed to compress image data: %w", err)
+	}
+
+	err = writer.Close()
+	if err != nil {
+		return entities.Image{}, err
+	}
+
 	bucket := g.settings.ImageBucket()
-	_, err := g.client.PutObject(&s3.PutObjectInput{
-		Bucket:       &bucket,
-		Key:          &fileName,
-		Body:         bytes.NewReader(*data),
-		ContentType:  &contentType,
-		CacheControl: aws.String("max-age=31536000"), // 1yr
+	contentEncoding := "gzip"
+	_, err = g.client.PutObject(&s3.PutObjectInput{
+		Bucket: &bucket,
+		Key:    &fileName,
+		Body:   bytes.NewReader(buf.Bytes()),
+		// Body: bytes.NewReader(*data),
+		ContentEncoding: &contentEncoding,
+		ContentType:     &contentType,
+		CacheControl:    aws.String("max-age=31536000"), // 1yr
 	})
 
 	if err != nil {
 		return entities.Image{}, err
 	}
 
-	url := g.getImageUrl(fileName)
+	url := g.getExternalURL(fileName)
 
 	return entities.NewImage(fileName, url, contentType), nil
 }
@@ -64,12 +85,12 @@ func (g *s3Gateway) GetImageByFileName(ctx context.Context, fileName string) (en
 		return entities.Image{}, err
 	}
 
-	url := g.getImageUrl(fileName)
+	url := g.getExternalURL(fileName)
 	contentType := *header.ContentType
 
 	return entities.NewImage(fileName, url, contentType), nil
 }
 
-func (g *s3Gateway) getImageUrl(fileName string) string {
+func (g *s3Gateway) getExternalURL(fileName string) string {
 	return fmt.Sprintf("%s/%s", g.settings.StaticPublicBaseURL(), fileName)
 }

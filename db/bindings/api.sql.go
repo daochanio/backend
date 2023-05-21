@@ -490,17 +490,29 @@ const updateUser = `-- name: UpdateUser :exec
 UPDATE users
 SET
 	ens_name = $2,
+	ens_avatar_file_name = $3,
+	ens_avatar_url = $4,
+	ens_avatar_content_type = $5,
 	updated_at = NOW()
 WHERE address = $1
 `
 
 type UpdateUserParams struct {
-	Address string
-	EnsName pgtype.Text
+	Address              string
+	EnsName              pgtype.Text
+	EnsAvatarFileName    pgtype.Text
+	EnsAvatarUrl         pgtype.Text
+	EnsAvatarContentType pgtype.Text
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.Exec(ctx, updateUser, arg.Address, arg.EnsName)
+	_, err := q.db.Exec(ctx, updateUser,
+		arg.Address,
+		arg.EnsName,
+		arg.EnsAvatarFileName,
+		arg.EnsAvatarUrl,
+		arg.EnsAvatarContentType,
+	)
 	return err
 }
 
