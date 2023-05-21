@@ -48,20 +48,20 @@ func NewHydrateUsersUseCase(logger common.Logger, blockchain Blockchain, databas
 //
 // 1. Fetch the avatar text record from ENS using the name
 //
-// 2. If nft uri detected, parse information and fetch the nft metadata uri from the contract
+// 2. This record can point to any anonymous server, so we proxy all the following http requests through a "safe" proxy to avoid leaking sensitive information
+//
+// 3. If nft uri detected, parse information and fetch the nft metadata uri from the contract
 // then follow the metadata uri to get the image url.
 //
-// 3. The resulting image url is hashed to derive a unique id
+// 4. The resulting image url is hashed to derive a unique id
 //
-// 4. If IPFS scheme detected on the url, resolve the https ipfs url
+// 5. If IPFS scheme detected on the url, resolve the https ipfs url
 //
-// 5. If the unique id is different from the current id on the user
+// 6. If the unique id is different from the current id on the user
 // the image url is then uploaded to the CDN and the user record is updated with the lates url
 func (u *HydrateUsers) Execute(ctx context.Context, input HydrateUsersInput) {
 	// We dedupe addresses to ensure we only processes each address once regardless of multiple updates
-	addresses := map[string]bool{
-		"0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045": true,
-	}
+	addresses := map[string]bool{}
 	for _, address := range input.Addresses {
 		addresses[address] = true
 	}
@@ -153,6 +153,17 @@ func (u *HydrateUsers) hydrateAvatar(ctx context.Context, name *string) (*entiti
 	}
 
 	fileName := u.getFileName(*uri, contentType)
+
+	existingImage, err := u.storage.GetImageByFileName(ctx, fileName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if existingImage != nil {
+		u.logger.Info(ctx).Msgf("found existing avatar: %s for name: %s from uri: %s", existingImage.Url(), *name, *uri)
+		return existingImage, nil
+	}
 
 	image, err := u.storage.UploadImage(ctx, fileName, contentType, data)
 

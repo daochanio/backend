@@ -35,7 +35,7 @@ func (w *worker) GetData(ctx context.Context, uri string) (*[]byte, string, erro
 	}
 
 	defer resp.Body.Close()
-	limit := int64(1024 * 1024 * 10)
+	limit := int64(1024 * 1024 * 5)
 	limitedReader := io.LimitReader(resp.Body, limit)
 	data, err := io.ReadAll(limitedReader)
 	if err != nil && err != io.EOF {

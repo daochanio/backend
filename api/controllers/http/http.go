@@ -142,7 +142,7 @@ func (h *httpServer) Start(ctx context.Context) error {
 		r.Group(func(r chi.Router) {
 			r.Use(h.authenticator)
 			r.Use(h.rateLimiter("create:image", 7, time.Minute*10)) // should encompass creating images for threads and comments
-			r.Use(h.maxSize(10 * 1024))
+			r.Use(h.maxSize(5 * 1024))
 
 			r.Post("/images", h.uploadImageRoute)
 		})

@@ -39,11 +39,15 @@ func (u *CreateThread) Execute(ctx context.Context, input CreateThreadInput) (en
 		return entities.Thread{}, err
 	}
 
+	if image == nil {
+		return entities.Thread{}, common.ErrNotFound
+	}
+
 	thread := entities.NewThread(entities.ThreadParams{
 		Address: input.Address,
 		Title:   input.Title,
 		Content: input.Content,
-		Image:   image,
+		Image:   *image,
 	})
 
 	return u.database.CreateThread(ctx, thread)

@@ -38,11 +38,15 @@ func (u *CreateComment) Execute(ctx context.Context, input CreateCommentInput) (
 		return entities.Comment{}, err
 	}
 
+	if image == nil {
+		return entities.Comment{}, common.ErrNotFound
+	}
+
 	comment := entities.NewComment(entities.CommentParams{
 		ThreadId: input.ThreadId,
 		Address:  input.Address,
 		Content:  input.Content,
-		Image:    image,
+		Image:    *image,
 	})
 
 	return u.database.CreateComment(ctx, comment, input.RepliedToCommentId)

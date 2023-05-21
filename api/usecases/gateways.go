@@ -44,7 +44,7 @@ type Blockchain interface {
 
 type Storage interface {
 	UploadImage(ctx context.Context, fileName string, contentType string, data *[]byte) (entities.Image, error)
-	GetImageByFileName(ctx context.Context, fileName string) (entities.Image, error)
+	GetImageByFileName(ctx context.Context, fileName string) (*entities.Image, error)
 }
 
 type SafeProxy interface {

@@ -56,7 +56,7 @@ func (e *ethereumGateway) getERC1155URI(ctx context.Context, address common.Addr
 	}
 
 	// See https://eips.ethereum.org/EIPS/eip-1155
-	// token ids are passed in hexidecimal form and should be padded with zeros until 64 chars long
+	// token ids are passed in hexadecimal form and should be padded with zeros until 64 chars long
 	hexId := hex.EncodeToString(id.Bytes())
 	idLength := len([]rune(hexId))
 	for i := 0; i < 64-idLength; i++ {

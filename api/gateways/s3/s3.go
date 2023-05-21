@@ -2,11 +2,11 @@ package s3
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/daochanio/backend/api/entities"
@@ -39,29 +39,14 @@ func (g *s3Gateway) UploadImage(ctx context.Context, fileName string, contentTyp
 		return entities.Image{}, fmt.Errorf("invalid image data")
 	}
 
-	var buf bytes.Buffer
-	writer := gzip.NewWriter(&buf)
-	_, err := writer.Write(*data)
-
-	if err != nil {
-		return entities.Image{}, fmt.Errorf("failed to compress image data: %w", err)
-	}
-
-	err = writer.Close()
-	if err != nil {
-		return entities.Image{}, err
-	}
-
+	// TODO: Check if the image already exists
 	bucket := g.settings.ImageBucket()
-	contentEncoding := "gzip"
-	_, err = g.client.PutObject(&s3.PutObjectInput{
-		Bucket: &bucket,
-		Key:    &fileName,
-		Body:   bytes.NewReader(buf.Bytes()),
-		// Body: bytes.NewReader(*data),
-		ContentEncoding: &contentEncoding,
-		ContentType:     &contentType,
-		CacheControl:    aws.String("max-age=31536000"), // 1yr
+	_, err := g.client.PutObject(&s3.PutObjectInput{
+		Bucket:       &bucket,
+		Key:          &fileName,
+		Body:         bytes.NewReader(*data),
+		ContentType:  &contentType,
+		CacheControl: aws.String("max-age=31536000"), // 1yr
 	})
 
 	if err != nil {
@@ -74,21 +59,27 @@ func (g *s3Gateway) UploadImage(ctx context.Context, fileName string, contentTyp
 }
 
 // We get file header information to both verify that the file exists and to get the content type
-func (g *s3Gateway) GetImageByFileName(ctx context.Context, fileName string) (entities.Image, error) {
+func (g *s3Gateway) GetImageByFileName(ctx context.Context, fileName string) (*entities.Image, error) {
 	bucket := g.settings.ImageBucket()
 	header, err := g.client.HeadObject(&s3.HeadObjectInput{
 		Bucket: &bucket,
 		Key:    &fileName,
 	})
 
+	if awsError, ok := err.(awserr.Error); ok && awsError.Code() == "NotFound" {
+		return nil, nil
+	}
+
 	if err != nil {
-		return entities.Image{}, err
+		return nil, err
 	}
 
 	url := g.getExternalURL(fileName)
 	contentType := *header.ContentType
 
-	return entities.NewImage(fileName, url, contentType), nil
+	image := entities.NewImage(fileName, url, contentType)
+
+	return &image, nil
 }
 
 func (g *s3Gateway) getExternalURL(fileName string) string {
