@@ -48,6 +48,6 @@ type Storage interface {
 }
 
 type SafeProxy interface {
-	GetData(ctx context.Context, uri string) (*[]byte, string, error)
+	DownloadImage(ctx context.Context, uri string) (*[]byte, string, error)
 	GetNFTImageURI(ctx context.Context, uri string) (string, error)
 }

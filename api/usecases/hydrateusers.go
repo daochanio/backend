@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/daochanio/backend/api/entities"
@@ -45,20 +44,17 @@ func NewHydrateUsersUseCase(logger common.Logger, blockchain Blockchain, databas
 // See: https://docs.ens.domains/ens-improvement-proposals/ensip-12-avatar-text-records
 //
 // Steps:
+//  1. Fetch the avatar text record from ENS using the name
+//  2. This record can point to any arbitrary server, so we proxy all the following http requests through a "safe" proxy to avoid leaking sensitive server information
+//  3. If nft uri detected, parse information and fetch the nft metadata uri from the contract then follow the metadata uri to get the image url.
+//  4. The resulting image url is hashed to derive a unique and idempotent file name
+//  5. If IPFS scheme detected on the url, resolve the https ipfs url
+//  6. Check if the file already exists in storage
+//  7. If not, download the image and upload it to our storage
 //
-// 1. Fetch the avatar text record from ENS using the name
-//
-// 2. This record can point to any anonymous server, so we proxy all the following http requests through a "safe" proxy to avoid leaking sensitive information
-//
-// 3. If nft uri detected, parse information and fetch the nft metadata uri from the contract
-// then follow the metadata uri to get the image url.
-//
-// 4. The resulting image url is hashed to derive a unique id
-//
-// 5. If IPFS scheme detected on the url, resolve the https ipfs url
-//
-// 6. If the unique id is different from the current id on the user
-// the image url is then uploaded to the CDN and the user record is updated with the lates url
+// TODO:
+//   - Supported Data URIs
+//   - Support other chains for NFT URIs
 func (u *HydrateUsers) Execute(ctx context.Context, input HydrateUsersInput) {
 	// We dedupe addresses to ensure we only processes each address once regardless of multiple updates
 	addresses := map[string]bool{}
@@ -115,7 +111,6 @@ func (u *HydrateUsers) hydrateAvatar(ctx context.Context, name *string) (*entiti
 		return nil, nil
 	}
 
-	// TODO: only supporting mainnet right now (i.e chain id 1)
 	if suffix, ok := strings.CutPrefix(*uri, "eip155:1/"); ok {
 		standard, info, ok := strings.Cut(suffix, ":")
 		if !ok {
@@ -146,23 +141,17 @@ func (u *HydrateUsers) hydrateAvatar(ctx context.Context, name *string) (*entiti
 		return nil, err
 	}
 
-	data, contentType, err := u.proxy.GetData(ctx, *uri)
+	fileName := u.getFileName(*uri)
 
-	if err != nil {
-		return nil, err
-	}
-
-	fileName := u.getFileName(*uri, contentType)
-
-	existingImage, err := u.storage.GetImageByFileName(ctx, fileName)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if existingImage != nil {
+	if existingImage, err := u.storage.GetImageByFileName(ctx, fileName); err == nil && existingImage != nil {
 		u.logger.Info(ctx).Msgf("found existing avatar: %s for name: %s from uri: %s", existingImage.Url(), *name, *uri)
 		return existingImage, nil
+	}
+
+	data, contentType, err := u.proxy.DownloadImage(ctx, *uri)
+
+	if err != nil {
+		return nil, err
 	}
 
 	image, err := u.storage.UploadImage(ctx, fileName, contentType, data)
@@ -177,10 +166,8 @@ func (u *HydrateUsers) hydrateAvatar(ctx context.Context, name *string) (*entiti
 }
 
 // hash the uri to derive a unique but idempotent filename
-func (h *HydrateUsers) getFileName(uri string, contentType string) string {
+func (h *HydrateUsers) getFileName(uri string) string {
 	hash := sha256.New()
 	hash.Write([]byte(uri))
-	name := hex.EncodeToString(hash.Sum(nil))
-	ext := strings.Split(contentType, "/")[1]
-	return fmt.Sprintf("%v.%v", name, ext)
+	return hex.EncodeToString(hash.Sum(nil))
 }

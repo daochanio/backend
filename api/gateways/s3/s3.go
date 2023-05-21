@@ -39,7 +39,6 @@ func (g *s3Gateway) UploadImage(ctx context.Context, fileName string, contentTyp
 		return entities.Image{}, fmt.Errorf("invalid image data")
 	}
 
-	// TODO: Check if the image already exists
 	bucket := g.settings.ImageBucket()
 	_, err := g.client.PutObject(&s3.PutObjectInput{
 		Bucket:       &bucket,
@@ -58,7 +57,6 @@ func (g *s3Gateway) UploadImage(ctx context.Context, fileName string, contentTyp
 	return entities.NewImage(fileName, url, contentType), nil
 }
 
-// We get file header information to both verify that the file exists and to get the content type
 func (g *s3Gateway) GetImageByFileName(ctx context.Context, fileName string) (*entities.Image, error) {
 	bucket := g.settings.ImageBucket()
 	header, err := g.client.HeadObject(&s3.HeadObjectInput{

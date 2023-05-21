@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/daochanio/backend/api/settings"
 	"github.com/daochanio/backend/api/usecases"
@@ -27,7 +28,7 @@ func NewSafeProxyGateway(logger common.Logger, settings settings.Settings, httpC
 	}
 }
 
-func (w *worker) GetData(ctx context.Context, uri string) (*[]byte, string, error) {
+func (w *worker) DownloadImage(ctx context.Context, uri string) (*[]byte, string, error) {
 	resp, err := w.safeProxy(ctx, uri)
 
 	if err != nil {
@@ -43,6 +44,10 @@ func (w *worker) GetData(ctx context.Context, uri string) (*[]byte, string, erro
 	}
 
 	contentType := http.DetectContentType(data)
+
+	if !strings.HasPrefix(contentType, "image") {
+		return nil, "", fmt.Errorf("invalid content type: %s", contentType)
+	}
 
 	return &data, contentType, nil
 }
