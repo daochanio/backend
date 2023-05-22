@@ -11,7 +11,8 @@ import (
 )
 
 type Subscriber interface {
-	Start(ctx context.Context) error
+	Start(ctx context.Context)
+	Stop(ctx context.Context)
 }
 
 type subscriber struct {
@@ -48,27 +49,44 @@ func NewSubscriber(logger common.Logger, settings settings.Settings, commonSetti
 //   - We will always write a record to the table for every vote we process, regardless of whether it is counted or not with some kind of accepted/discarded flag
 //
 // When the next distribution round runs, the records that are accepted and not associated with a distribution can be processed and then tied to a distribution through FK
-func (s *subscriber) Start(ctx context.Context) error {
+func (s *subscriber) Start(ctx context.Context) {
+	s.logger.Info(ctx).Msg("starting subscriber")
+
 	group := s.commonSettings.Appname()
 	consumer := s.commonSettings.Hostname()
 
 	_ = s.client.XGroupCreateMkStream(ctx, common.VoteStream, group, "$").Err()
 
 	for {
-		results, err := s.readMessages(ctx, group, consumer)
-
-		if err != nil {
-			s.logger.Error(ctx).Err(err).Msg("error reading messages from streams")
-			continue
+		select {
+		case <-ctx.Done():
+			s.logger.Info(ctx).Msg("subscriber stopped")
+			return
+		default:
+			s.execute(ctx, group, consumer)
 		}
+	}
+}
 
-		for _, result := range results {
-			for _, message := range result.Messages {
-				s.logger.Info(ctx).Msgf("received message: %v %v %v", result.Stream, message.ID, message.Values)
+// Any future needed resource cleanup can be done here
+func (s *subscriber) Stop(ctx context.Context) {
+	s.logger.Info(ctx).Msg("cleaning up subscriber")
+}
 
-				if err := s.client.XAck(ctx, result.Stream, group, message.ID).Err(); err != nil {
-					s.logger.Error(ctx).Err(err).Msgf("error acknowledging message: %v %v %v", result.Stream, message.ID, message.Values)
-				}
+func (s *subscriber) execute(ctx context.Context, group string, consumer string) {
+	results, err := s.readMessages(ctx, group, consumer)
+
+	if err != nil {
+		s.logger.Error(ctx).Err(err).Msg("error reading messages from streams")
+		return
+	}
+
+	for _, result := range results {
+		for _, message := range result.Messages {
+			s.logger.Info(ctx).Msgf("received message: %v %v %v", result.Stream, message.ID, message.Values)
+
+			if err := s.client.XAck(ctx, result.Stream, group, message.ID).Err(); err != nil {
+				s.logger.Error(ctx).Err(err).Msgf("error acknowledging message: %v %v %v", result.Stream, message.ID, message.Values)
 			}
 		}
 	}

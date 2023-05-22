@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/daochanio/backend/api/controllers/http"
 	"github.com/daochanio/backend/api/controllers/subscribe"
@@ -20,7 +20,10 @@ import (
 )
 
 func main() {
-	container := newContainer()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
+
+	container := newContainer(ctx)
 
 	// start the http controller inside a go routine
 	if err := container.Invoke(startHttpServer); err != nil {
@@ -38,13 +41,17 @@ func main() {
 	}
 }
 
-func newContainer() *dig.Container {
+func newContainer(ctx context.Context) *dig.Container {
 	container := dig.New()
 
-	if err := container.Provide(context.Background); err != nil {
+	if err := container.Provide(func() context.Context {
+		return ctx
+	}); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(appName); err != nil {
+	if err := container.Provide(func() string {
+		return "api"
+	}); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(common.NewCommonSettings); err != nil {
@@ -131,30 +138,38 @@ func newContainer() *dig.Container {
 	return container
 }
 
-func appName() string {
-	return "api"
-}
-
 func startHttpServer(ctx context.Context, httpServer http.HttpServer) {
 	go func() {
-		err := httpServer.Start(ctx)
-		panic(err)
+		httpServer.Start(ctx)
 	}()
 }
 
 func startSubscriber(ctx context.Context, subscriber subscribe.Subscriber) {
 	go func() {
-		err := subscriber.Start(ctx)
-		panic(err)
+		subscriber.Start(ctx)
 	}()
 }
 
-func awaitSigterm(ctx context.Context, logger common.Logger) {
-	logger.Info(ctx).Msg("awaiting sigterm")
+func awaitSigterm(ctx context.Context, logger common.Logger, httpServer http.HttpServer, subscriber subscribe.Subscriber) {
+	logger.Info(ctx).Msg("awaiting kill signal")
 
-	cancelChan := make(chan os.Signal, 1)
-	signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)
-	sig := <-cancelChan
+	<-ctx.Done()
 
-	logger.Info(ctx).Msgf("received sigterm %v", sig)
+	logger.Info(ctx).Msgf("received kill signal")
+
+	shutdownCtx := context.Background()
+
+	if err := httpServer.Stop(shutdownCtx); err != nil {
+		logger.Error(ctx).Err(err).Msg("failed to shutdown http server")
+	}
+
+	// See https://github.com/redis/go-redis/issues/2276 and https://github.com/redis/go-redis/pull/2455
+	// Blocking calls to redis client methods will not be interrupted by the shutdown context.
+	// We need to wait before calling Stop() to ensure that the subscriber has finished processing its latest loop.
+	// This way we ensure that no new messages will be written to the buffer after flushing inside the Stop() method.
+	time.Sleep(10 * time.Second)
+
+	subscriber.Stop(shutdownCtx)
+
+	logger.Info(ctx).Msgf("shutdown complete")
 }

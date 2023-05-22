@@ -18,10 +18,12 @@ import (
 )
 
 type HttpServer interface {
-	Start(context.Context) error
+	Start(context.Context)
+	Stop(ctx context.Context) error
 }
 
 type httpServer struct {
+	server        *http.Server
 	logger        common.Logger
 	settings      settings.Settings
 	getChallenge  *usecases.GetChallenge
@@ -55,7 +57,9 @@ func NewHttpServer(
 	getComments *usecases.GetComments,
 	deleteComment *usecases.DeleteComment,
 	uploadImage *usecases.UploadImage) HttpServer {
+	var server *http.Server
 	return &httpServer{
+		server,
 		logger,
 		settings,
 		getChallenge,
@@ -74,7 +78,7 @@ func NewHttpServer(
 	}
 }
 
-func (h *httpServer) Start(ctx context.Context) error {
+func (h *httpServer) Start(ctx context.Context) {
 	h.logger.Info(ctx).Msg("starting http service")
 
 	r := chi.NewRouter()
@@ -152,11 +156,23 @@ func (h *httpServer) Start(ctx context.Context) error {
 
 	h.logger.Info(ctx).Msgf("listening on port %v", port)
 
-	err := http.ListenAndServe(fmt.Sprintf(":%v", port), r)
+	h.server = &http.Server{Addr: fmt.Sprintf(":%v", port), Handler: r}
 
-	h.logger.Error(ctx).Err(err).Msg("error in http service")
+	if err := h.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		h.logger.Error(ctx).Err(err).Msg("http service failed")
+		panic(err)
+	}
 
-	return err
+	h.logger.Info(ctx).Msg("http service stopped")
+}
+
+func (h *httpServer) Stop(ctx context.Context) error {
+	h.logger.Info(ctx).Msg("cleaning up http service")
+
+	if h.server != nil {
+		return h.server.Shutdown(ctx)
+	}
+	return nil
 }
 
 func (h *httpServer) presentNotFound(w http.ResponseWriter, r *http.Request, err error) {

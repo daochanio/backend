@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/indexer/controllers/index"
@@ -16,12 +16,19 @@ import (
 )
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
+
 	container := dig.New()
 
-	if err := container.Provide(context.Background); err != nil {
+	if err := container.Provide(func() context.Context {
+		return ctx
+	}); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(appName); err != nil {
+	if err := container.Provide(func() string {
+		return "indexer"
+	}); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(common.NewCommonSettings); err != nil {
@@ -60,26 +67,25 @@ func main() {
 	}
 }
 
-func appName() string {
-	return "indexer"
-}
-
 func startIndexer(ctx context.Context, indexer index.Indexer, logger common.Logger) {
 	go func() {
-		// blocking call to start the indexer
-		if err := indexer.Start(ctx); err != nil {
-			logger.Error(ctx).Err(err).Msg("indexer stopped")
-			panic(err)
-		}
+		indexer.Start(ctx)
 	}()
 }
 
-func awaitSigterm(ctx context.Context, logger common.Logger) {
-	logger.Info(ctx).Msg("awaiting sigterm")
+func awaitSigterm(ctx context.Context, logger common.Logger, indexer index.Indexer, settings settings.Settings) {
+	logger.Info(ctx).Msg("awaiting kill signal")
 
-	cancelChan := make(chan os.Signal, 1)
-	signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)
-	sig := <-cancelChan
+	<-ctx.Done()
 
-	logger.Info(ctx).Msgf("received signal %v", sig)
+	logger.Info(ctx).Msgf("received kill signal")
+
+	// allow indexer to finish if its currently in the middle of indexing
+	time.Sleep(time.Second * 10)
+
+	stopCtx := context.Background()
+
+	indexer.Stop(stopCtx)
+
+	logger.Info(ctx).Msgf("shutdown complete")
 }

@@ -15,7 +15,8 @@ import (
 )
 
 type Subscriber interface {
-	Start(ctx context.Context) error
+	Start(ctx context.Context)
+	Stop(ctx context.Context)
 }
 
 type subscriber struct {
@@ -57,9 +58,9 @@ func NewSubscriber(logger common.Logger, settings settings.Settings, commonSetti
 // We flush the buffer at a certain length or past a certain number of seconds.
 // We can't assume that the messages we are reading in order, since streams are processed in parallel from multiple distributed processes.
 // Example: autoclaiming a vote message from the PEL that Node 1 failed to process but is older than a message that Node 2 is currently processing.
-//
-// TODO: If we receive a sigterm and there are messages in the buffer, flush the buffer and ensure it finishes before exiting
-func (s *subscriber) Start(ctx context.Context) error {
+func (s *subscriber) Start(ctx context.Context) {
+	s.logger.Info(ctx).Msg("starting subscriber")
+
 	group := s.commonSettings.Appname()
 	consumer := s.commonSettings.Hostname()
 
@@ -67,19 +68,34 @@ func (s *subscriber) Start(ctx context.Context) error {
 	_ = s.client.XGroupCreateMkStream(ctx, common.VoteStream, group, "$").Err()
 
 	for {
-		if len(*s.messageBuffer) >= 1000 || (time.Since(s.lastFlush) > time.Second*15 && len(*s.messageBuffer) > 0) {
-			s.flushBuffer(ctx)
+		select {
+		case <-ctx.Done():
+			s.logger.Info(ctx).Msg("subscriber stopped")
+			return
+		default:
+			s.execute(ctx, group, consumer)
 		}
-
-		results, err := s.readMessages(ctx, group, consumer)
-
-		if err != nil {
-			s.logger.Error(ctx).Err(err).Msg("error reading messages from streams")
-			continue
-		}
-
-		s.bufferMessages(ctx, group, results)
 	}
+}
+
+func (s *subscriber) Stop(ctx context.Context) {
+	s.logger.Info(ctx).Msg("cleaning up subscriber")
+	s.flushBuffer(ctx)
+}
+
+func (s *subscriber) execute(ctx context.Context, group string, consumer string) {
+	if len(*s.messageBuffer) >= 1000 || (time.Since(s.lastFlush) > time.Second*15 && len(*s.messageBuffer) > 0) {
+		s.flushBuffer(ctx)
+	}
+
+	results, err := s.readMessages(ctx, group, consumer)
+
+	if err != nil {
+		s.logger.Error(ctx).Err(err).Msg("error reading messages from streams")
+		return
+	}
+
+	s.bufferMessages(ctx, group, results)
 }
 
 // Reads messages from the streams starting by checking the pending messages that are unacknowledged
@@ -112,7 +128,7 @@ func (s *subscriber) readMessages(ctx context.Context, group string, consumer st
 		Group:    group,
 		Consumer: consumer,
 		Streams:  []string{common.SigninStream, common.VoteStream, ">", ">"},
-		Block:    time.Second * 10,
+		Block:    time.Second * 10, // This value should be tied to the value specified in main.go's awaitSigterm
 		Count:    100,
 	}).Result()
 
