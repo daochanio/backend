@@ -1,13 +1,15 @@
 package settings
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -18,7 +20,7 @@ type Settings interface {
 	PostgresConfig() *pgxpool.Config
 	RegionalRedisOptions() *redis.Options
 	GlobalRedisOptions() *redis.Options
-	S3Config() *aws.Config
+	S3Config(context.Context) *aws.Config
 	StaticPublicBaseURL() string
 	ImageBucket() string
 	BlockchainURI() string
@@ -39,7 +41,6 @@ type settings struct {
 	staticAccessKeyId           string
 	staticSecretAccessKey       string
 	staticURL                   string
-	staticRegion                string
 	imageBucket                 string
 	ipfsGatewayURI              string
 	workerURI                   string
@@ -60,7 +61,6 @@ func NewSettings() Settings {
 		staticAccessKeyId:           os.Getenv("STATIC_ACCESS_KEY_ID"),
 		staticSecretAccessKey:       os.Getenv("STATIC_SECRET_ACCESS_KEY"),
 		staticURL:                   os.Getenv("STATIC_URL"),
-		staticRegion:                os.Getenv("STATIC_REGION"),
 		imageBucket:                 os.Getenv("IMAGE_BUCKET"),
 		ipfsGatewayURI:              os.Getenv("IPFS_GATEWAY_URI"),
 		workerURI:                   os.Getenv("WORKER_URI"),
@@ -84,14 +84,14 @@ func (s *settings) PostgresConfig() *pgxpool.Config {
 }
 
 func (s *settings) RegionalRedisOptions() *redis.Options {
-	return s.buildRedisConfig(s.redisCacheConnectionString)
+	return s.buildRedisOptions(s.redisCacheConnectionString)
 }
 
 func (s *settings) GlobalRedisOptions() *redis.Options {
-	return s.buildRedisConfig(s.redisStreamConnectionString)
+	return s.buildRedisOptions(s.redisStreamConnectionString)
 }
 
-func (s *settings) buildRedisConfig(connStr string) *redis.Options {
+func (s *settings) buildRedisOptions(connStr string) *redis.Options {
 	opt, err := redis.ParseURL(connStr)
 
 	if err != nil {
@@ -107,10 +107,23 @@ func (s *settings) buildRedisConfig(connStr string) *redis.Options {
 	return opt
 }
 
-func (s *settings) S3Config() *aws.Config {
-	credentials := credentials.NewStaticCredentials(s.staticAccessKeyId, s.staticSecretAccessKey, "")
-	config := aws.NewConfig().WithCredentials(credentials).WithEndpoint(s.staticURL).WithRegion(s.staticRegion)
-	return config
+func (s *settings) S3Config(ctx context.Context) *aws.Config {
+	resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+		return aws.Endpoint{
+			URL: s.staticURL,
+		}, nil
+	})
+
+	cfg, err := config.LoadDefaultConfig(
+		ctx,
+		config.WithEndpointResolverWithOptions(resolver),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(s.staticAccessKeyId, s.staticSecretAccessKey, "")))
+
+	if err != nil {
+		panic(err)
+	}
+
+	return &cfg
 }
 
 func (s *settings) JWTSecret() string {
