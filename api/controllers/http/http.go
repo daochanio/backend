@@ -158,7 +158,10 @@ func (h *httpServer) Start(ctx context.Context) {
 
 	h.server = &http.Server{Addr: fmt.Sprintf(":%v", port), Handler: r}
 
-	h.server.ListenAndServe()
+	if err := h.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		h.logger.Error(ctx).Err(err).Msg("http service failed")
+		panic(err)
+	}
 
 	h.logger.Info(ctx).Msg("http service stopped")
 }

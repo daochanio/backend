@@ -155,16 +155,17 @@ func awaitSigterm(ctx context.Context, logger common.Logger, httpServer http.Htt
 
 	<-ctx.Done()
 
-	logger.Info(ctx).Msgf("received kill signal, beginning shutdown")
+	logger.Info(ctx).Msgf("received kill signal")
 
 	shutdownCtx := context.Background()
 
-	httpServer.Stop(shutdownCtx)
+	if err := httpServer.Stop(shutdownCtx); err != nil {
+		logger.Error(ctx).Err(err).Msg("failed to shutdown http server")
+	}
 
-	// FIXME:
 	// See https://github.com/redis/go-redis/issues/2276 and https://github.com/redis/go-redis/pull/2455
 	// Blocking calls to redis client methods will not be interrupted by the shutdown context.
-	// We need to wait before calling Stop() to ensure that the subscriber has finished processing its latest loop before we call Stop().
+	// We need to wait before calling Stop() to ensure that the subscriber has finished processing its latest loop.
 	// This way we ensure that no new messages will be written to the buffer after flushing inside the Stop() method.
 	time.Sleep(10 * time.Second)
 

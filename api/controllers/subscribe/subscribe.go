@@ -16,7 +16,7 @@ import (
 
 type Subscriber interface {
 	Start(ctx context.Context)
-	Stop(ctx context.Context) error
+	Stop(ctx context.Context)
 }
 
 type subscriber struct {
@@ -78,10 +78,9 @@ func (s *subscriber) Start(ctx context.Context) {
 	}
 }
 
-func (s *subscriber) Stop(ctx context.Context) error {
+func (s *subscriber) Stop(ctx context.Context) {
 	s.logger.Info(ctx).Msg("cleaning up subscriber")
 	s.flushBuffer(ctx)
-	return nil
 }
 
 func (s *subscriber) execute(ctx context.Context, group string, consumer string) {

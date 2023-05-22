@@ -78,7 +78,7 @@ func awaitSigterm(ctx context.Context, logger common.Logger, indexer index.Index
 
 	<-ctx.Done()
 
-	logger.Info(ctx).Msgf("received kill signal, beginning shutdown")
+	logger.Info(ctx).Msgf("received kill signal")
 
 	// allow indexer to finish if its currently in the middle of indexing
 	time.Sleep(time.Second * 10)

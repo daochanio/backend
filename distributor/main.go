@@ -77,7 +77,7 @@ func awaitSigterm(ctx context.Context, logger common.Logger, distributor distrib
 
 	<-ctx.Done()
 
-	logger.Info(ctx).Msgf("received kill signal, beginning shutdown")
+	logger.Info(ctx).Msgf("received kill signal")
 
 	shutdownCtx := context.Background()
 
