@@ -3,12 +3,13 @@ package s3
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/api/settings"
 	"github.com/daochanio/backend/api/usecases"
@@ -18,15 +19,11 @@ import (
 type s3Gateway struct {
 	logger   common.Logger
 	settings settings.Settings
-	client   *s3.S3
+	client   *s3.Client
 }
 
-func NewStorageGateway(logger common.Logger, settings settings.Settings) usecases.Storage {
-	sess, err := session.NewSession(settings.S3Config())
-	if err != nil {
-		panic(err)
-	}
-	client := s3.New(sess)
+func NewStorageGateway(ctx context.Context, logger common.Logger, settings settings.Settings) usecases.Storage {
+	client := s3.NewFromConfig(*settings.S3Config(ctx))
 	return &s3Gateway{
 		logger,
 		settings,
@@ -40,7 +37,7 @@ func (g *s3Gateway) UploadImage(ctx context.Context, fileName string, contentTyp
 	}
 
 	bucket := g.settings.ImageBucket()
-	_, err := g.client.PutObject(&s3.PutObjectInput{
+	_, err := g.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:       &bucket,
 		Key:          &fileName,
 		Body:         bytes.NewReader(*data),
@@ -59,12 +56,13 @@ func (g *s3Gateway) UploadImage(ctx context.Context, fileName string, contentTyp
 
 func (g *s3Gateway) GetImageByFileName(ctx context.Context, fileName string) (*entities.Image, error) {
 	bucket := g.settings.ImageBucket()
-	header, err := g.client.HeadObject(&s3.HeadObjectInput{
+	header, err := g.client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: &bucket,
 		Key:    &fileName,
 	})
 
-	if awsError, ok := err.(awserr.Error); ok && awsError.Code() == "NotFound" {
+	var responseError *awshttp.ResponseError
+	if errors.As(err, &responseError) && responseError.ResponseError.HTTPStatusCode() == http.StatusNotFound {
 		return nil, nil
 	}
 
