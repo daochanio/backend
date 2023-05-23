@@ -2,13 +2,13 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"time"
 
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/db/bindings"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -132,7 +132,7 @@ func (p *postgresGateway) GetComments(ctx context.Context, threadId int64, offse
 func (p *postgresGateway) GetCommentById(ctx context.Context, id int64) (entities.Comment, error) {
 	comment, err := p.queries.GetComment(ctx, id)
 
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return entities.Comment{}, common.ErrNotFound
 	}
 
@@ -164,7 +164,7 @@ func (p *postgresGateway) GetCommentById(ctx context.Context, id int64) (entitie
 func (p *postgresGateway) DeleteComment(ctx context.Context, id int64) error {
 	_, err := p.queries.DeleteComment(ctx, id)
 
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return common.ErrNotFound
 	}
 

@@ -468,6 +468,28 @@ func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]Thread, err
 	return items, nil
 }
 
+const getUser = `-- name: GetUser :one
+SELECT address, ens_name, created_at, updated_at, reputation, ens_avatar_file_name, ens_avatar_url, ens_avatar_content_type
+FROM users
+WHERE address = $1
+`
+
+func (q *Queries) GetUser(ctx context.Context, address string) (User, error) {
+	row := q.db.QueryRow(ctx, getUser, address)
+	var i User
+	err := row.Scan(
+		&i.Address,
+		&i.EnsName,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Reputation,
+		&i.EnsAvatarFileName,
+		&i.EnsAvatarUrl,
+		&i.EnsAvatarContentType,
+	)
+	return i, err
+}
+
 const updateChallenge = `-- name: UpdateChallenge :exec
 INSERT INTO challenges (address, message, expires_at)
 VALUES ($1, $2, $3)

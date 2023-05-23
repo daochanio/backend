@@ -10,7 +10,7 @@ import (
 	"github.com/daochanio/backend/common"
 )
 
-func (h *httpServer) authenticator(next http.Handler) http.Handler {
+func (h *httpServer) authentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		token := strings.Split(r.Header.Get("Authorization"), " ")
@@ -29,7 +29,16 @@ func (h *httpServer) authenticator(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx = context.WithValue(ctx, common.ContextKeyAddress, address)
+		user, err := h.getUser.Execute(ctx, usecases.GetUserInput{
+			Address: address,
+		})
+
+		if err != nil {
+			h.presentUnathorized(w, r, err)
+			return
+		}
+
+		ctx = context.WithValue(ctx, common.ContextKeyUser, user)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

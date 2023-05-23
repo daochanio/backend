@@ -11,13 +11,11 @@ import (
 
 type Authenticate struct {
 	settings settings.Settings
-	cache    Cache
 }
 
-func NewAuthenticateUseCase(settings settings.Settings, cache Cache) *Authenticate {
+func NewAuthenticateUseCase(settings settings.Settings) *Authenticate {
 	return &Authenticate{
 		settings,
-		cache,
 	}
 }
 
@@ -46,7 +44,11 @@ func (u *Authenticate) Execute(ctx context.Context, input *AuthenticateInput) (s
 		return "", fmt.Errorf("invalid token")
 	}
 
-	claims := token.Claims.(jwt.MapClaims)
+	claims, ok := token.Claims.(jwt.MapClaims)
+
+	if !ok {
+		return "", fmt.Errorf("invalid claims")
+	}
 
 	return claims.GetSubject()
 }

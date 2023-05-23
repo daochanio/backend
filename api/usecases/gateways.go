@@ -12,6 +12,7 @@ type Database interface {
 	GetChallengeByAddress(ctx context.Context, address string) (entities.Challenge, error)
 	SaveChallenge(ctx context.Context, challenge entities.Challenge) error
 
+	GetUserByAddress(ctx context.Context, address string) (entities.User, error)
 	GetThreads(ctx context.Context, limit int64) ([]entities.Thread, error)
 	GetThreadById(ctx context.Context, threadId int64) (entities.Thread, error)
 	GetComments(ctx context.Context, threadId int64, offset int64, limit int64) ([]entities.Comment, int64, error)
