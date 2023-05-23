@@ -39,6 +39,7 @@ type httpServer struct {
 	getComments   *usecases.GetComments
 	deleteComment *usecases.DeleteComment
 	uploadImage   *usecases.UploadImage
+	getUser       *usecases.GetUser
 }
 
 func NewHttpServer(
@@ -56,7 +57,8 @@ func NewHttpServer(
 	createComment *usecases.CreateComment,
 	getComments *usecases.GetComments,
 	deleteComment *usecases.DeleteComment,
-	uploadImage *usecases.UploadImage) HttpServer {
+	uploadImage *usecases.UploadImage,
+	getUser *usecases.GetUser) HttpServer {
 	var server *http.Server
 	return &httpServer{
 		server,
@@ -75,6 +77,7 @@ func NewHttpServer(
 		getComments,
 		deleteComment,
 		uploadImage,
+		getUser,
 	}
 }
 
@@ -107,6 +110,7 @@ func (h *httpServer) Start(ctx context.Context) {
 			r.Use(h.rateLimiter("public", 20, time.Minute))
 			r.Use(h.maxSize(1))
 
+			r.Get("/users/{address}", h.getUserByAddressRoute)
 			r.Get("/threads", h.getThreadsRoute)
 			r.Get("/threads/{threadId}", h.getThreadByIdRoute)
 			r.Get("/threads/{threadId}/comments", h.getCommentsRoute)
@@ -123,7 +127,8 @@ func (h *httpServer) Start(ctx context.Context) {
 
 		// authenticated routes
 		r.Group(func(r chi.Router) {
-			r.Use(h.authenticator)
+			r.Use(h.authentication)
+			r.Use(h.ensName)
 			r.Use(h.maxSize(5))
 
 			r.With(h.rateLimiter("create:thread", 2, time.Minute*10)).Post("/threads", h.createThreadRoute)
@@ -133,8 +138,9 @@ func (h *httpServer) Start(ctx context.Context) {
 		})
 
 		// permissioned routes
+		// TODO: Make this require moderator+ permission
 		r.Group(func(r chi.Router) {
-			r.Use(h.authenticator) // TODO: Make this require moderator+ permission
+			r.Use(h.authentication)
 			r.Use(h.rateLimiter("permissioned", 10, time.Second))
 			r.Use(h.maxSize(1))
 
@@ -144,7 +150,8 @@ func (h *httpServer) Start(ctx context.Context) {
 
 		// image route
 		r.Group(func(r chi.Router) {
-			r.Use(h.authenticator)
+			r.Use(h.authentication)
+			r.Use(h.ensName)
 			r.Use(h.rateLimiter("create:image", 7, time.Minute*10)) // should encompass creating images for threads and comments
 			r.Use(h.maxSize(5 * 1024))
 
@@ -188,6 +195,11 @@ func (h *httpServer) presentBadRequest(w http.ResponseWriter, r *http.Request, e
 func (h *httpServer) presentUnathorized(w http.ResponseWriter, r *http.Request, err error) {
 	h.logger.Warn(r.Context()).Err(err).Msg("unauthorized")
 	h.presentJSON(w, r, http.StatusUnauthorized, toErrJson("unathorized"), nil)
+}
+
+func (h *httpServer) presentForbidden(w http.ResponseWriter, r *http.Request, err error) {
+	h.logger.Warn(r.Context()).Err(err).Msg("forbidden")
+	h.presentJSON(w, r, http.StatusForbidden, toErrJson("forbidden"), nil)
 }
 
 func (h *httpServer) presentTooManyRequests(w http.ResponseWriter, r *http.Request, err error) {

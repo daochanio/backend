@@ -129,6 +129,9 @@ func newContainer(ctx context.Context) *dig.Container {
 	if err := container.Provide(usecases.NewHydrateUsersUseCase); err != nil {
 		panic(err)
 	}
+	if err := container.Provide(usecases.NewGetUserUseCase); err != nil {
+		panic(err)
+	}
 	if err := container.Provide(http.NewHttpServer); err != nil {
 		panic(err)
 	}

@@ -2,13 +2,13 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"time"
 
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/db/bindings"
+	"github.com/jackc/pgx/v5"
 )
 
 func (p *postgresGateway) CreateThread(ctx context.Context, thread entities.Thread) (entities.Thread, error) {
@@ -79,7 +79,7 @@ func (p *postgresGateway) GetThreads(ctx context.Context, limit int64) ([]entiti
 func (p *postgresGateway) GetThreadById(ctx context.Context, id int64) (entities.Thread, error) {
 	thread, err := p.queries.GetThread(ctx, id)
 
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return entities.Thread{}, common.ErrNotFound
 	}
 
@@ -110,7 +110,7 @@ func (p *postgresGateway) GetThreadById(ctx context.Context, id int64) (entities
 func (p *postgresGateway) DeleteThread(ctx context.Context, id int64) error {
 	_, err := p.queries.DeleteThread(ctx, id)
 
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return common.ErrNotFound
 	}
 

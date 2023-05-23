@@ -1,3 +1,8 @@
+-- name: GetUser :one
+SELECT *
+FROM users
+WHERE address = $1;
+
 -- upsert user every time they signin so we don't have to check if they exist
 -- name: UpsertUser :exec
 INSERT INTO users (address)

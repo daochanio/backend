@@ -79,8 +79,15 @@ func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, ok := ctx.Value(common.ContextKeyUser).(entities.User)
+
+	if !ok {
+		h.presentBadRequest(w, r, fmt.Errorf("invalid user"))
+		return
+	}
+
 	thread, err := h.createThread.Execute(ctx, usecases.CreateThreadInput{
-		Address:       ctx.Value(common.ContextKeyAddress).(string),
+		Address:       user.Address(),
 		Title:         body.Title,
 		ImageFileName: body.ImageFileName,
 		Content:       body.Content,
@@ -100,11 +107,19 @@ func (h *httpServer) deleteThreadRoute(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		h.presentBadRequest(w, r, err)
+		return
+	}
+
+	user, ok := ctx.Value(common.ContextKeyUser).(entities.User)
+
+	if !ok {
+		h.presentBadRequest(w, r, fmt.Errorf("invalid user"))
+		return
 	}
 
 	err = h.deleteThread.Execute(ctx, usecases.DeleteThreadInput{
 		ThreadId:       id,
-		DeleterAddress: ctx.Value(common.ContextKeyAddress).(string),
+		DeleterAddress: user.Address(),
 	})
 
 	if errors.Is(err, common.ErrNotFound) {
@@ -129,9 +144,16 @@ func (h *httpServer) createThreadVoteRoute(w http.ResponseWriter, r *http.Reques
 		h.presentBadRequest(w, r, err)
 	}
 
+	user, ok := ctx.Value(common.ContextKeyUser).(entities.User)
+
+	if !ok {
+		h.presentBadRequest(w, r, fmt.Errorf("invalid user"))
+		return
+	}
+
 	err = h.createVote.Execute(ctx, usecases.CreateVoteInput{
 		Id:      id,
-		Address: ctx.Value(common.ContextKeyAddress).(string),
+		Address: user.Address(),
 		Value:   common.VoteValue(value),
 		Type:    common.ThreadVote,
 	})

@@ -74,10 +74,17 @@ func (h *httpServer) createCommentRoute(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	user, ok := ctx.Value(common.ContextKeyUser).(entities.User)
+
+	if !ok {
+		h.presentBadRequest(w, r, fmt.Errorf("invalid user"))
+		return
+	}
+
 	comment, err := h.createComment.Execute(ctx, usecases.CreateCommentInput{
 		RepliedToCommentId: repliedToCommentId,
 		ThreadId:           threadId,
-		Address:            ctx.Value(common.ContextKeyAddress).(string),
+		Address:            user.Address(),
 		Content:            body.Content,
 		ImageFileName:      body.ImageFileName,
 	})
@@ -97,11 +104,19 @@ func (h *httpServer) deleteCommentRoute(w http.ResponseWriter, r *http.Request) 
 
 	if err != nil {
 		h.presentBadRequest(w, r, err)
+		return
+	}
+
+	user, ok := ctx.Value(common.ContextKeyUser).(entities.User)
+
+	if !ok {
+		h.presentBadRequest(w, r, fmt.Errorf("invalid user"))
+		return
 	}
 
 	err = h.deleteComment.Execute(ctx, usecases.DeleteCommentInput{
 		Id:             id,
-		DeleterAddress: ctx.Value(common.ContextKeyAddress).(string),
+		DeleterAddress: user.Address(),
 	})
 
 	if errors.Is(err, common.ErrNotFound) {
@@ -125,11 +140,19 @@ func (h *httpServer) createCommentVoteRoute(w http.ResponseWriter, r *http.Reque
 
 	if err != nil {
 		h.presentBadRequest(w, r, err)
+		return
+	}
+
+	user, ok := ctx.Value(common.ContextKeyUser).(entities.User)
+
+	if !ok {
+		h.presentBadRequest(w, r, fmt.Errorf("invalid user"))
+		return
 	}
 
 	err = h.createVote.Execute(ctx, usecases.CreateVoteInput{
 		Id:      id,
-		Address: ctx.Value(common.ContextKeyAddress).(string),
+		Address: user.Address(),
 		Value:   common.VoteValue(value),
 		Type:    common.CommentVote,
 	})
