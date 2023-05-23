@@ -23,16 +23,16 @@ build-indexer:
 	go build -o bin/indexer ./indexer/
 
 run-api:
-	ENV=dev go run api/*.go
+	ENV=dev APP_NAME=api go run api/*.go
 
 run-distributor:
-	ENV=dev go run distributor/main.go
+	ENV=dev APP_NAME=distributor go run distributor/*.go
 
 run-indexer:
-	ENV=dev go run indexer/main.go
+	ENV=dev APP_NAME=indexer go run indexer/*.go
 
 db-migrate:
-	ENV=dev go run db/main.go
+	ENV=dev APP_NAME=db go run db/*.go
 
 db-add:
 	goose -dir db/migrations create $(name).sql
