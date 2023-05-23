@@ -23,7 +23,7 @@ build-indexer:
 	go build -o bin/indexer ./indexer/
 
 run-api:
-	ENV=dev go run api/main.go
+	ENV=dev go run api/*.go
 
 run-distributor:
 	ENV=dev go run distributor/main.go
