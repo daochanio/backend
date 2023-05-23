@@ -16,16 +16,18 @@ import (
 	"go.uber.org/dig"
 )
 
-func newContainer(ctx context.Context, appName string) *dig.Container {
+func newContainer(ctx context.Context) *dig.Container {
 	container := dig.New()
+	provideGeneral(ctx, container)
+	provideGateways(container)
+	provideUseCases(container)
+	provideControllers(container)
+	return container
+}
 
+func provideGeneral(ctx context.Context, container *dig.Container) {
 	if err := container.Provide(func() context.Context {
 		return ctx
-	}); err != nil {
-		panic(err)
-	}
-	if err := container.Provide(func() string {
-		return appName
 	}); err != nil {
 		panic(err)
 	}
@@ -41,12 +43,6 @@ func newContainer(ctx context.Context, appName string) *dig.Container {
 	if err := container.Provide(settings.NewSettings); err != nil {
 		panic(err)
 	}
-
-	provideGateways(container)
-	provideUseCases(container)
-	provideControllers(container)
-
-	return container
 }
 
 func provideGateways(container *dig.Container) {

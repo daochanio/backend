@@ -22,8 +22,9 @@ type commonSettings struct {
 	hostname string
 }
 
-func NewCommonSettings(appname string) CommonSettings {
+func NewCommonSettings() CommonSettings {
 	env := os.Getenv("ENV")
+	appname := os.Getenv("APP_NAME")
 
 	if env == "dev" {
 		err := godotenv.Load(fmt.Sprintf(".env/.env.%v.dev", appname))
