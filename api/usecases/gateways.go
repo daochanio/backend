@@ -9,6 +9,9 @@ import (
 )
 
 type Database interface {
+	Start(ctx context.Context)
+	Shutdown(ctx context.Context)
+
 	GetChallengeByAddress(ctx context.Context, address string) (entities.Challenge, error)
 	SaveChallenge(ctx context.Context, challenge entities.Challenge) error
 
@@ -29,26 +32,36 @@ type Database interface {
 }
 
 type Cache interface {
+	Start(ctx context.Context)
+	Shutdown(ctx context.Context)
 	VerifyRateLimit(ctx context.Context, key string, rate int, period time.Duration) error
 }
 
 type Stream interface {
+	Start(ctx context.Context)
+	Shutdown(ctx context.Context)
 	PublishSignin(ctx context.Context, address string) error
 	PublishVote(ctx context.Context, vote entities.Vote) error
 }
 
 type Blockchain interface {
+	Start(ctx context.Context)
+	Shutdown(ctx context.Context)
 	GetNameByAddress(ctx context.Context, address string) (*string, error)
 	GetAvatarURIByName(ctx context.Context, name string) (*string, error)
 	GetNFTURI(ctx context.Context, standard string, address string, id string) (string, error)
 }
 
 type Storage interface {
+	Start(ctx context.Context)
+	Shutdown(ctx context.Context)
 	UploadImage(ctx context.Context, fileName string, contentType string, data *[]byte) (entities.Image, error)
 	GetImageByFileName(ctx context.Context, fileName string) (*entities.Image, error)
 }
 
 type SafeProxy interface {
+	Start(ctx context.Context)
+	Shutdown(ctx context.Context)
 	DownloadImage(ctx context.Context, uri string) (*[]byte, string, error)
 	GetNFTImageURI(ctx context.Context, uri string) (string, error)
 }

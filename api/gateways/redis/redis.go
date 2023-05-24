@@ -1,6 +1,8 @@
 package redis
 
 import (
+	"context"
+
 	"github.com/daochanio/backend/api/settings"
 	"github.com/daochanio/backend/api/usecases"
 	"github.com/daochanio/backend/common"
@@ -16,13 +18,24 @@ type redisCacheGateway struct {
 }
 
 func NewCacheGateway(settings settings.Settings, logger common.Logger) usecases.Cache {
-	client := redis.NewClient(settings.RegionalRedisOptions())
-	limiter := redis_rate.NewLimiter(client)
 	return &redisCacheGateway{
 		settings: settings,
 		logger:   logger,
-		client:   client,
-		limiter:  limiter,
+		client:   nil,
+		limiter:  nil,
+	}
+}
+
+func (r *redisCacheGateway) Start(ctx context.Context) {
+	r.logger.Info(ctx).Msg("starting redis cache")
+	r.client = redis.NewClient(r.settings.RegionalRedisOptions())
+	r.limiter = redis_rate.NewLimiter(r.client)
+}
+
+func (r *redisCacheGateway) Shutdown(ctx context.Context) {
+	r.logger.Info(ctx).Msg("shutting down redis cache")
+	if err := r.client.Close(); err != nil {
+		r.logger.Error(ctx).Err(err).Msg("error closing redis cache client")
 	}
 }
 
@@ -33,10 +46,21 @@ type redisStreamGateway struct {
 }
 
 func NewStreamGateway(settings settings.Settings, logger common.Logger) usecases.Stream {
-	client := redis.NewClient(settings.GlobalRedisOptions())
 	return &redisStreamGateway{
 		settings: settings,
 		logger:   logger,
-		client:   client,
+		client:   nil,
+	}
+}
+
+func (r *redisStreamGateway) Start(ctx context.Context) {
+	r.logger.Info(ctx).Msg("starting redis stream")
+	r.client = redis.NewClient(r.settings.GlobalRedisOptions())
+}
+
+func (r *redisStreamGateway) Shutdown(ctx context.Context) {
+	r.logger.Info(ctx).Msg("shutting down redis stream")
+	if err := r.client.Close(); err != nil {
+		r.logger.Error(ctx).Err(err).Msg("error closing redis stream client")
 	}
 }

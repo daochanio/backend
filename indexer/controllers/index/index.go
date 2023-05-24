@@ -11,7 +11,7 @@ import (
 
 type Indexer interface {
 	Start(ctx context.Context)
-	Stop(ctx context.Context)
+	Shutdown(ctx context.Context)
 }
 
 type indexer struct {
@@ -47,6 +47,6 @@ func (i *indexer) Start(ctx context.Context) {
 }
 
 // Do any future shutdown resource cleanup here
-func (i *indexer) Stop(ctx context.Context) {
-	i.logger.Info(ctx).Msg("cleaning up indexer")
+func (i *indexer) Shutdown(ctx context.Context) {
+	i.logger.Info(ctx).Msg("shutting down indexer")
 }

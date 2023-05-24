@@ -12,30 +12,22 @@ import (
 
 type Subscriber interface {
 	Start(ctx context.Context)
-	Stop(ctx context.Context)
+	Shutdown(ctx context.Context)
 }
 
 type subscriber struct {
 	logger         common.Logger
 	settings       settings.Settings
-	commonSettings common.CommonSettings
+	commonSettings common.Settings
 	client         *redis.Client
 }
 
-func NewSubscriber(logger common.Logger, settings settings.Settings, commonSettings common.CommonSettings) Subscriber {
-	opt, err := redis.ParseURL(settings.StreamConnectionString())
-
-	if err != nil {
-		panic(err)
-	}
-
-	client := redis.NewClient(opt)
-
+func NewSubscriber(logger common.Logger, settings settings.Settings, commonSettings common.Settings) Subscriber {
 	return &subscriber{
-		logger,
-		settings,
-		commonSettings,
-		client,
+		logger:         logger,
+		settings:       settings,
+		commonSettings: commonSettings,
+		client:         nil,
 	}
 }
 
@@ -51,6 +43,14 @@ func NewSubscriber(logger common.Logger, settings settings.Settings, commonSetti
 // When the next distribution round runs, the records that are accepted and not associated with a distribution can be processed and then tied to a distribution through FK
 func (s *subscriber) Start(ctx context.Context) {
 	s.logger.Info(ctx).Msg("starting subscriber")
+
+	opt, err := redis.ParseURL(s.settings.StreamConnectionString())
+
+	if err != nil {
+		panic(err)
+	}
+
+	s.client = redis.NewClient(opt)
 
 	group := s.commonSettings.Appname()
 	consumer := s.commonSettings.Hostname()
@@ -68,9 +68,11 @@ func (s *subscriber) Start(ctx context.Context) {
 	}
 }
 
-// Any future needed resource cleanup can be done here
-func (s *subscriber) Stop(ctx context.Context) {
-	s.logger.Info(ctx).Msg("cleaning up subscriber")
+func (s *subscriber) Shutdown(ctx context.Context) {
+	s.logger.Info(ctx).Msg("shutting down subscriber")
+	if err := s.client.Close(); err != nil {
+		s.logger.Error(ctx).Err(err).Msg("error closing subscriber client")
+	}
 }
 
 func (s *subscriber) execute(ctx context.Context, group string, consumer string) {
@@ -122,7 +124,7 @@ func (s *subscriber) readMessages(ctx context.Context, group string, consumer st
 		Group:    group,
 		Consumer: consumer,
 		Streams:  []string{common.VoteStream, ">"},
-		Block:    time.Second * 10,
+		Block:    time.Second * 5,
 		Count:    100,
 	}).Result()
 

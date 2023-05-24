@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"os/signal"
+	"sync"
 	"syscall"
-	"time"
 
 	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/indexer/controllers/index"
 	"github.com/daochanio/backend/indexer/settings"
+	"github.com/daochanio/backend/indexer/usecases"
 )
 
 func main() {
@@ -22,8 +23,15 @@ func main() {
 	}
 }
 
-func start(ctx context.Context, logger common.Logger, indexer index.Indexer, settings settings.Settings) {
+func start(ctx context.Context, logger common.Logger, indexer index.Indexer, settings settings.Settings, database usecases.Database, blockchain usecases.Blockchain) {
+	database.Start(ctx)
+	blockchain.Start(ctx)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	go func() {
+		defer wg.Done()
 		indexer.Start(ctx)
 	}()
 
@@ -33,12 +41,14 @@ func start(ctx context.Context, logger common.Logger, indexer index.Indexer, set
 
 	logger.Info(ctx).Msgf("received kill signal")
 
-	// allow indexer to finish if its currently in the middle of indexing
-	time.Sleep(time.Second * 10)
+	wg.Wait()
 
-	stopCtx := context.Background()
+	shutdownCtx := context.Background()
 
-	indexer.Stop(stopCtx)
+	indexer.Shutdown(shutdownCtx)
+
+	database.Shutdown(shutdownCtx)
+	blockchain.Shutdown(shutdownCtx)
 
 	logger.Info(ctx).Msgf("shutdown complete")
 }

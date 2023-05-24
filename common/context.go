@@ -2,7 +2,7 @@ package common
 
 type ContextKey string
 
-const contextKeyPrefix = "etheralley context key "
+const contextKeyPrefix = "daochan context key "
 
 func (c ContextKey) String() string {
 	return contextKeyPrefix + string(c)

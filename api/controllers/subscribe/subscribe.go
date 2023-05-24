@@ -16,16 +16,16 @@ import (
 
 type Subscriber interface {
 	Start(ctx context.Context)
-	Stop(ctx context.Context)
+	Shutdown(ctx context.Context)
 }
 
 type subscriber struct {
 	logger                common.Logger
 	settings              settings.Settings
-	commonSettings        common.CommonSettings
+	commonSettings        common.Settings
 	client                *redis.Client
 	aggregateVotesUseCase *usecases.AggregateVotes
-	hydrateUserUseCase    *usecases.HydrateUsers
+	hydrateUsersUseCase   *usecases.HydrateUsers
 	messageBuffer         *[]bufferMessage
 	lastFlush             time.Time
 }
@@ -35,24 +35,21 @@ type bufferMessage struct {
 	stream  redis.XStream
 }
 
-func NewSubscriber(logger common.Logger, settings settings.Settings, commonSettings common.CommonSettings, aggregateVotesUseCase *usecases.AggregateVotes, hydrateUsersUseCase *usecases.HydrateUsers) Subscriber {
-	client := redis.NewClient(settings.GlobalRedisOptions())
-	buffer := &[]bufferMessage{}
-	lastFlush := time.Now()
+func NewSubscriber(logger common.Logger, settings settings.Settings, commonSettings common.Settings, aggregateVotesUseCase *usecases.AggregateVotes, hydrateUsersUseCase *usecases.HydrateUsers) Subscriber {
 	return &subscriber{
-		logger,
-		settings,
-		commonSettings,
-		client,
-		aggregateVotesUseCase,
-		hydrateUsersUseCase,
-		buffer,
-		lastFlush,
+		logger:                logger,
+		settings:              settings,
+		commonSettings:        commonSettings,
+		client:                nil,
+		aggregateVotesUseCase: aggregateVotesUseCase,
+		hydrateUsersUseCase:   hydrateUsersUseCase,
+		messageBuffer:         nil,
+		lastFlush:             time.Now(),
 	}
 }
 
 // Subscribe to the vote stream and read incoming votes
-// Buffer successive messages with the same key to minimize work
+// Buffer messages to provide the opportunity for de-duplication of messages with similar keys.
 // I.e buffering on votes is to avoid excessive writes on the same column for hot threads/comments or a bad actor writing the same vote over and over.
 // Either scenario would cause a lot of write contention on a single row.
 // We flush the buffer at a certain length or past a certain number of seconds.
@@ -60,6 +57,10 @@ func NewSubscriber(logger common.Logger, settings settings.Settings, commonSetti
 // Example: autoclaiming a vote message from the PEL that Node 1 failed to process but is older than a message that Node 2 is currently processing.
 func (s *subscriber) Start(ctx context.Context) {
 	s.logger.Info(ctx).Msg("starting subscriber")
+
+	s.client = redis.NewClient(s.settings.GlobalRedisOptions())
+	s.messageBuffer = &[]bufferMessage{}
+	s.lastFlush = time.Now()
 
 	group := s.commonSettings.Appname()
 	consumer := s.commonSettings.Hostname()
@@ -78,9 +79,15 @@ func (s *subscriber) Start(ctx context.Context) {
 	}
 }
 
-func (s *subscriber) Stop(ctx context.Context) {
-	s.logger.Info(ctx).Msg("cleaning up subscriber")
+func (s *subscriber) Shutdown(ctx context.Context) {
+	s.logger.Info(ctx).Msg("shutting down subscriber")
+
+	// ensure we clear the buffer before shutting down
 	s.flushBuffer(ctx)
+
+	if err := s.client.Close(); err != nil {
+		s.logger.Error(ctx).Err(err).Msg("error closing redis client")
+	}
 }
 
 func (s *subscriber) execute(ctx context.Context, group string, consumer string) {
@@ -128,7 +135,7 @@ func (s *subscriber) readMessages(ctx context.Context, group string, consumer st
 		Group:    group,
 		Consumer: consumer,
 		Streams:  []string{common.SigninStream, common.VoteStream, ">", ">"},
-		Block:    time.Second * 10, // This value should be tied to the value specified in main.go's awaitSigterm
+		Block:    time.Second * 5,
 		Count:    100,
 	}).Result()
 
@@ -233,7 +240,7 @@ func (s *subscriber) hydrateUsers(ctx context.Context, wg *sync.WaitGroup, addre
 		return
 	}
 
-	s.hydrateUserUseCase.Execute(ctx, usecases.HydrateUsersInput{
+	s.hydrateUsersUseCase.Execute(ctx, usecases.HydrateUsersInput{
 		Addresses: addresses,
 	})
 }

@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"os/signal"
+	"sync"
 	"syscall"
-	"time"
 
 	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/distributor/controllers/distribute"
@@ -23,11 +23,15 @@ func main() {
 }
 
 func start(ctx context.Context, logger common.Logger, distributor distribute.Distributor, subscriber subscribe.Subscriber) {
+	var wg sync.WaitGroup
+	wg.Add(2)
 	go func() {
+		defer wg.Done()
 		distributor.Start(ctx)
 	}()
 
 	go func() {
+		defer wg.Done()
 		subscriber.Start(ctx)
 	}()
 
@@ -37,14 +41,13 @@ func start(ctx context.Context, logger common.Logger, distributor distribute.Dis
 
 	logger.Info(ctx).Msgf("received kill signal")
 
-	stopCtx := context.Background()
+	wg.Wait()
 
-	// Allow distributor to finish if its currently in the middle of processing
-	time.Sleep(time.Second * 10)
+	shutdownCtx := context.Background()
 
-	distributor.Stop(stopCtx)
+	distributor.Shutdown(shutdownCtx)
 
-	subscriber.Stop(stopCtx)
+	subscriber.Shutdown(shutdownCtx)
 
-	logger.Info(ctx).Msgf("shutdown complete")
+	logger.Info(shutdownCtx).Msgf("shutdown complete")
 }

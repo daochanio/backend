@@ -23,6 +23,10 @@ func NewBlockchainGateway(settings settings.Settings, logger common.Logger) usec
 	}
 }
 
+func (e *ethereumGateway) Start(ctx context.Context) {}
+
+func (e *ethereumGateway) Shutdown(ctx context.Context) {}
+
 // Parse for go-ethereum http error to determine if its retryable.
 // Wrap in common.ErrRetryable if status code is 429 and include msg
 func (e *ethereumGateway) tryWrapRetryable(ctx context.Context, msg string, err error) error {
