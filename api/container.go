@@ -31,7 +31,7 @@ func provideGeneral(ctx context.Context, container *dig.Container) {
 	}); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(common.NewCommonSettings); err != nil {
+	if err := container.Provide(common.NewSettings); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(common.NewLogger); err != nil {

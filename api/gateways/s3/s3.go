@@ -23,13 +23,18 @@ type s3Gateway struct {
 }
 
 func NewStorageGateway(ctx context.Context, logger common.Logger, settings settings.Settings) usecases.Storage {
-	client := s3.NewFromConfig(*settings.S3Config(ctx))
 	return &s3Gateway{
-		logger,
-		settings,
-		client,
+		logger:   logger,
+		settings: settings,
+		client:   nil,
 	}
 }
+
+func (g *s3Gateway) Start(ctx context.Context) {
+	g.client = s3.NewFromConfig(*g.settings.S3Config(ctx))
+}
+
+func (g *s3Gateway) Shutdown(ctx context.Context) {}
 
 func (g *s3Gateway) UploadImage(ctx context.Context, fileName string, contentType string, data *[]byte) (entities.Image, error) {
 	if data == nil {

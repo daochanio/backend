@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"os/signal"
+	"sync"
 	"syscall"
-	"time"
 
 	"github.com/daochanio/backend/api/controllers/http"
 	"github.com/daochanio/backend/api/controllers/subscribe"
+	"github.com/daochanio/backend/api/usecases"
 	"github.com/daochanio/backend/common"
 )
 
@@ -22,12 +23,35 @@ func main() {
 	}
 }
 
-func start(ctx context.Context, logger common.Logger, httpServer http.HttpServer, subscriber subscribe.Subscriber) {
+func start(
+	ctx context.Context,
+	logger common.Logger,
+	httpServer http.HttpServer,
+	subscriber subscribe.Subscriber,
+	database usecases.Database,
+	cache usecases.Cache,
+	stream usecases.Stream,
+	blockchain usecases.Blockchain,
+	storage usecases.Storage,
+	safeProxy usecases.SafeProxy,
+) {
+	database.Start(ctx)
+	cache.Start(ctx)
+	stream.Start(ctx)
+	blockchain.Start(ctx)
+	storage.Start(ctx)
+	safeProxy.Start(ctx)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	go func() {
+		defer wg.Done()
 		httpServer.Start(ctx)
 	}()
 
 	go func() {
+		defer wg.Done()
 		subscriber.Start(ctx)
 	}()
 
@@ -37,19 +61,23 @@ func start(ctx context.Context, logger common.Logger, httpServer http.HttpServer
 
 	logger.Info(ctx).Msgf("received kill signal")
 
-	stopCtx := context.Background()
+	shutdownCtx := context.Background()
 
-	if err := httpServer.Stop(stopCtx); err != nil {
+	if err := httpServer.Shutdown(shutdownCtx); err != nil {
 		logger.Error(ctx).Err(err).Msg("failed to shutdown http server")
 	}
 
-	// See https://github.com/redis/go-redis/issues/2276 and https://github.com/redis/go-redis/pull/2455
-	// Blocking calls to redis client methods will not be interrupted by the shutdown context.
-	// We need to wait before calling Stop() to ensure that the subscriber has finished processing its latest loop.
-	// This way we ensure that no new messages will be written to the buffer after flushing inside the Stop() method.
-	time.Sleep(10 * time.Second)
+	// the ctx being marked as done should cause the subscriber to return from its blocking call
+	wg.Wait()
 
-	subscriber.Stop(stopCtx)
+	subscriber.Shutdown(shutdownCtx)
+
+	database.Shutdown(shutdownCtx)
+	cache.Shutdown(shutdownCtx)
+	stream.Shutdown(shutdownCtx)
+	blockchain.Shutdown(shutdownCtx)
+	storage.Shutdown(shutdownCtx)
+	safeProxy.Shutdown(shutdownCtx)
 
 	logger.Info(ctx).Msgf("shutdown complete")
 }

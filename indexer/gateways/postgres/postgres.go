@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/db/bindings"
 	"github.com/daochanio/backend/indexer/settings"
 	"github.com/daochanio/backend/indexer/usecases"
@@ -12,18 +13,34 @@ import (
 )
 
 type postgresGateway struct {
-	queries *bindings.Queries
+	logger   common.Logger
+	settings settings.Settings
+	db       *pgxpool.Pool
+	queries  *bindings.Queries
 }
 
-func NewPostgresGateway(ctx context.Context, settings settings.Settings) usecases.Database {
-	db, err := pgxpool.NewWithConfig(ctx, settings.PostgresConfig())
+func NewPostgresGateway(ctx context.Context, settings settings.Settings, logger common.Logger) usecases.Database {
+	return &postgresGateway{
+		logger:   logger,
+		settings: settings,
+		db:       nil,
+		queries:  nil,
+	}
+}
+
+func (g *postgresGateway) Start(ctx context.Context) {
+	g.logger.Info(ctx).Msg("starting postgres database")
+	db, err := pgxpool.NewWithConfig(ctx, g.settings.PostgresConfig())
 	if err != nil {
 		panic(err)
 	}
-	queries := bindings.New(db)
-	return &postgresGateway{
-		queries,
-	}
+	g.db = db
+	g.queries = bindings.New(db)
+}
+
+func (g *postgresGateway) Shutdown(ctx context.Context) {
+	g.logger.Info(ctx).Msg("shutting down postgres database")
+	g.db.Close()
 }
 
 func (g *postgresGateway) GetLastIndexedBlock(ctx context.Context) (*big.Int, error) {

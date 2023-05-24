@@ -32,6 +32,10 @@ func NewEthereumGateway(logger com.Logger, settings settings.Settings) usecases.
 	}
 }
 
+func (g *ethereumGateway) Start(ctx context.Context) {}
+
+func (g *ethereumGateway) Shutdown(ctx context.Context) {}
+
 func (g *ethereumGateway) GetLatestBlockNumber(ctx context.Context) (*big.Int, error) {
 	header, err := g.ethClient.HeaderByNumber(ctx, nil)
 	if err == ethereum.NotFound {

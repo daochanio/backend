@@ -28,6 +28,10 @@ func NewSafeProxyGateway(logger common.Logger, settings settings.Settings, httpC
 	}
 }
 
+func (w *worker) Start(ctx context.Context) {}
+
+func (w *worker) Shutdown(ctx context.Context) {}
+
 func (w *worker) DownloadImage(ctx context.Context, uri string) (*[]byte, string, error) {
 	resp, err := w.safeProxy(ctx, uri)
 

@@ -9,20 +9,20 @@ import (
 
 // These are intended to be generic settings that every app is expected to implement.
 // packages in common can safely expect to have access to these settings in their constructors.
-type CommonSettings interface {
+type Settings interface {
 	Appname() string
 	Hostname() string
 	Env() string
 	IsDev() bool
 }
 
-type commonSettings struct {
+type settings struct {
 	env      string
 	appname  string
 	hostname string
 }
 
-func NewCommonSettings() CommonSettings {
+func NewSettings() Settings {
 	env := os.Getenv("ENV")
 	appname := os.Getenv("APP_NAME")
 
@@ -38,25 +38,25 @@ func NewCommonSettings() CommonSettings {
 		hostname = "localhost"
 	}
 
-	return &commonSettings{
+	return &settings{
 		env,
 		appname,
 		hostname,
 	}
 }
 
-func (s *commonSettings) Appname() string {
+func (s *settings) Appname() string {
 	return s.appname
 }
 
-func (s *commonSettings) Hostname() string {
+func (s *settings) Hostname() string {
 	return s.hostname
 }
 
-func (s *commonSettings) Env() string {
+func (s *settings) Env() string {
 	return s.env
 }
 
-func (s *commonSettings) IsDev() bool {
+func (s *settings) IsDev() bool {
 	return s.env == "dev"
 }

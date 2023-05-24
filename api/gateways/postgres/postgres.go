@@ -18,15 +18,25 @@ type postgresGateway struct {
 }
 
 func NewDatabaseGateway(ctx context.Context, settings settings.Settings, logger common.Logger) usecases.Database {
-	db, err := pgxpool.NewWithConfig(ctx, settings.PostgresConfig())
+	return &postgresGateway{
+		settings: settings,
+		logger:   logger,
+		db:       nil,
+		queries:  nil,
+	}
+}
+
+func (p *postgresGateway) Start(ctx context.Context) {
+	p.logger.Info(ctx).Msg("starting postgres database")
+	db, err := pgxpool.NewWithConfig(ctx, p.settings.PostgresConfig())
 	if err != nil {
 		panic(err)
 	}
-	queries := bindings.New(db)
-	return &postgresGateway{
-		settings,
-		logger,
-		db,
-		queries,
-	}
+	p.db = db
+	p.queries = bindings.New(db)
+}
+
+func (p *postgresGateway) Shutdown(ctx context.Context) {
+	p.logger.Info(ctx).Msg("shutting down postgres database")
+	p.db.Close()
 }

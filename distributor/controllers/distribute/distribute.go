@@ -10,7 +10,7 @@ import (
 
 type Distributor interface {
 	Start(ctx context.Context)
-	Stop(ctx context.Context)
+	Shutdown(ctx context.Context)
 }
 
 type distributor struct {
@@ -38,8 +38,8 @@ func (d *distributor) Start(ctx context.Context) {
 	}
 }
 
-func (d *distributor) Stop(ctx context.Context) {
-	d.logger.Info(ctx).Msg("cleaning up distributor")
+func (d *distributor) Shutdown(ctx context.Context) {
+	d.logger.Info(ctx).Msg("shutting down distributor")
 }
 
 func (d *distributor) distribute(ctx context.Context) {

@@ -19,7 +19,7 @@ import (
 
 type HttpServer interface {
 	Start(context.Context)
-	Stop(ctx context.Context) error
+	Shutdown(ctx context.Context) error
 }
 
 type httpServer struct {
@@ -173,8 +173,8 @@ func (h *httpServer) Start(ctx context.Context) {
 	h.logger.Info(ctx).Msg("http service stopped")
 }
 
-func (h *httpServer) Stop(ctx context.Context) error {
-	h.logger.Info(ctx).Msg("cleaning up http service")
+func (h *httpServer) Shutdown(ctx context.Context) error {
+	h.logger.Info(ctx).Msg("shutting down http service")
 
 	if h.server != nil {
 		return h.server.Shutdown(ctx)
