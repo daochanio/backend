@@ -9,7 +9,8 @@
       "program": "${workspaceRoot}/api",
       "cwd": "${workspaceRoot}",
       "env": {
-        "ENV": "dev"
+        "ENV": "dev",
+        "APP_NAME": "api"
       },
       "args": [],
       "showLog": true
@@ -22,7 +23,8 @@
       "program": "${workspaceRoot}/distributor",
       "cwd": "${workspaceRoot}",
       "env": {
-        "ENV": "dev"
+        "ENV": "dev",
+        "APP_NAME": "distributor"
       },
       "args": [],
       "showLog": true
@@ -35,7 +37,8 @@
       "program": "${workspaceRoot}/indexer",
       "cwd": "${workspaceRoot}",
       "env": {
-        "ENV": "dev"
+        "ENV": "dev",
+        "APP_NAME": "indexer"
       },
       "args": [],
       "showLog": true

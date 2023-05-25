@@ -100,6 +100,8 @@ func (h *httpServer) Start(ctx context.Context) {
 	r.Use(h.recoverer)
 	r.Use(h.timeout)
 
+	r.Mount("/debug", middleware.Profiler())
+
 	r.Get("/", h.healthRoute)
 
 	r.Route("/v1", func(r chi.Router) {
