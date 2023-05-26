@@ -176,9 +176,9 @@ type commentJson struct {
 	Id               string       `json:"id"`
 	RepliedToComment *commentJson `json:"repliedToComment,omitempty"`
 	ThreadId         string       `json:"threadId,omitempty"` // empty if reply
-	Address          string       `json:"address"`
 	Content          string       `json:"content"`
 	Image            *imageJson   `json:"image,omitempty"` // empty if comment deleted
+	User             *userJson    `json:"user,omitempty"`  // empty if replied to comment
 	IsDeleted        bool         `json:"isDeleted"`
 	CreatedAt        time.Time    `json:"createdAt"`
 	DeletedAt        *time.Time   `json:"deletedAt,omitempty"` // empty if comment not deleted
@@ -196,12 +196,13 @@ func toCommentsJson(comments []entities.Comment) []commentJson {
 }
 
 func toCommentJson(comment entities.Comment) commentJson {
+	userJson := toUserJson(comment.User())
 	json := commentJson{
 		Id:        fmt.Sprint(comment.Id()),
 		ThreadId:  fmt.Sprint(comment.ThreadId()),
-		Address:   comment.Address(),
 		Content:   comment.Content(),
 		Image:     toImageJson(comment.Image()),
+		User:      &userJson,
 		IsDeleted: comment.IsDeleted(),
 		CreatedAt: comment.CreatedAt(),
 		DeletedAt: comment.DeletedAt(),
@@ -211,7 +212,6 @@ func toCommentJson(comment entities.Comment) commentJson {
 	if repliedToComment := comment.RepliedToComment(); repliedToComment != nil {
 		repliedToCommentJson := commentJson{
 			Id:        fmt.Sprint(repliedToComment.Id()),
-			Address:   repliedToComment.Address(),
 			Content:   repliedToComment.Content(),
 			Image:     toImageJson(repliedToComment.Image()),
 			IsDeleted: repliedToComment.IsDeleted(),

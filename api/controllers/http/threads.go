@@ -174,10 +174,10 @@ type createThreadJson struct {
 
 type threadJson struct {
 	Id        string         `json:"id"`
-	Address   string         `json:"address"`
 	Title     string         `json:"title"`
 	Content   string         `json:"content"`
 	Image     *imageJson     `json:"image,omitempty"` // empty if thread deleted
+	User      userJson       `json:"user"`
 	Comments  *[]commentJson `json:"comments,omitempty"`
 	IsDeleted bool           `json:"isDeleted"`
 	CreatedAt time.Time      `json:"createdAt"`
@@ -188,10 +188,10 @@ type threadJson struct {
 func toThreadJson(thread entities.Thread) threadJson {
 	json := threadJson{
 		Id:        fmt.Sprint(thread.Id()),
-		Address:   thread.Address(),
 		Title:     thread.Title(),
 		Content:   thread.Content(),
 		Image:     toImageJson(thread.Image()),
+		User:      toUserJson(thread.User()),
 		IsDeleted: thread.IsDeleted(),
 		CreatedAt: thread.CreatedAt(),
 		DeletedAt: thread.DeletedAt(),

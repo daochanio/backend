@@ -13,7 +13,7 @@ import (
 )
 
 func (p *postgresGateway) GetUserByAddress(ctx context.Context, address string) (entities.User, error) {
-	user, err := p.queries.GetUser(ctx, address)
+	dbUser, err := p.queries.GetUser(ctx, address)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return entities.User{}, common.ErrNotFound
@@ -23,30 +23,18 @@ func (p *postgresGateway) GetUserByAddress(ctx context.Context, address string) 
 		return entities.User{}, err
 	}
 
-	var ensName *string
-	if user.EnsName.Valid {
-		ensName = &user.EnsName.String
-	}
+	user := toUser(
+		dbUser.Address,
+		dbUser.EnsName,
+		dbUser.EnsAvatarFileName,
+		dbUser.EnsAvatarUrl,
+		dbUser.EnsAvatarContentType,
+		dbUser.Reputation,
+		dbUser.CreatedAt,
+		dbUser.UpdatedAt,
+	)
 
-	var ensAvatar *entities.Image
-	if user.EnsAvatarUrl.Valid {
-		image := entities.NewImage(user.EnsAvatarFileName.String, user.EnsAvatarUrl.String, user.EnsAvatarContentType.String)
-		ensAvatar = &image
-	}
-
-	var updatedAt *time.Time
-	if user.UpdatedAt.Valid {
-		updatedAt = &user.UpdatedAt.Time
-	}
-
-	return entities.NewUser(entities.UserParams{
-		Address:    user.Address,
-		EnsName:    ensName,
-		EnsAvatar:  ensAvatar,
-		Reputation: user.Reputation,
-		CreatedAt:  user.CreatedAt.Time,
-		UpdatedAt:  updatedAt,
-	}), nil
+	return user, nil
 }
 
 func (p *postgresGateway) UpsertUser(ctx context.Context, address string) error {
@@ -82,5 +70,38 @@ func (p *postgresGateway) UpdateUser(ctx context.Context, address string, name *
 		EnsAvatarUrl:         url,
 		EnsAvatarFileName:    fileName,
 		EnsAvatarContentType: contentType,
+	})
+}
+
+func toUser(
+	address string,
+	name pgtype.Text,
+	avatarFileName pgtype.Text,
+	avatarUrl pgtype.Text,
+	avatarContentType pgtype.Text,
+	reputation int64,
+	createdAt pgtype.Timestamp,
+	updatedAt pgtype.Timestamp,
+) entities.User {
+	var ensName *string
+	if name.Valid {
+		ensName = &name.String
+	}
+	var ensAvatar *entities.Image
+	if avatarUrl.Valid {
+		avatar := entities.NewImage(avatarFileName.String, avatarUrl.String, avatarContentType.String)
+		ensAvatar = &avatar
+	}
+	var updatedAtTime *time.Time
+	if updatedAt.Valid {
+		updatedAtTime = &updatedAt.Time
+	}
+	return entities.NewUser(entities.UserParams{
+		Address:    address,
+		EnsName:    ensName,
+		EnsAvatar:  ensAvatar,
+		Reputation: reputation,
+		CreatedAt:  createdAt.Time,
+		UpdatedAt:  updatedAtTime,
 	})
 }

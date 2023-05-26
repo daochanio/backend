@@ -43,12 +43,5 @@ func (u *CreateComment) Execute(ctx context.Context, input CreateCommentInput) (
 		return entities.Comment{}, fmt.Errorf("image not found %w", common.ErrNotFound)
 	}
 
-	comment := entities.NewComment(entities.CommentParams{
-		ThreadId: input.ThreadId,
-		Address:  input.Address,
-		Content:  input.Content,
-		Image:    *image,
-	})
-
-	return u.database.CreateComment(ctx, comment, input.RepliedToCommentId)
+	return u.database.CreateComment(ctx, input.ThreadId, input.Address, input.RepliedToCommentId, input.Content, image.FileName(), image.Url(), image.ContentType())
 }

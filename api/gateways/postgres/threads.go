@@ -11,73 +11,74 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func (p *postgresGateway) CreateThread(ctx context.Context, thread entities.Thread) (entities.Thread, error) {
-	createdThread, err := p.queries.CreateThread(ctx, bindings.CreateThreadParams{
-		Address:          thread.Address(),
-		Title:            thread.Title(),
-		Content:          thread.Content(),
-		ImageFileName:    thread.Image().FileName(),
-		ImageUrl:         thread.Image().Url(),
-		ImageContentType: thread.Image().ContentType(),
+func (p *postgresGateway) CreateThread(
+	ctx context.Context,
+	address string,
+	title string,
+	content string,
+	imageFileName string,
+	imageUrl string,
+	imageContentType string,
+) (entities.Thread, error) {
+	id, err := p.queries.CreateThread(ctx, bindings.CreateThreadParams{
+		Address:          address,
+		Title:            title,
+		Content:          content,
+		ImageFileName:    imageFileName,
+		ImageUrl:         imageUrl,
+		ImageContentType: imageContentType,
 	})
 
 	if err != nil {
 		return entities.Thread{}, err
 	}
 
-	var deletedAt *time.Time
-	if createdThread.DeletedAt.Valid {
-		deletedAt = &createdThread.DeletedAt.Time
-	}
-
-	image := entities.NewImage(createdThread.ImageFileName, createdThread.ImageUrl, createdThread.ImageContentType)
-
-	return entities.NewThread(entities.ThreadParams{
-		Id:        createdThread.ID,
-		Address:   createdThread.Address,
-		Title:     createdThread.Title,
-		Content:   createdThread.Content,
-		Image:     image,
-		Votes:     0,
-		CreatedAt: createdThread.CreatedAt.Time,
-		IsDeleted: createdThread.IsDeleted,
-		DeletedAt: deletedAt,
-	}), nil
+	return p.GetThreadById(ctx, id)
 }
 
 func (p *postgresGateway) GetThreads(ctx context.Context, limit int64) ([]entities.Thread, error) {
-	threads, err := p.queries.GetThreads(ctx, limit)
+	dbThreads, err := p.queries.GetThreads(ctx, limit)
 
 	if err != nil {
 		return nil, err
 	}
 
-	threadEnts := []entities.Thread{}
-	for _, thread := range threads {
+	threads := []entities.Thread{}
+	for _, dbThread := range dbThreads {
 		var deletedAt *time.Time
-		if thread.DeletedAt.Valid {
-			deletedAt = &thread.DeletedAt.Time
+		if dbThread.DeletedAt.Valid {
+			deletedAt = &dbThread.DeletedAt.Time
 		}
 
-		image := entities.NewImage(thread.ImageFileName, thread.ImageUrl, thread.ImageContentType)
-		entitie := entities.NewThread(entities.ThreadParams{
-			Id:        thread.ID,
-			Address:   thread.Address,
-			Title:     thread.Title,
-			Content:   thread.Content,
+		image := entities.NewImage(dbThread.ImageFileName, dbThread.ImageUrl, dbThread.ImageContentType)
+		user := toUser(
+			dbThread.Address,
+			dbThread.EnsName,
+			dbThread.EnsAvatarFileName,
+			dbThread.EnsAvatarUrl,
+			dbThread.EnsAvatarContentType,
+			dbThread.Reputation,
+			dbThread.UserCreatedAt,
+			dbThread.UserUpdatedAt,
+		)
+		thread := entities.NewThread(entities.ThreadParams{
+			Id:        dbThread.ID,
+			Title:     dbThread.Title,
+			Content:   dbThread.Content,
 			Image:     image,
-			Votes:     thread.Votes,
-			CreatedAt: thread.CreatedAt.Time,
-			IsDeleted: thread.IsDeleted,
+			User:      user,
+			Votes:     dbThread.Votes,
+			CreatedAt: dbThread.CreatedAt.Time,
+			IsDeleted: dbThread.IsDeleted,
 			DeletedAt: deletedAt,
 		})
-		threadEnts = append(threadEnts, entitie)
+		threads = append(threads, thread)
 	}
-	return threadEnts, nil
+	return threads, nil
 }
 
 func (p *postgresGateway) GetThreadById(ctx context.Context, id int64) (entities.Thread, error) {
-	thread, err := p.queries.GetThread(ctx, id)
+	dbThread, err := p.queries.GetThread(ctx, id)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return entities.Thread{}, common.ErrNotFound
@@ -88,23 +89,33 @@ func (p *postgresGateway) GetThreadById(ctx context.Context, id int64) (entities
 	}
 
 	var deletedAt *time.Time
-	if thread.DeletedAt.Valid {
-		deletedAt = &thread.DeletedAt.Time
+	if dbThread.DeletedAt.Valid {
+		deletedAt = &dbThread.DeletedAt.Time
 	}
 
-	image := entities.NewImage(thread.ImageFileName, thread.ImageUrl, thread.ImageContentType)
-	entitie := entities.NewThread(entities.ThreadParams{
-		Id:        thread.ID,
-		Address:   thread.Address,
-		Title:     thread.Title,
-		Content:   thread.Content,
+	image := entities.NewImage(dbThread.ImageFileName, dbThread.ImageUrl, dbThread.ImageContentType)
+	user := toUser(
+		dbThread.Address,
+		dbThread.EnsName,
+		dbThread.EnsAvatarFileName,
+		dbThread.EnsAvatarUrl,
+		dbThread.EnsAvatarContentType,
+		dbThread.Reputation,
+		dbThread.UserCreatedAt,
+		dbThread.UserUpdatedAt,
+	)
+	thread := entities.NewThread(entities.ThreadParams{
+		Id:        dbThread.ID,
+		Title:     dbThread.Title,
+		Content:   dbThread.Content,
 		Image:     image,
-		Votes:     thread.Votes,
-		CreatedAt: thread.CreatedAt.Time,
-		IsDeleted: thread.IsDeleted,
+		User:      user,
+		Votes:     dbThread.Votes,
+		CreatedAt: dbThread.CreatedAt.Time,
+		IsDeleted: dbThread.IsDeleted,
 		DeletedAt: deletedAt,
 	})
-	return entitie, nil
+	return thread, nil
 }
 
 func (p *postgresGateway) DeleteThread(ctx context.Context, id int64) error {

@@ -33,7 +33,8 @@ func (u *DeleteComment) Execute(ctx context.Context, input DeleteCommentInput) e
 		return err
 	}
 
-	if comment.Address() != input.DeleterAddress {
+	user := comment.User()
+	if user.Address() != input.DeleterAddress {
 		return errors.New("comment does not belong to the user")
 	}
 

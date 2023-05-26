@@ -44,7 +44,7 @@ func (q *Queries) AggregateThreadVotes(ctx context.Context, threadID int64) erro
 const createComment = `-- name: CreateComment :one
 INSERT INTO comments (address, thread_id, replied_to_comment_id, content, image_file_name, image_url, image_content_type)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, thread_id, replied_to_comment_id, address, content, image_file_name, image_url, image_content_type, votes, is_deleted, created_at, deleted_at
+RETURNING id
 `
 
 type CreateCommentParams struct {
@@ -57,7 +57,7 @@ type CreateCommentParams struct {
 	ImageContentType   string
 }
 
-func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error) {
+func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (int64, error) {
 	row := q.db.QueryRow(ctx, createComment,
 		arg.Address,
 		arg.ThreadID,
@@ -67,22 +67,9 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (C
 		arg.ImageUrl,
 		arg.ImageContentType,
 	)
-	var i Comment
-	err := row.Scan(
-		&i.ID,
-		&i.ThreadID,
-		&i.RepliedToCommentID,
-		&i.Address,
-		&i.Content,
-		&i.ImageFileName,
-		&i.ImageUrl,
-		&i.ImageContentType,
-		&i.Votes,
-		&i.IsDeleted,
-		&i.CreatedAt,
-		&i.DeletedAt,
-	)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const createCommentDownVote = `-- name: CreateCommentDownVote :exec
@@ -142,7 +129,7 @@ func (q *Queries) CreateCommentUpVote(ctx context.Context, arg CreateCommentUpVo
 const createThread = `-- name: CreateThread :one
 INSERT INTO threads (address, title, content, image_file_name, image_url, image_content_type)
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, address, title, content, image_file_name, image_url, image_content_type, votes, is_deleted, created_at, deleted_at
+RETURNING id
 `
 
 type CreateThreadParams struct {
@@ -154,7 +141,7 @@ type CreateThreadParams struct {
 	ImageContentType string
 }
 
-func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (Thread, error) {
+func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (int64, error) {
 	row := q.db.QueryRow(ctx, createThread,
 		arg.Address,
 		arg.Title,
@@ -163,21 +150,9 @@ func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (Thr
 		arg.ImageUrl,
 		arg.ImageContentType,
 	)
-	var i Thread
-	err := row.Scan(
-		&i.ID,
-		&i.Address,
-		&i.Title,
-		&i.Content,
-		&i.ImageFileName,
-		&i.ImageUrl,
-		&i.ImageContentType,
-		&i.Votes,
-		&i.IsDeleted,
-		&i.CreatedAt,
-		&i.DeletedAt,
-	)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const createThreadDownVote = `-- name: CreateThreadDownVote :exec
@@ -278,14 +253,66 @@ func (q *Queries) GetChallenge(ctx context.Context, address string) (Challenge, 
 }
 
 const getComment = `-- name: GetComment :one
-SELECT c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.image_file_name, c.image_url, c.image_content_type, c.votes, c.is_deleted, c.created_at, c.deleted_at
+SELECT
+	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.image_file_name, c.image_url, c.image_content_type, c.votes, c.is_deleted, c.created_at, c.deleted_at,
+	r.id as r_id,
+	r.address as r_address,
+	r.content as r_content,
+	r.image_file_name as r_image_file_name,
+	r.image_url as r_image_url,
+	r.image_content_type as r_image_content_type,
+	r.is_deleted as r_is_deleted,
+	r.created_at as r_created_at,
+	r.deleted_at as r_deleted_at,
+	u.address as address,
+	u.ens_name as ens_name,
+	u.ens_avatar_file_name as ens_avatar_file_name,
+	u.ens_avatar_url as ens_avatar_url,
+	u.ens_avatar_content_type as ens_avatar_content_type,
+	u.reputation as reputation,
+	u.created_at as user_created_at,
+	u.updated_at as user_updated_at
 FROM comments c
+INNER JOIN users u on c.address = u.address
+LEFT JOIN comments r on c.replied_to_comment_id = r.id
 WHERE c.id = $1
 `
 
-func (q *Queries) GetComment(ctx context.Context, id int64) (Comment, error) {
+type GetCommentRow struct {
+	ID                   int64
+	ThreadID             int64
+	RepliedToCommentID   pgtype.Int8
+	Address              string
+	Content              string
+	ImageFileName        string
+	ImageUrl             string
+	ImageContentType     string
+	Votes                int64
+	IsDeleted            bool
+	CreatedAt            pgtype.Timestamp
+	DeletedAt            pgtype.Timestamp
+	RID                  pgtype.Int8
+	RAddress             pgtype.Text
+	RContent             pgtype.Text
+	RImageFileName       pgtype.Text
+	RImageUrl            pgtype.Text
+	RImageContentType    pgtype.Text
+	RIsDeleted           pgtype.Bool
+	RCreatedAt           pgtype.Timestamp
+	RDeletedAt           pgtype.Timestamp
+	Address_2            string
+	EnsName              pgtype.Text
+	EnsAvatarFileName    pgtype.Text
+	EnsAvatarUrl         pgtype.Text
+	EnsAvatarContentType pgtype.Text
+	Reputation           int64
+	UserCreatedAt        pgtype.Timestamp
+	UserUpdatedAt        pgtype.Timestamp
+}
+
+func (q *Queries) GetComment(ctx context.Context, id int64) (GetCommentRow, error) {
 	row := q.db.QueryRow(ctx, getComment, id)
-	var i Comment
+	var i GetCommentRow
 	err := row.Scan(
 		&i.ID,
 		&i.ThreadID,
@@ -299,6 +326,23 @@ func (q *Queries) GetComment(ctx context.Context, id int64) (Comment, error) {
 		&i.IsDeleted,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.RID,
+		&i.RAddress,
+		&i.RContent,
+		&i.RImageFileName,
+		&i.RImageUrl,
+		&i.RImageContentType,
+		&i.RIsDeleted,
+		&i.RCreatedAt,
+		&i.RDeletedAt,
+		&i.Address_2,
+		&i.EnsName,
+		&i.EnsAvatarFileName,
+		&i.EnsAvatarUrl,
+		&i.EnsAvatarContentType,
+		&i.Reputation,
+		&i.UserCreatedAt,
+		&i.UserUpdatedAt,
 	)
 	return i, err
 }
@@ -315,10 +359,20 @@ SELECT
 	r.is_deleted as r_is_deleted,
 	r.created_at as r_created_at,
 	r.deleted_at as r_deleted_at,
+	u.address as address,
+	u.ens_name as ens_name,
+	u.ens_avatar_file_name as ens_avatar_file_name,
+	u.ens_avatar_url as ens_avatar_url,
+	u.ens_avatar_content_type as ens_avatar_content_type,
+	u.reputation as reputation,
+	u.created_at as user_created_at,
+	u.updated_at as user_updated_at,
 	count(*) OVER() AS full_count
 FROM comments c
+INNER JOIN users u on c.address = u.address
 LEFT JOIN comments r on c.replied_to_comment_id = r.id
 WHERE c.thread_id = $1
+AND c.is_deleted = FALSE
 ORDER BY c.created_at DESC
 OFFSET $2::bigint
 LIMIT $3::bigint
@@ -331,28 +385,36 @@ type GetCommentsParams struct {
 }
 
 type GetCommentsRow struct {
-	ID                 int64
-	ThreadID           int64
-	RepliedToCommentID pgtype.Int8
-	Address            string
-	Content            string
-	ImageFileName      string
-	ImageUrl           string
-	ImageContentType   string
-	Votes              int64
-	IsDeleted          bool
-	CreatedAt          pgtype.Timestamp
-	DeletedAt          pgtype.Timestamp
-	RID                pgtype.Int8
-	RAddress           pgtype.Text
-	RContent           pgtype.Text
-	RImageFileName     pgtype.Text
-	RImageUrl          pgtype.Text
-	RImageContentType  pgtype.Text
-	RIsDeleted         pgtype.Bool
-	RCreatedAt         pgtype.Timestamp
-	RDeletedAt         pgtype.Timestamp
-	FullCount          int64
+	ID                   int64
+	ThreadID             int64
+	RepliedToCommentID   pgtype.Int8
+	Address              string
+	Content              string
+	ImageFileName        string
+	ImageUrl             string
+	ImageContentType     string
+	Votes                int64
+	IsDeleted            bool
+	CreatedAt            pgtype.Timestamp
+	DeletedAt            pgtype.Timestamp
+	RID                  pgtype.Int8
+	RAddress             pgtype.Text
+	RContent             pgtype.Text
+	RImageFileName       pgtype.Text
+	RImageUrl            pgtype.Text
+	RImageContentType    pgtype.Text
+	RIsDeleted           pgtype.Bool
+	RCreatedAt           pgtype.Timestamp
+	RDeletedAt           pgtype.Timestamp
+	Address_2            string
+	EnsName              pgtype.Text
+	EnsAvatarFileName    pgtype.Text
+	EnsAvatarUrl         pgtype.Text
+	EnsAvatarContentType pgtype.Text
+	Reputation           int64
+	UserCreatedAt        pgtype.Timestamp
+	UserUpdatedAt        pgtype.Timestamp
+	FullCount            int64
 }
 
 func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]GetCommentsRow, error) {
@@ -386,6 +448,14 @@ func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]Get
 			&i.RIsDeleted,
 			&i.RCreatedAt,
 			&i.RDeletedAt,
+			&i.Address_2,
+			&i.EnsName,
+			&i.EnsAvatarFileName,
+			&i.EnsAvatarUrl,
+			&i.EnsAvatarContentType,
+			&i.Reputation,
+			&i.UserCreatedAt,
+			&i.UserUpdatedAt,
 			&i.FullCount,
 		); err != nil {
 			return nil, err
@@ -399,15 +469,47 @@ func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]Get
 }
 
 const getThread = `-- name: GetThread :one
-SELECT threads.id, threads.address, threads.title, threads.content, threads.image_file_name, threads.image_url, threads.image_content_type, threads.votes, threads.is_deleted, threads.created_at, threads.deleted_at
-FROM threads
-WHERE threads.id = $1
-AND threads.is_deleted = FALSE
+SELECT 
+	t.id, t.address, t.title, t.content, t.image_file_name, t.image_url, t.image_content_type, t.votes, t.is_deleted, t.created_at, t.deleted_at,
+	u.address as address,
+	u.ens_name as ens_name,
+	u.ens_avatar_file_name as ens_avatar_file_name,
+	u.ens_avatar_url as ens_avatar_url,
+	u.ens_avatar_content_type as ens_avatar_content_type,
+	u.reputation as reputation,
+	u.created_at as user_created_at,
+	u.updated_at as user_updated_at
+FROM threads t
+INNER JOIN users u on t.address = u.address
+WHERE t.id = $1
+AND t.is_deleted = FALSE
 `
 
-func (q *Queries) GetThread(ctx context.Context, id int64) (Thread, error) {
+type GetThreadRow struct {
+	ID                   int64
+	Address              string
+	Title                string
+	Content              string
+	ImageFileName        string
+	ImageUrl             string
+	ImageContentType     string
+	Votes                int64
+	IsDeleted            bool
+	CreatedAt            pgtype.Timestamp
+	DeletedAt            pgtype.Timestamp
+	Address_2            string
+	EnsName              pgtype.Text
+	EnsAvatarFileName    pgtype.Text
+	EnsAvatarUrl         pgtype.Text
+	EnsAvatarContentType pgtype.Text
+	Reputation           int64
+	UserCreatedAt        pgtype.Timestamp
+	UserUpdatedAt        pgtype.Timestamp
+}
+
+func (q *Queries) GetThread(ctx context.Context, id int64) (GetThreadRow, error) {
 	row := q.db.QueryRow(ctx, getThread, id)
-	var i Thread
+	var i GetThreadRow
 	err := row.Scan(
 		&i.ID,
 		&i.Address,
@@ -420,31 +522,71 @@ func (q *Queries) GetThread(ctx context.Context, id int64) (Thread, error) {
 		&i.IsDeleted,
 		&i.CreatedAt,
 		&i.DeletedAt,
+		&i.Address_2,
+		&i.EnsName,
+		&i.EnsAvatarFileName,
+		&i.EnsAvatarUrl,
+		&i.EnsAvatarContentType,
+		&i.Reputation,
+		&i.UserCreatedAt,
+		&i.UserUpdatedAt,
 	)
 	return i, err
 }
 
 const getThreads = `-- name: GetThreads :many
-SELECT threads.id, threads.address, threads.title, threads.content, threads.image_file_name, threads.image_url, threads.image_content_type, threads.votes, threads.is_deleted, threads.created_at, threads.deleted_at
-FROM threads
-WHERE threads.is_deleted = FALSE
+SELECT
+	t.id, t.address, t.title, t.content, t.image_file_name, t.image_url, t.image_content_type, t.votes, t.is_deleted, t.created_at, t.deleted_at,
+	u.address as address,
+	u.ens_name as ens_name,
+	u.ens_avatar_file_name as ens_avatar_file_name,
+	u.ens_avatar_url as ens_avatar_url,
+	u.ens_avatar_content_type as ens_avatar_content_type,
+	u.reputation as reputation,
+	u.created_at as user_created_at,
+	u.updated_at as user_updated_at
+FROM threads t
+INNER JOIN users u on t.address = u.address
+WHERE t.is_deleted = FALSE
 ORDER BY RANDOM()
 LIMIT $1::bigint
 `
+
+type GetThreadsRow struct {
+	ID                   int64
+	Address              string
+	Title                string
+	Content              string
+	ImageFileName        string
+	ImageUrl             string
+	ImageContentType     string
+	Votes                int64
+	IsDeleted            bool
+	CreatedAt            pgtype.Timestamp
+	DeletedAt            pgtype.Timestamp
+	Address_2            string
+	EnsName              pgtype.Text
+	EnsAvatarFileName    pgtype.Text
+	EnsAvatarUrl         pgtype.Text
+	EnsAvatarContentType pgtype.Text
+	Reputation           int64
+	UserCreatedAt        pgtype.Timestamp
+	UserUpdatedAt        pgtype.Timestamp
+}
 
 // Order by random is not performant as we need to do a full table scan.
 // Move to TABLESAMPLE SYSTEM_ROWS(N) when performance becomes an issue.
 // Table sample is not random enough until the table gets big.
 // https://www.postgresql.org/docs/current/tsm-system-rows.html
-func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]Thread, error) {
+func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]GetThreadsRow, error) {
 	rows, err := q.db.Query(ctx, getThreads, dollar_1)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Thread
+	var items []GetThreadsRow
 	for rows.Next() {
-		var i Thread
+		var i GetThreadsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Address,
@@ -457,6 +599,14 @@ func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]Thread, err
 			&i.IsDeleted,
 			&i.CreatedAt,
 			&i.DeletedAt,
+			&i.Address_2,
+			&i.EnsName,
+			&i.EnsAvatarFileName,
+			&i.EnsAvatarUrl,
+			&i.EnsAvatarContentType,
+			&i.Reputation,
+			&i.UserCreatedAt,
+			&i.UserUpdatedAt,
 		); err != nil {
 			return nil, err
 		}

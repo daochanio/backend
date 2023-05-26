@@ -6,10 +6,10 @@ import (
 
 type Thread struct {
 	id        int64
-	address   string
 	title     string
 	content   string
 	image     Image
+	user      User
 	comments  *[]Comment
 	isDeleted bool
 	createdAt time.Time
@@ -19,10 +19,10 @@ type Thread struct {
 
 type ThreadParams struct {
 	Id        int64
-	Address   string
 	Title     string
 	Content   string
 	Image     Image
+	User      User
 	Comments  *[]Comment
 	IsDeleted bool
 	CreatedAt time.Time
@@ -33,10 +33,10 @@ type ThreadParams struct {
 func NewThread(params ThreadParams) Thread {
 	return Thread{
 		id:        params.Id,
-		address:   params.Address,
 		title:     params.Title,
 		content:   params.Content,
 		image:     params.Image,
+		user:      params.User,
 		comments:  params.Comments,
 		isDeleted: params.IsDeleted,
 		createdAt: params.CreatedAt,
@@ -47,10 +47,6 @@ func NewThread(params ThreadParams) Thread {
 
 func (t *Thread) Id() int64 {
 	return t.id
-}
-
-func (t *Thread) Address() string {
-	return t.address
 }
 
 func (t *Thread) Title() string {
@@ -67,6 +63,10 @@ func (t *Thread) Content() string {
 
 func (t *Thread) Image() *Image {
 	return &t.image
+}
+
+func (t *Thread) User() User {
+	return t.user
 }
 
 func (t *Thread) IsDeleted() bool {
