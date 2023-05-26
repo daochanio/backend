@@ -23,8 +23,8 @@ type Database interface {
 
 	UpsertUser(ctx context.Context, address string) error
 	UpdateUser(ctx context.Context, address string, name *string, avatar *entities.Image) error
-	CreateComment(ctx context.Context, comment entities.Comment, repliedToCommentId *int64) (entities.Comment, error)
-	CreateThread(ctx context.Context, thread entities.Thread) (entities.Thread, error)
+	CreateComment(ctx context.Context, threadId int64, address string, repliedToCommentId *int64, content string, imageFileName string, imageUrl string, imageContentType string) (entities.Comment, error)
+	CreateThread(ctx context.Context, address string, title string, content string, imageFileName string, imageUrl string, imageContentType string) (entities.Thread, error)
 	CreateVote(ctx context.Context, vote entities.Vote) error
 	DeleteThread(ctx context.Context, threadId int64) error
 	DeleteComment(ctx context.Context, commentId int64) error

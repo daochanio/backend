@@ -33,7 +33,8 @@ func (u *DeleteThread) Execute(ctx context.Context, input DeleteThreadInput) err
 		return err
 	}
 
-	if thread.Address() != input.DeleterAddress {
+	user := thread.User()
+	if user.Address() != input.DeleterAddress {
 		return errors.New("thread does not belong to the user")
 	}
 

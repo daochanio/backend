@@ -8,9 +8,9 @@ type Comment struct {
 	id               int64
 	repliedToComment *Comment
 	threadId         int64
-	address          string
 	content          string
 	image            Image
+	user             User
 	isDeleted        bool
 	createdAt        time.Time
 	deletedAt        *time.Time
@@ -21,9 +21,9 @@ type CommentParams struct {
 	Id               int64
 	RepliedToComment *Comment
 	ThreadId         int64
-	Address          string
 	Content          string
 	Image            Image
+	User             User
 	IsDeleted        bool
 	CreatedAt        time.Time
 	DeletedAt        *time.Time
@@ -35,9 +35,9 @@ func NewComment(params CommentParams) Comment {
 		id:               params.Id,
 		repliedToComment: params.RepliedToComment,
 		threadId:         params.ThreadId,
-		address:          params.Address,
 		content:          params.Content,
 		image:            params.Image,
+		user:             params.User,
 		isDeleted:        params.IsDeleted,
 		createdAt:        params.CreatedAt,
 		deletedAt:        params.DeletedAt,
@@ -61,10 +61,6 @@ func (c *Comment) ThreadId() int64 {
 	return c.threadId
 }
 
-func (c *Comment) Address() string {
-	return c.address
-}
-
 func (c *Comment) Content() string {
 	if c.isDeleted {
 		return "This comment has been deleted."
@@ -79,6 +75,10 @@ func (c *Comment) Image() *Image {
 	}
 
 	return &c.image
+}
+
+func (c *Comment) User() User {
+	return c.user
 }
 
 func (c *Comment) IsDeleted() bool {
