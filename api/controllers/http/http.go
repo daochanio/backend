@@ -100,7 +100,7 @@ func (h *httpServer) Start(ctx context.Context) {
 	r.Use(h.recoverer)
 	r.Use(h.timeout)
 
-	r.Mount("/debug", middleware.Profiler())
+	// r.Mount("/debug", middleware.Profiler())
 
 	r.Get("/", h.healthRoute)
 
@@ -154,7 +154,7 @@ func (h *httpServer) Start(ctx context.Context) {
 		r.Group(func(r chi.Router) {
 			r.Use(h.authentication)
 			r.Use(h.ensName)
-			// r.Use(h.rateLimiter("create:image", 7, time.Minute*10)) // should encompass creating images for threads and comments
+			r.Use(h.rateLimiter("create:image", 7, time.Minute*10)) // should encompass creating images for threads and comments
 			r.Use(h.maxSize(5 * 1024))
 
 			r.Post("/images", h.uploadImageRoute)
