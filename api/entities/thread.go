@@ -6,7 +6,6 @@ import (
 
 type Thread struct {
 	id        int64
-	address   string
 	title     string
 	content   string
 	image     Image
