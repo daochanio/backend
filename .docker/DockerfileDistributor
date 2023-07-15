@@ -3,7 +3,8 @@
 ##
 ## Build
 ##
-FROM golang:1.20 AS build
+# bullseye until https://github.com/GoogleContainerTools/distroless/issues/1342
+FROM golang:1.20-bullseye AS build
 
 WORKDIR /app
 
