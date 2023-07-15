@@ -28,7 +28,7 @@ func NewCacheGateway(settings settings.Settings, logger common.Logger) usecases.
 
 func (r *redisCacheGateway) Start(ctx context.Context) {
 	r.logger.Info(ctx).Msg("starting redis cache")
-	r.client = redis.NewClient(r.settings.RegionalRedisOptions())
+	r.client = redis.NewClient(r.settings.RedisCacheOptions())
 	r.limiter = redis_rate.NewLimiter(r.client)
 }
 
@@ -55,7 +55,7 @@ func NewStreamGateway(settings settings.Settings, logger common.Logger) usecases
 
 func (r *redisStreamGateway) Start(ctx context.Context) {
 	r.logger.Info(ctx).Msg("starting redis stream")
-	r.client = redis.NewClient(r.settings.GlobalRedisOptions())
+	r.client = redis.NewClient(r.settings.RedisStreamOptions())
 }
 
 func (r *redisStreamGateway) Shutdown(ctx context.Context) {

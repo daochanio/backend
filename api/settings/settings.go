@@ -2,9 +2,7 @@ package settings
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -18,8 +16,8 @@ type Settings interface {
 	Port() string
 	JWTSecret() string
 	PostgresConfig() *pgxpool.Config
-	RegionalRedisOptions() *redis.Options
-	GlobalRedisOptions() *redis.Options
+	RedisCacheOptions() *redis.Options
+	RedisStreamOptions() *redis.Options
 	S3Config(context.Context) *aws.Config
 	StaticPublicBaseURL() string
 	ImageBucket() string
@@ -47,12 +45,10 @@ type settings struct {
 }
 
 func NewSettings() Settings {
-	appRegion := strings.ToUpper(os.Getenv(os.Getenv("APP_REGION_KEY")))
-	redisCacheConnectionString := fmt.Sprintf("REDIS_CACHE_CONNECTION_STRING_%s", appRegion)
 	return &settings{
 		port:                        os.Getenv("PORT"),
 		pgConnectionString:          os.Getenv("PG_CONNECTION_STRING"),
-		redisCacheConnectionString:  os.Getenv(redisCacheConnectionString),
+		redisCacheConnectionString:  os.Getenv("REDIS_CACHE_CONNECTION_STRING"),
 		redisStreamConnectionString: os.Getenv("REDIS_STREAM_CONNECTION_STRING"),
 		jwtSecret:                   os.Getenv("JWT_SECRET"),
 		blockchainURI:               os.Getenv("BLOCKCHAIN_URI"),
@@ -83,11 +79,11 @@ func (s *settings) PostgresConfig() *pgxpool.Config {
 	return config
 }
 
-func (s *settings) RegionalRedisOptions() *redis.Options {
+func (s *settings) RedisCacheOptions() *redis.Options {
 	return s.buildRedisOptions(s.redisCacheConnectionString)
 }
 
-func (s *settings) GlobalRedisOptions() *redis.Options {
+func (s *settings) RedisStreamOptions() *redis.Options {
 	return s.buildRedisOptions(s.redisStreamConnectionString)
 }
 

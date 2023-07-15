@@ -58,7 +58,7 @@ func NewSubscriber(logger common.Logger, settings settings.Settings, commonSetti
 func (s *subscriber) Start(ctx context.Context) {
 	s.logger.Info(ctx).Msg("starting subscriber")
 
-	s.client = redis.NewClient(s.settings.GlobalRedisOptions())
+	s.client = redis.NewClient(s.settings.RedisStreamOptions())
 	s.messageBuffer = &[]bufferMessage{}
 	s.lastFlush = time.Now()
 
