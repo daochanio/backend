@@ -15,7 +15,6 @@ SET
 	ens_name = $2,
 	ens_avatar_file_name = $3,
 	ens_avatar_url = $4,
-	ens_avatar_content_type = $5,
 	updated_at = NOW()
 WHERE address = $1;
 
@@ -31,12 +30,12 @@ ON CONFLICT (address) DO UPDATE
 SET message = $2, expires_at = $3;
 
 -- name: CreateThread :one
-INSERT INTO threads (address, title, content, image_file_name, image_url, image_content_type)
+INSERT INTO threads (address, title, content, image_file_name, image_original_url, image_thumbnail_url)
 VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id;
 
 -- name: CreateComment :one
-INSERT INTO comments (address, thread_id, replied_to_comment_id, content, image_file_name, image_url, image_content_type)
+INSERT INTO comments (address, thread_id, replied_to_comment_id, content, image_file_name, image_original_url, image_thumbnail_url)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING id;
 
@@ -51,7 +50,6 @@ SELECT
 	u.ens_name as ens_name,
 	u.ens_avatar_file_name as ens_avatar_file_name,
 	u.ens_avatar_url as ens_avatar_url,
-	u.ens_avatar_content_type as ens_avatar_content_type,
 	u.reputation as reputation,
 	u.created_at as user_created_at,
 	u.updated_at as user_updated_at
@@ -68,7 +66,6 @@ SELECT
 	u.ens_name as ens_name,
 	u.ens_avatar_file_name as ens_avatar_file_name,
 	u.ens_avatar_url as ens_avatar_url,
-	u.ens_avatar_content_type as ens_avatar_content_type,
 	u.reputation as reputation,
 	u.created_at as user_created_at,
 	u.updated_at as user_updated_at
@@ -84,8 +81,8 @@ SELECT
 	r.address as r_address,
 	r.content as r_content,
 	r.image_file_name as r_image_file_name,
-	r.image_url as r_image_url,
-	r.image_content_type as r_image_content_type,
+	r.image_original_url as r_image_original_url,
+	r.image_thumbnail_url as r_image_thumbnail_url,
 	r.is_deleted as r_is_deleted,
 	r.created_at as r_created_at,
 	r.deleted_at as r_deleted_at,
@@ -93,7 +90,6 @@ SELECT
 	u.ens_name as ens_name,
 	u.ens_avatar_file_name as ens_avatar_file_name,
 	u.ens_avatar_url as ens_avatar_url,
-	u.ens_avatar_content_type as ens_avatar_content_type,
 	u.reputation as reputation,
 	u.created_at as user_created_at,
 	u.updated_at as user_updated_at,
@@ -114,8 +110,8 @@ SELECT
 	r.address as r_address,
 	r.content as r_content,
 	r.image_file_name as r_image_file_name,
-	r.image_url as r_image_url,
-	r.image_content_type as r_image_content_type,
+	r.image_original_url as r_image_original_url,
+	r.image_thumbnail_url as r_image_thumbnail_url,
 	r.is_deleted as r_is_deleted,
 	r.created_at as r_created_at,
 	r.deleted_at as r_deleted_at,
@@ -123,7 +119,6 @@ SELECT
 	u.ens_name as ens_name,
 	u.ens_avatar_file_name as ens_avatar_file_name,
 	u.ens_avatar_url as ens_avatar_url,
-	u.ens_avatar_content_type as ens_avatar_content_type,
 	u.reputation as reputation,
 	u.created_at as user_created_at,
 	u.updated_at as user_updated_at

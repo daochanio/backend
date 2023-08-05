@@ -2,8 +2,6 @@ package usecases
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"strings"
 
@@ -15,21 +13,19 @@ type HydrateUsers struct {
 	logger     common.Logger
 	blockchain Blockchain
 	database   Database
-	storage    Storage
-	safeProxy  SafeProxy
+	images     Images
 }
 
 type HydrateUsersInput struct {
 	Addresses []string
 }
 
-func NewHydrateUsersUseCase(logger common.Logger, blockchain Blockchain, database Database, storage Storage, safeProxy SafeProxy) *HydrateUsers {
+func NewHydrateUsersUseCase(logger common.Logger, blockchain Blockchain, database Database, images Images) *HydrateUsers {
 	return &HydrateUsers{
 		logger,
 		blockchain,
 		database,
-		storage,
-		safeProxy,
+		images,
 	}
 }
 
@@ -95,13 +91,14 @@ func (u *HydrateUsers) hydrateName(ctx context.Context, address string) (*string
 	return name, nil
 }
 
-func (u *HydrateUsers) hydrateAvatar(ctx context.Context, name *string) (*entities.Image, error) {
+func (u *HydrateUsers) hydrateAvatar(ctx context.Context, name *string) (*entities.Avatar, error) {
 	// if theres no name, theres also no avatar
 	if name == nil {
 		return nil, nil
 	}
 
 	uri, err := u.blockchain.GetAvatarURIByName(ctx, *name)
+	isNFT := false
 
 	if err != nil {
 		return nil, err
@@ -128,46 +125,21 @@ func (u *HydrateUsers) hydrateAvatar(ctx context.Context, name *string) (*entiti
 			return nil, err
 		}
 
-		nftImageURI, err := u.safeProxy.GetNFTImageURI(ctx, nftURI)
-
-		if err != nil {
-			return nil, err
-		}
-
-		uri = &nftImageURI
+		uri = &nftURI
+		isNFT = true
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	fileName := u.getFileName(*uri)
-
-	if existingImage, err := u.storage.GetImageByFileName(ctx, fileName); err == nil && existingImage != nil {
-		u.logger.Info(ctx).Msgf("found existing avatar: %s for name: %s from uri: %s", existingImage.Url(), *name, *uri)
-		return existingImage, nil
-	}
-
-	data, contentType, err := u.safeProxy.DownloadImage(ctx, *uri)
+	avatar, err := u.images.UploadAvatar(ctx, *uri, isNFT)
 
 	if err != nil {
 		return nil, err
 	}
 
-	image, err := u.storage.UploadImage(ctx, fileName, contentType, data)
+	u.logger.Info(ctx).Msgf("uploaded avatar: %s for name: %s from uri: %s", avatar.URL(), *name, *uri)
 
-	if err != nil {
-		return nil, err
-	}
-
-	u.logger.Info(ctx).Msgf("uploaded avatar: %s for name: %s from uri: %s", image.Url(), *name, *uri)
-
-	return &image, nil
-}
-
-// hash the uri to derive a unique but idempotent filename
-func (h *HydrateUsers) getFileName(uri string) string {
-	hash := sha256.New()
-	hash.Write([]byte(uri))
-	return hex.EncodeToString(hash.Sum(nil))
+	return avatar, nil
 }

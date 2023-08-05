@@ -1,13 +1,9 @@
 package settings
 
 import (
-	"context"
 	"os"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -18,13 +14,10 @@ type Settings interface {
 	PostgresConfig() *pgxpool.Config
 	RedisCacheOptions() *redis.Options
 	RedisStreamOptions() *redis.Options
-	S3Config(context.Context) *aws.Config
-	StaticPublicBaseURL() string
-	ImageBucket() string
 	BlockchainURI() string
 	RealIPHeader() string
-	IPFSGatewayURI() string
-	WokerURI() string
+	ImagesBaseURL() string
+	ImagesAPIKey() string
 }
 
 type settings struct {
@@ -35,13 +28,8 @@ type settings struct {
 	jwtSecret                   string
 	blockchainURI               string
 	realIPHeader                string
-	staticPublicBaseURL         string
-	staticAccessKeyId           string
-	staticSecretAccessKey       string
-	staticURL                   string
-	imageBucket                 string
-	ipfsGatewayURI              string
-	workerURI                   string
+	imagesBaseUrl               string
+	imagesAPIKey                string
 }
 
 func NewSettings() Settings {
@@ -53,13 +41,8 @@ func NewSettings() Settings {
 		jwtSecret:                   os.Getenv("JWT_SECRET"),
 		blockchainURI:               os.Getenv("BLOCKCHAIN_URI"),
 		realIPHeader:                os.Getenv("REAL_IP_HEADER"),
-		staticPublicBaseURL:         os.Getenv("STATIC_PUBLIC_BASE_URL"),
-		staticAccessKeyId:           os.Getenv("STATIC_ACCESS_KEY_ID"),
-		staticSecretAccessKey:       os.Getenv("STATIC_SECRET_ACCESS_KEY"),
-		staticURL:                   os.Getenv("STATIC_URL"),
-		imageBucket:                 os.Getenv("IMAGE_BUCKET"),
-		ipfsGatewayURI:              os.Getenv("IPFS_GATEWAY_URI"),
-		workerURI:                   os.Getenv("WORKER_URI"),
+		imagesBaseUrl:               os.Getenv("IMAGES_BASE_URL"),
+		imagesAPIKey:                os.Getenv("IMAGES_API_KEY"),
 	}
 }
 
@@ -103,25 +86,6 @@ func (s *settings) buildRedisOptions(connStr string) *redis.Options {
 	return opt
 }
 
-func (s *settings) S3Config(ctx context.Context) *aws.Config {
-	resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-		return aws.Endpoint{
-			URL: s.staticURL,
-		}, nil
-	})
-
-	cfg, err := config.LoadDefaultConfig(
-		ctx,
-		config.WithEndpointResolverWithOptions(resolver),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(s.staticAccessKeyId, s.staticSecretAccessKey, "")))
-
-	if err != nil {
-		panic(err)
-	}
-
-	return &cfg
-}
-
 func (s *settings) JWTSecret() string {
 	return s.jwtSecret
 }
@@ -134,18 +98,10 @@ func (s *settings) RealIPHeader() string {
 	return s.realIPHeader
 }
 
-func (s *settings) StaticPublicBaseURL() string {
-	return s.staticPublicBaseURL
+func (s *settings) ImagesBaseURL() string {
+	return s.imagesBaseUrl
 }
 
-func (s *settings) ImageBucket() string {
-	return s.imageBucket
-}
-
-func (s *settings) IPFSGatewayURI() string {
-	return s.ipfsGatewayURI
-}
-
-func (s *settings) WokerURI() string {
-	return s.workerURI
+func (s *settings) ImagesAPIKey() string {
+	return s.imagesAPIKey
 }

@@ -32,15 +32,13 @@ func start(
 	cache usecases.Cache,
 	stream usecases.Stream,
 	blockchain usecases.Blockchain,
-	storage usecases.Storage,
-	safeProxy usecases.SafeProxy,
+	images usecases.Images,
 ) {
 	database.Start(ctx)
 	cache.Start(ctx)
 	stream.Start(ctx)
 	blockchain.Start(ctx)
-	storage.Start(ctx)
-	safeProxy.Start(ctx)
+	images.Start(ctx)
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -76,8 +74,7 @@ func start(
 	cache.Shutdown(shutdownCtx)
 	stream.Shutdown(shutdownCtx)
 	blockchain.Shutdown(shutdownCtx)
-	storage.Shutdown(shutdownCtx)
-	safeProxy.Shutdown(shutdownCtx)
+	images.Shutdown(shutdownCtx)
 
 	logger.Info(ctx).Msgf("shutdown complete")
 }

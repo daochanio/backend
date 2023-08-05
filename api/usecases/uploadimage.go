@@ -2,45 +2,32 @@ package usecases
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"strings"
+	"io"
 
 	"github.com/daochanio/backend/api/entities"
 	"github.com/daochanio/backend/common"
-	"github.com/google/uuid"
 )
 
 type UploadImage struct {
-	logger  common.Logger
-	storage Storage
+	logger common.Logger
+	images Images
 }
 
-func NewUploadImageUsecase(logger common.Logger, storage Storage) *UploadImage {
+func NewUploadImageUsecase(logger common.Logger, images Images) *UploadImage {
 	return &UploadImage{
 		logger,
-		storage,
+		images,
 	}
 }
 
 type UploadImageInput struct {
-	ContentType string  `validate:"oneof=image/jpeg image/png image/gif image/webp"`
-	Bytes       *[]byte `validate:"required"`
+	Reader io.Reader `validate:"required"`
 }
 
-func (u *UploadImage) Execute(ctx context.Context, input UploadImageInput) (entities.Image, error) {
+func (u *UploadImage) Execute(ctx context.Context, input UploadImageInput) (*entities.Image, error) {
 	if err := common.ValidateStruct(input); err != nil {
-		return entities.Image{}, err
+		return &entities.Image{}, err
 	}
 
-	id := uuid.New().String()
-	ext := strings.Split(input.ContentType, "/")
-
-	if len(ext) != 2 {
-		return entities.Image{}, errors.New("invalid content type")
-	}
-
-	fileName := fmt.Sprintf("%s.%s", id, ext[1])
-
-	return u.storage.UploadImage(ctx, fileName, input.ContentType, input.Bytes)
+	return u.images.UploadImage(ctx, input.Reader)
 }

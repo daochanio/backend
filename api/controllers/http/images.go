@@ -1,7 +1,6 @@
 package http
 
 import (
-	"io"
 	"net/http"
 
 	"github.com/daochanio/backend/api/entities"
@@ -17,18 +16,9 @@ func (h *httpServer) uploadImageRoute(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer file.Close()
-	bytes, err := io.ReadAll(file)
-
-	if err != nil {
-		h.presentBadRequest(w, r, err)
-		return
-	}
-
-	contentType := http.DetectContentType(bytes)
 
 	image, err := h.uploadImage.Execute(r.Context(), usecases.UploadImageInput{
-		Bytes:       &bytes,
-		ContentType: contentType,
+		Reader: file,
 	})
 
 	if err != nil {
@@ -36,13 +26,13 @@ func (h *httpServer) uploadImageRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.presentJSON(w, r, http.StatusCreated, toImageJson(&image), nil)
+	h.presentJSON(w, r, http.StatusCreated, toImageJson(image), nil)
 }
 
 type imageJson struct {
-	FileName    string `json:"fileName"`
-	Url         string `json:"url"`
-	ContentType string `json:"contentType"`
+	FileName     string `json:"fileName"`
+	OriginalURL  string `json:"originalUrl"`
+	ThumbnailURL string `json:"thumbnailUrl"`
 }
 
 func toImageJson(image *entities.Image) *imageJson {
@@ -51,8 +41,8 @@ func toImageJson(image *entities.Image) *imageJson {
 	}
 
 	return &imageJson{
-		FileName:    image.FileName(),
-		Url:         image.Url(),
-		ContentType: image.ContentType(),
+		FileName:     image.FileName(),
+		OriginalURL:  image.OriginalURL(),
+		ThumbnailURL: image.ThumbnailURL(),
 	}
 }

@@ -28,7 +28,6 @@ func (p *postgresGateway) GetUserByAddress(ctx context.Context, address string) 
 		dbUser.EnsName,
 		dbUser.EnsAvatarFileName,
 		dbUser.EnsAvatarUrl,
-		dbUser.EnsAvatarContentType,
 		dbUser.Reputation,
 		dbUser.CreatedAt,
 		dbUser.UpdatedAt,
@@ -41,7 +40,7 @@ func (p *postgresGateway) UpsertUser(ctx context.Context, address string) error 
 	return p.queries.UpsertUser(ctx, address)
 }
 
-func (p *postgresGateway) UpdateUser(ctx context.Context, address string, name *string, avatar *entities.Image) error {
+func (p *postgresGateway) UpdateUser(ctx context.Context, address string, name *string, avatar *entities.Avatar) error {
 	ensName := pgtype.Text{}
 	if name != nil {
 		ensName.String = *name
@@ -51,25 +50,20 @@ func (p *postgresGateway) UpdateUser(ctx context.Context, address string, name *
 	}
 	fileName := pgtype.Text{}
 	url := pgtype.Text{}
-	contentType := pgtype.Text{}
 	if avatar != nil {
 		fileName.String = avatar.FileName()
 		fileName.Valid = true
-		url.String = avatar.Url()
+		url.String = avatar.URL()
 		url.Valid = true
-		contentType.String = avatar.ContentType()
-		contentType.Valid = true
 	} else {
 		fileName.Valid = false
 		url.Valid = false
-		contentType.Valid = false
 	}
 	return p.queries.UpdateUser(ctx, bindings.UpdateUserParams{
-		Address:              address,
-		EnsName:              ensName,
-		EnsAvatarUrl:         url,
-		EnsAvatarFileName:    fileName,
-		EnsAvatarContentType: contentType,
+		Address:           address,
+		EnsName:           ensName,
+		EnsAvatarUrl:      url,
+		EnsAvatarFileName: fileName,
 	})
 }
 
@@ -78,7 +72,6 @@ func toUser(
 	name pgtype.Text,
 	avatarFileName pgtype.Text,
 	avatarUrl pgtype.Text,
-	avatarContentType pgtype.Text,
 	reputation int64,
 	createdAt pgtype.Timestamp,
 	updatedAt pgtype.Timestamp,
@@ -87,9 +80,9 @@ func toUser(
 	if name.Valid {
 		ensName = &name.String
 	}
-	var ensAvatar *entities.Image
+	var ensAvatar *entities.Avatar
 	if avatarUrl.Valid {
-		avatar := entities.NewImage(avatarFileName.String, avatarUrl.String, avatarContentType.String)
+		avatar := entities.NewAvatar(avatarFileName.String, avatarUrl.String)
 		ensAvatar = &avatar
 	}
 	var updatedAtTime *time.Time

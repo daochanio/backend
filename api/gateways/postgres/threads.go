@@ -17,16 +17,16 @@ func (p *postgresGateway) CreateThread(
 	title string,
 	content string,
 	imageFileName string,
-	imageUrl string,
-	imageContentType string,
+	imageOriginalURL string,
+	imageThumbnailURL string,
 ) (entities.Thread, error) {
 	id, err := p.queries.CreateThread(ctx, bindings.CreateThreadParams{
-		Address:          address,
-		Title:            title,
-		Content:          content,
-		ImageFileName:    imageFileName,
-		ImageUrl:         imageUrl,
-		ImageContentType: imageContentType,
+		Address:           address,
+		Title:             title,
+		Content:           content,
+		ImageFileName:     imageFileName,
+		ImageOriginalUrl:  imageOriginalURL,
+		ImageThumbnailUrl: imageThumbnailURL,
 	})
 
 	if err != nil {
@@ -50,13 +50,12 @@ func (p *postgresGateway) GetThreads(ctx context.Context, limit int64) ([]entiti
 			deletedAt = &dbThread.DeletedAt.Time
 		}
 
-		image := entities.NewImage(dbThread.ImageFileName, dbThread.ImageUrl, dbThread.ImageContentType)
+		image := entities.NewImage(dbThread.ImageFileName, dbThread.ImageOriginalUrl, dbThread.ImageThumbnailUrl)
 		user := toUser(
 			dbThread.Address,
 			dbThread.EnsName,
 			dbThread.EnsAvatarFileName,
 			dbThread.EnsAvatarUrl,
-			dbThread.EnsAvatarContentType,
 			dbThread.Reputation,
 			dbThread.UserCreatedAt,
 			dbThread.UserUpdatedAt,
@@ -93,13 +92,12 @@ func (p *postgresGateway) GetThreadById(ctx context.Context, id int64) (entities
 		deletedAt = &dbThread.DeletedAt.Time
 	}
 
-	image := entities.NewImage(dbThread.ImageFileName, dbThread.ImageUrl, dbThread.ImageContentType)
+	image := entities.NewImage(dbThread.ImageFileName, dbThread.ImageOriginalUrl, dbThread.ImageThumbnailUrl)
 	user := toUser(
 		dbThread.Address,
 		dbThread.EnsName,
 		dbThread.EnsAvatarFileName,
 		dbThread.EnsAvatarUrl,
-		dbThread.EnsAvatarContentType,
 		dbThread.Reputation,
 		dbThread.UserCreatedAt,
 		dbThread.UserUpdatedAt,

@@ -1,16 +1,16 @@
 package entities
 
 type Image struct {
-	fileName    string
-	url         string
-	contentType string
+	fileName     string
+	originalURL  string
+	thumbnailURL string
 }
 
-func NewImage(fileName string, url string, contentType string) Image {
+func NewImage(fileName string, originalURL string, thumbnailURL string) Image {
 	return Image{
 		fileName,
-		url,
-		contentType,
+		originalURL,
+		thumbnailURL,
 	}
 }
 
@@ -18,10 +18,10 @@ func (i Image) FileName() string {
 	return i.fileName
 }
 
-func (i Image) Url() string {
-	return i.url
+func (i Image) OriginalURL() string {
+	return i.originalURL
 }
 
-func (i Image) ContentType() string {
-	return i.contentType
+func (i Image) ThumbnailURL() string {
+	return i.thumbnailURL
 }

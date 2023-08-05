@@ -25,11 +25,7 @@ type httpClient struct {
 }
 
 func NewHttpClient(logger Logger) HttpClient {
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
+	client := &http.Client{}
 	return &httpClient{
 		logger,
 		client,

@@ -5,7 +5,7 @@ import "time"
 type User struct {
 	address    string
 	ensName    *string
-	ensAvatar  *Image
+	ensAvatar  *Avatar
 	reputation int64
 	createdAt  time.Time
 	updatedAt  *time.Time
@@ -14,7 +14,7 @@ type User struct {
 type UserParams struct {
 	Address    string
 	EnsName    *string
-	EnsAvatar  *Image
+	EnsAvatar  *Avatar
 	Reputation int64
 	CreatedAt  time.Time
 	UpdatedAt  *time.Time
@@ -39,7 +39,7 @@ func (u *User) EnsName() *string {
 	return u.ensName
 }
 
-func (u *User) EnsAvatar() *Image {
+func (u *User) EnsAvatar() *Avatar {
 	return u.ensAvatar
 }
 

@@ -6,10 +6,9 @@ import (
 	"github.com/daochanio/backend/api/controllers/http"
 	"github.com/daochanio/backend/api/controllers/subscribe"
 	"github.com/daochanio/backend/api/gateways/ethereum"
+	"github.com/daochanio/backend/api/gateways/images"
 	"github.com/daochanio/backend/api/gateways/postgres"
 	"github.com/daochanio/backend/api/gateways/redis"
-	"github.com/daochanio/backend/api/gateways/s3"
-	"github.com/daochanio/backend/api/gateways/worker"
 	"github.com/daochanio/backend/api/settings"
 	"github.com/daochanio/backend/api/usecases"
 	"github.com/daochanio/backend/common"
@@ -55,10 +54,7 @@ func provideGateways(container *dig.Container) {
 	if err := container.Provide(redis.NewStreamGateway); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(s3.NewStorageGateway); err != nil {
-		panic(err)
-	}
-	if err := container.Provide(worker.NewSafeProxyGateway); err != nil {
+	if err := container.Provide(images.NewImagesGateway); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(ethereum.NewBlockchainGateway); err != nil {

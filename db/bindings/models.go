@@ -21,8 +21,8 @@ type Comment struct {
 	Address            string
 	Content            string
 	ImageFileName      string
-	ImageUrl           string
-	ImageContentType   string
+	ImageOriginalUrl   string
+	ImageThumbnailUrl  string
 	Votes              int64
 	IsDeleted          bool
 	CreatedAt          pgtype.Timestamp
@@ -44,17 +44,17 @@ type IndexerProgress struct {
 }
 
 type Thread struct {
-	ID               int64
-	Address          string
-	Title            string
-	Content          string
-	ImageFileName    string
-	ImageUrl         string
-	ImageContentType string
-	Votes            int64
-	IsDeleted        bool
-	CreatedAt        pgtype.Timestamp
-	DeletedAt        pgtype.Timestamp
+	ID                int64
+	Address           string
+	Title             string
+	Content           string
+	ImageFileName     string
+	ImageOriginalUrl  string
+	ImageThumbnailUrl string
+	Votes             int64
+	IsDeleted         bool
+	CreatedAt         pgtype.Timestamp
+	DeletedAt         pgtype.Timestamp
 }
 
 type ThreadVote struct {
@@ -66,12 +66,11 @@ type ThreadVote struct {
 }
 
 type User struct {
-	Address              string
-	EnsName              pgtype.Text
-	CreatedAt            pgtype.Timestamp
-	UpdatedAt            pgtype.Timestamp
-	Reputation           int64
-	EnsAvatarFileName    pgtype.Text
-	EnsAvatarUrl         pgtype.Text
-	EnsAvatarContentType pgtype.Text
+	Address           string
+	EnsName           pgtype.Text
+	CreatedAt         pgtype.Timestamp
+	UpdatedAt         pgtype.Timestamp
+	Reputation        int64
+	EnsAvatarFileName pgtype.Text
+	EnsAvatarUrl      pgtype.Text
 }
