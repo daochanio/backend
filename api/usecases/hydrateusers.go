@@ -91,7 +91,7 @@ func (u *HydrateUsers) hydrateName(ctx context.Context, address string) (*string
 	return name, nil
 }
 
-func (u *HydrateUsers) hydrateAvatar(ctx context.Context, name *string) (*entities.Avatar, error) {
+func (u *HydrateUsers) hydrateAvatar(ctx context.Context, name *string) (*entities.Image, error) {
 	// if theres no name, theres also no avatar
 	if name == nil {
 		return nil, nil
@@ -139,7 +139,7 @@ func (u *HydrateUsers) hydrateAvatar(ctx context.Context, name *string) (*entiti
 		return nil, err
 	}
 
-	u.logger.Info(ctx).Msgf("uploaded avatar: %s for name: %s from uri: %s", avatar.URL(), *name, *uri)
+	u.logger.Info(ctx).Msgf("uploaded avatar: %s for name: %s from uri: %s", avatar.FileName(), *name, *uri)
 
 	return avatar, nil
 }

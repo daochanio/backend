@@ -30,9 +30,14 @@ func (h *httpServer) uploadImageRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 type imageJson struct {
-	FileName     string `json:"fileName"`
-	OriginalURL  string `json:"originalUrl"`
-	ThumbnailURL string `json:"thumbnailUrl"`
+	FileName  string     `json:"fileName"`
+	Original  headerJson `json:"original"`
+	Formatted headerJson `json:"formatted"`
+}
+
+type headerJson struct {
+	URL         string `json:"url"`
+	ContentType string `json:"contentType"`
 }
 
 func toImageJson(image *entities.Image) *imageJson {
@@ -41,8 +46,14 @@ func toImageJson(image *entities.Image) *imageJson {
 	}
 
 	return &imageJson{
-		FileName:     image.FileName(),
-		OriginalURL:  image.OriginalURL(),
-		ThumbnailURL: image.ThumbnailURL(),
+		FileName: image.FileName(),
+		Original: headerJson{
+			URL:         image.OriginalURL(),
+			ContentType: image.OriginalContentType(),
+		},
+		Formatted: headerJson{
+			URL:         image.FormattedURL(),
+			ContentType: image.FormattedContentType(),
+		},
 	}
 }

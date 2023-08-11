@@ -44,5 +44,5 @@ func (u *CreateThread) Execute(ctx context.Context, input CreateThreadInput) (en
 		return entities.Thread{}, fmt.Errorf("image not found %w", common.ErrNotFound)
 	}
 
-	return u.database.CreateThread(ctx, input.Address, input.Title, input.Content, image.FileName(), image.OriginalURL(), image.ThumbnailURL())
+	return u.database.CreateThread(ctx, input.Address, input.Title, input.Content, image)
 }

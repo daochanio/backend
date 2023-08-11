@@ -27,7 +27,10 @@ func (p *postgresGateway) GetUserByAddress(ctx context.Context, address string) 
 		dbUser.Address,
 		dbUser.EnsName,
 		dbUser.EnsAvatarFileName,
-		dbUser.EnsAvatarUrl,
+		dbUser.EnsAvatarOriginalUrl,
+		dbUser.EnsAvatarOriginalContentType,
+		dbUser.EnsAvatarFormattedUrl,
+		dbUser.EnsAvatarFormattedContentType,
 		dbUser.Reputation,
 		dbUser.CreatedAt,
 		dbUser.UpdatedAt,
@@ -40,7 +43,7 @@ func (p *postgresGateway) UpsertUser(ctx context.Context, address string) error 
 	return p.queries.UpsertUser(ctx, address)
 }
 
-func (p *postgresGateway) UpdateUser(ctx context.Context, address string, name *string, avatar *entities.Avatar) error {
+func (p *postgresGateway) UpdateUser(ctx context.Context, address string, name *string, avatar *entities.Image) error {
 	ensName := pgtype.Text{}
 	if name != nil {
 		ensName.String = *name
@@ -49,21 +52,36 @@ func (p *postgresGateway) UpdateUser(ctx context.Context, address string, name *
 		ensName.Valid = false
 	}
 	fileName := pgtype.Text{}
-	url := pgtype.Text{}
+	originalURL := pgtype.Text{}
+	originalContentType := pgtype.Text{}
+	formattedURL := pgtype.Text{}
+	formattedContentType := pgtype.Text{}
 	if avatar != nil {
 		fileName.String = avatar.FileName()
 		fileName.Valid = true
-		url.String = avatar.URL()
-		url.Valid = true
+		originalURL.String = avatar.OriginalURL()
+		originalURL.Valid = true
+		originalContentType.String = avatar.OriginalContentType()
+		originalContentType.Valid = true
+		formattedURL.String = avatar.FormattedURL()
+		formattedURL.Valid = true
+		formattedContentType.String = avatar.FormattedContentType()
+		formattedContentType.Valid = true
 	} else {
 		fileName.Valid = false
-		url.Valid = false
+		originalURL.Valid = false
+		originalContentType.Valid = false
+		formattedURL.Valid = false
+		formattedContentType.Valid = false
 	}
 	return p.queries.UpdateUser(ctx, bindings.UpdateUserParams{
-		Address:           address,
-		EnsName:           ensName,
-		EnsAvatarUrl:      url,
-		EnsAvatarFileName: fileName,
+		Address:                       address,
+		EnsName:                       ensName,
+		EnsAvatarFileName:             fileName,
+		EnsAvatarOriginalUrl:          originalURL,
+		EnsAvatarOriginalContentType:  originalContentType,
+		EnsAvatarFormattedUrl:         formattedURL,
+		EnsAvatarFormattedContentType: formattedContentType,
 	})
 }
 
@@ -71,7 +89,10 @@ func toUser(
 	address string,
 	name pgtype.Text,
 	avatarFileName pgtype.Text,
-	avatarUrl pgtype.Text,
+	avatarOriginalUrl pgtype.Text,
+	avatarOriginalContentType pgtype.Text,
+	avatarFormattedUrl pgtype.Text,
+	avatarFormattedContentType pgtype.Text,
 	reputation int64,
 	createdAt pgtype.Timestamp,
 	updatedAt pgtype.Timestamp,
@@ -80,9 +101,15 @@ func toUser(
 	if name.Valid {
 		ensName = &name.String
 	}
-	var ensAvatar *entities.Avatar
-	if avatarUrl.Valid {
-		avatar := entities.NewAvatar(avatarFileName.String, avatarUrl.String)
+	var ensAvatar *entities.Image
+	if avatarOriginalUrl.Valid {
+		avatar := entities.NewImage(
+			avatarFileName.String,
+			avatarOriginalUrl.String,
+			avatarOriginalContentType.String,
+			avatarFormattedUrl.String,
+			avatarFormattedContentType.String,
+		)
 		ensAvatar = &avatar
 	}
 	var updatedAtTime *time.Time

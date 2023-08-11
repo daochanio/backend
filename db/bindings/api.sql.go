@@ -42,19 +42,21 @@ func (q *Queries) AggregateThreadVotes(ctx context.Context, threadID int64) erro
 }
 
 const createComment = `-- name: CreateComment :one
-INSERT INTO comments (address, thread_id, replied_to_comment_id, content, image_file_name, image_original_url, image_thumbnail_url)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO comments (address, thread_id, replied_to_comment_id, content, image_file_name, image_original_url, image_original_content_type, image_formatted_url, image_formatted_content_type)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING id
 `
 
 type CreateCommentParams struct {
-	Address            string
-	ThreadID           int64
-	RepliedToCommentID pgtype.Int8
-	Content            string
-	ImageFileName      string
-	ImageOriginalUrl   string
-	ImageThumbnailUrl  string
+	Address                   string
+	ThreadID                  int64
+	RepliedToCommentID        pgtype.Int8
+	Content                   string
+	ImageFileName             string
+	ImageOriginalUrl          string
+	ImageOriginalContentType  string
+	ImageFormattedUrl         string
+	ImageFormattedContentType string
 }
 
 func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (int64, error) {
@@ -65,7 +67,9 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (i
 		arg.Content,
 		arg.ImageFileName,
 		arg.ImageOriginalUrl,
-		arg.ImageThumbnailUrl,
+		arg.ImageOriginalContentType,
+		arg.ImageFormattedUrl,
+		arg.ImageFormattedContentType,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -127,18 +131,20 @@ func (q *Queries) CreateCommentUpVote(ctx context.Context, arg CreateCommentUpVo
 }
 
 const createThread = `-- name: CreateThread :one
-INSERT INTO threads (address, title, content, image_file_name, image_original_url, image_thumbnail_url)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO threads (address, title, content, image_file_name, image_original_url, image_original_content_type, image_formatted_url, image_formatted_content_type)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING id
 `
 
 type CreateThreadParams struct {
-	Address           string
-	Title             string
-	Content           string
-	ImageFileName     string
-	ImageOriginalUrl  string
-	ImageThumbnailUrl string
+	Address                   string
+	Title                     string
+	Content                   string
+	ImageFileName             string
+	ImageOriginalUrl          string
+	ImageOriginalContentType  string
+	ImageFormattedUrl         string
+	ImageFormattedContentType string
 }
 
 func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (int64, error) {
@@ -148,7 +154,9 @@ func (q *Queries) CreateThread(ctx context.Context, arg CreateThreadParams) (int
 		arg.Content,
 		arg.ImageFileName,
 		arg.ImageOriginalUrl,
-		arg.ImageThumbnailUrl,
+		arg.ImageOriginalContentType,
+		arg.ImageFormattedUrl,
+		arg.ImageFormattedContentType,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -254,20 +262,25 @@ func (q *Queries) GetChallenge(ctx context.Context, address string) (Challenge, 
 
 const getComment = `-- name: GetComment :one
 SELECT
-	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.image_file_name, c.image_original_url, c.image_thumbnail_url, c.votes, c.is_deleted, c.created_at, c.deleted_at,
+	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.image_file_name, c.image_original_url, c.image_original_content_type, c.image_formatted_url, c.image_formatted_content_type, c.votes, c.is_deleted, c.created_at, c.deleted_at,
 	r.id as r_id,
 	r.address as r_address,
 	r.content as r_content,
 	r.image_file_name as r_image_file_name,
 	r.image_original_url as r_image_original_url,
-	r.image_thumbnail_url as r_image_thumbnail_url,
+	r.image_original_content_type as r_image_original_content_type,
+	r.image_formatted_url as r_image_formatted_url,
+	r.image_formatted_content_type as r_image_formatted_content_type,
 	r.is_deleted as r_is_deleted,
 	r.created_at as r_created_at,
 	r.deleted_at as r_deleted_at,
 	u.address as address,
 	u.ens_name as ens_name,
 	u.ens_avatar_file_name as ens_avatar_file_name,
-	u.ens_avatar_url as ens_avatar_url,
+	u.ens_avatar_original_url as ens_avatar_original_url,
+	u.ens_avatar_original_content_type as ens_avatar_original_content_type,
+	u.ens_avatar_formatted_url as ens_avatar_formatted_url,
+	u.ens_avatar_formatted_content_type as ens_avatar_formatted_content_type,
 	u.reputation as reputation,
 	u.created_at as user_created_at,
 	u.updated_at as user_updated_at
@@ -278,34 +291,41 @@ WHERE c.id = $1
 `
 
 type GetCommentRow struct {
-	ID                 int64
-	ThreadID           int64
-	RepliedToCommentID pgtype.Int8
-	Address            string
-	Content            string
-	ImageFileName      string
-	ImageOriginalUrl   string
-	ImageThumbnailUrl  string
-	Votes              int64
-	IsDeleted          bool
-	CreatedAt          pgtype.Timestamp
-	DeletedAt          pgtype.Timestamp
-	RID                pgtype.Int8
-	RAddress           pgtype.Text
-	RContent           pgtype.Text
-	RImageFileName     pgtype.Text
-	RImageOriginalUrl  pgtype.Text
-	RImageThumbnailUrl pgtype.Text
-	RIsDeleted         pgtype.Bool
-	RCreatedAt         pgtype.Timestamp
-	RDeletedAt         pgtype.Timestamp
-	Address_2          string
-	EnsName            pgtype.Text
-	EnsAvatarFileName  pgtype.Text
-	EnsAvatarUrl       pgtype.Text
-	Reputation         int64
-	UserCreatedAt      pgtype.Timestamp
-	UserUpdatedAt      pgtype.Timestamp
+	ID                            int64
+	ThreadID                      int64
+	RepliedToCommentID            pgtype.Int8
+	Address                       string
+	Content                       string
+	ImageFileName                 string
+	ImageOriginalUrl              string
+	ImageOriginalContentType      string
+	ImageFormattedUrl             string
+	ImageFormattedContentType     string
+	Votes                         int64
+	IsDeleted                     bool
+	CreatedAt                     pgtype.Timestamp
+	DeletedAt                     pgtype.Timestamp
+	RID                           pgtype.Int8
+	RAddress                      pgtype.Text
+	RContent                      pgtype.Text
+	RImageFileName                pgtype.Text
+	RImageOriginalUrl             pgtype.Text
+	RImageOriginalContentType     pgtype.Text
+	RImageFormattedUrl            pgtype.Text
+	RImageFormattedContentType    pgtype.Text
+	RIsDeleted                    pgtype.Bool
+	RCreatedAt                    pgtype.Timestamp
+	RDeletedAt                    pgtype.Timestamp
+	Address_2                     string
+	EnsName                       pgtype.Text
+	EnsAvatarFileName             pgtype.Text
+	EnsAvatarOriginalUrl          pgtype.Text
+	EnsAvatarOriginalContentType  pgtype.Text
+	EnsAvatarFormattedUrl         pgtype.Text
+	EnsAvatarFormattedContentType pgtype.Text
+	Reputation                    int64
+	UserCreatedAt                 pgtype.Timestamp
+	UserUpdatedAt                 pgtype.Timestamp
 }
 
 func (q *Queries) GetComment(ctx context.Context, id int64) (GetCommentRow, error) {
@@ -319,7 +339,9 @@ func (q *Queries) GetComment(ctx context.Context, id int64) (GetCommentRow, erro
 		&i.Content,
 		&i.ImageFileName,
 		&i.ImageOriginalUrl,
-		&i.ImageThumbnailUrl,
+		&i.ImageOriginalContentType,
+		&i.ImageFormattedUrl,
+		&i.ImageFormattedContentType,
 		&i.Votes,
 		&i.IsDeleted,
 		&i.CreatedAt,
@@ -329,14 +351,19 @@ func (q *Queries) GetComment(ctx context.Context, id int64) (GetCommentRow, erro
 		&i.RContent,
 		&i.RImageFileName,
 		&i.RImageOriginalUrl,
-		&i.RImageThumbnailUrl,
+		&i.RImageOriginalContentType,
+		&i.RImageFormattedUrl,
+		&i.RImageFormattedContentType,
 		&i.RIsDeleted,
 		&i.RCreatedAt,
 		&i.RDeletedAt,
 		&i.Address_2,
 		&i.EnsName,
 		&i.EnsAvatarFileName,
-		&i.EnsAvatarUrl,
+		&i.EnsAvatarOriginalUrl,
+		&i.EnsAvatarOriginalContentType,
+		&i.EnsAvatarFormattedUrl,
+		&i.EnsAvatarFormattedContentType,
 		&i.Reputation,
 		&i.UserCreatedAt,
 		&i.UserUpdatedAt,
@@ -346,20 +373,25 @@ func (q *Queries) GetComment(ctx context.Context, id int64) (GetCommentRow, erro
 
 const getComments = `-- name: GetComments :many
 SELECT
-	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.image_file_name, c.image_original_url, c.image_thumbnail_url, c.votes, c.is_deleted, c.created_at, c.deleted_at,
+	c.id, c.thread_id, c.replied_to_comment_id, c.address, c.content, c.image_file_name, c.image_original_url, c.image_original_content_type, c.image_formatted_url, c.image_formatted_content_type, c.votes, c.is_deleted, c.created_at, c.deleted_at,
 	r.id as r_id,
 	r.address as r_address,
 	r.content as r_content,
 	r.image_file_name as r_image_file_name,
 	r.image_original_url as r_image_original_url,
-	r.image_thumbnail_url as r_image_thumbnail_url,
+	r.image_original_content_type as r_image_original_content_type,
+	r.image_formatted_url as r_image_formatted_url,
+	r.image_formatted_content_type as r_image_formatted_content_type,
 	r.is_deleted as r_is_deleted,
 	r.created_at as r_created_at,
 	r.deleted_at as r_deleted_at,
 	u.address as address,
 	u.ens_name as ens_name,
 	u.ens_avatar_file_name as ens_avatar_file_name,
-	u.ens_avatar_url as ens_avatar_url,
+	u.ens_avatar_original_url as ens_avatar_original_url,
+	u.ens_avatar_original_content_type as ens_avatar_original_content_type,
+	u.ens_avatar_formatted_url as ens_avatar_formatted_url,
+	u.ens_avatar_formatted_content_type as ens_avatar_formatted_content_type,
 	u.reputation as reputation,
 	u.created_at as user_created_at,
 	u.updated_at as user_updated_at,
@@ -381,35 +413,42 @@ type GetCommentsParams struct {
 }
 
 type GetCommentsRow struct {
-	ID                 int64
-	ThreadID           int64
-	RepliedToCommentID pgtype.Int8
-	Address            string
-	Content            string
-	ImageFileName      string
-	ImageOriginalUrl   string
-	ImageThumbnailUrl  string
-	Votes              int64
-	IsDeleted          bool
-	CreatedAt          pgtype.Timestamp
-	DeletedAt          pgtype.Timestamp
-	RID                pgtype.Int8
-	RAddress           pgtype.Text
-	RContent           pgtype.Text
-	RImageFileName     pgtype.Text
-	RImageOriginalUrl  pgtype.Text
-	RImageThumbnailUrl pgtype.Text
-	RIsDeleted         pgtype.Bool
-	RCreatedAt         pgtype.Timestamp
-	RDeletedAt         pgtype.Timestamp
-	Address_2          string
-	EnsName            pgtype.Text
-	EnsAvatarFileName  pgtype.Text
-	EnsAvatarUrl       pgtype.Text
-	Reputation         int64
-	UserCreatedAt      pgtype.Timestamp
-	UserUpdatedAt      pgtype.Timestamp
-	FullCount          int64
+	ID                            int64
+	ThreadID                      int64
+	RepliedToCommentID            pgtype.Int8
+	Address                       string
+	Content                       string
+	ImageFileName                 string
+	ImageOriginalUrl              string
+	ImageOriginalContentType      string
+	ImageFormattedUrl             string
+	ImageFormattedContentType     string
+	Votes                         int64
+	IsDeleted                     bool
+	CreatedAt                     pgtype.Timestamp
+	DeletedAt                     pgtype.Timestamp
+	RID                           pgtype.Int8
+	RAddress                      pgtype.Text
+	RContent                      pgtype.Text
+	RImageFileName                pgtype.Text
+	RImageOriginalUrl             pgtype.Text
+	RImageOriginalContentType     pgtype.Text
+	RImageFormattedUrl            pgtype.Text
+	RImageFormattedContentType    pgtype.Text
+	RIsDeleted                    pgtype.Bool
+	RCreatedAt                    pgtype.Timestamp
+	RDeletedAt                    pgtype.Timestamp
+	Address_2                     string
+	EnsName                       pgtype.Text
+	EnsAvatarFileName             pgtype.Text
+	EnsAvatarOriginalUrl          pgtype.Text
+	EnsAvatarOriginalContentType  pgtype.Text
+	EnsAvatarFormattedUrl         pgtype.Text
+	EnsAvatarFormattedContentType pgtype.Text
+	Reputation                    int64
+	UserCreatedAt                 pgtype.Timestamp
+	UserUpdatedAt                 pgtype.Timestamp
+	FullCount                     int64
 }
 
 func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]GetCommentsRow, error) {
@@ -429,7 +468,9 @@ func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]Get
 			&i.Content,
 			&i.ImageFileName,
 			&i.ImageOriginalUrl,
-			&i.ImageThumbnailUrl,
+			&i.ImageOriginalContentType,
+			&i.ImageFormattedUrl,
+			&i.ImageFormattedContentType,
 			&i.Votes,
 			&i.IsDeleted,
 			&i.CreatedAt,
@@ -439,14 +480,19 @@ func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]Get
 			&i.RContent,
 			&i.RImageFileName,
 			&i.RImageOriginalUrl,
-			&i.RImageThumbnailUrl,
+			&i.RImageOriginalContentType,
+			&i.RImageFormattedUrl,
+			&i.RImageFormattedContentType,
 			&i.RIsDeleted,
 			&i.RCreatedAt,
 			&i.RDeletedAt,
 			&i.Address_2,
 			&i.EnsName,
 			&i.EnsAvatarFileName,
-			&i.EnsAvatarUrl,
+			&i.EnsAvatarOriginalUrl,
+			&i.EnsAvatarOriginalContentType,
+			&i.EnsAvatarFormattedUrl,
+			&i.EnsAvatarFormattedContentType,
 			&i.Reputation,
 			&i.UserCreatedAt,
 			&i.UserUpdatedAt,
@@ -464,11 +510,14 @@ func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]Get
 
 const getThread = `-- name: GetThread :one
 SELECT 
-	t.id, t.address, t.title, t.content, t.image_file_name, t.image_original_url, t.image_thumbnail_url, t.votes, t.is_deleted, t.created_at, t.deleted_at,
+	t.id, t.address, t.title, t.content, t.image_file_name, t.image_original_url, t.image_original_content_type, t.image_formatted_url, t.image_formatted_content_type, t.votes, t.is_deleted, t.created_at, t.deleted_at,
 	u.address as address,
 	u.ens_name as ens_name,
 	u.ens_avatar_file_name as ens_avatar_file_name,
-	u.ens_avatar_url as ens_avatar_url,
+	u.ens_avatar_original_url as ens_avatar_original_url,
+	u.ens_avatar_original_content_type as ens_avatar_original_content_type,
+	u.ens_avatar_formatted_url as ens_avatar_formatted_url,
+	u.ens_avatar_formatted_content_type as ens_avatar_formatted_content_type,
 	u.reputation as reputation,
 	u.created_at as user_created_at,
 	u.updated_at as user_updated_at
@@ -479,24 +528,29 @@ AND t.is_deleted = FALSE
 `
 
 type GetThreadRow struct {
-	ID                int64
-	Address           string
-	Title             string
-	Content           string
-	ImageFileName     string
-	ImageOriginalUrl  string
-	ImageThumbnailUrl string
-	Votes             int64
-	IsDeleted         bool
-	CreatedAt         pgtype.Timestamp
-	DeletedAt         pgtype.Timestamp
-	Address_2         string
-	EnsName           pgtype.Text
-	EnsAvatarFileName pgtype.Text
-	EnsAvatarUrl      pgtype.Text
-	Reputation        int64
-	UserCreatedAt     pgtype.Timestamp
-	UserUpdatedAt     pgtype.Timestamp
+	ID                            int64
+	Address                       string
+	Title                         string
+	Content                       string
+	ImageFileName                 string
+	ImageOriginalUrl              string
+	ImageOriginalContentType      string
+	ImageFormattedUrl             string
+	ImageFormattedContentType     string
+	Votes                         int64
+	IsDeleted                     bool
+	CreatedAt                     pgtype.Timestamp
+	DeletedAt                     pgtype.Timestamp
+	Address_2                     string
+	EnsName                       pgtype.Text
+	EnsAvatarFileName             pgtype.Text
+	EnsAvatarOriginalUrl          pgtype.Text
+	EnsAvatarOriginalContentType  pgtype.Text
+	EnsAvatarFormattedUrl         pgtype.Text
+	EnsAvatarFormattedContentType pgtype.Text
+	Reputation                    int64
+	UserCreatedAt                 pgtype.Timestamp
+	UserUpdatedAt                 pgtype.Timestamp
 }
 
 func (q *Queries) GetThread(ctx context.Context, id int64) (GetThreadRow, error) {
@@ -509,7 +563,9 @@ func (q *Queries) GetThread(ctx context.Context, id int64) (GetThreadRow, error)
 		&i.Content,
 		&i.ImageFileName,
 		&i.ImageOriginalUrl,
-		&i.ImageThumbnailUrl,
+		&i.ImageOriginalContentType,
+		&i.ImageFormattedUrl,
+		&i.ImageFormattedContentType,
 		&i.Votes,
 		&i.IsDeleted,
 		&i.CreatedAt,
@@ -517,7 +573,10 @@ func (q *Queries) GetThread(ctx context.Context, id int64) (GetThreadRow, error)
 		&i.Address_2,
 		&i.EnsName,
 		&i.EnsAvatarFileName,
-		&i.EnsAvatarUrl,
+		&i.EnsAvatarOriginalUrl,
+		&i.EnsAvatarOriginalContentType,
+		&i.EnsAvatarFormattedUrl,
+		&i.EnsAvatarFormattedContentType,
 		&i.Reputation,
 		&i.UserCreatedAt,
 		&i.UserUpdatedAt,
@@ -527,11 +586,14 @@ func (q *Queries) GetThread(ctx context.Context, id int64) (GetThreadRow, error)
 
 const getThreads = `-- name: GetThreads :many
 SELECT
-	t.id, t.address, t.title, t.content, t.image_file_name, t.image_original_url, t.image_thumbnail_url, t.votes, t.is_deleted, t.created_at, t.deleted_at,
+	t.id, t.address, t.title, t.content, t.image_file_name, t.image_original_url, t.image_original_content_type, t.image_formatted_url, t.image_formatted_content_type, t.votes, t.is_deleted, t.created_at, t.deleted_at,
 	u.address as address,
 	u.ens_name as ens_name,
 	u.ens_avatar_file_name as ens_avatar_file_name,
-	u.ens_avatar_url as ens_avatar_url,
+	u.ens_avatar_original_url as ens_avatar_original_url,
+	u.ens_avatar_original_content_type as ens_avatar_original_content_type,
+	u.ens_avatar_formatted_url as ens_avatar_formatted_url,
+	u.ens_avatar_formatted_content_type as ens_avatar_formatted_content_type,
 	u.reputation as reputation,
 	u.created_at as user_created_at,
 	u.updated_at as user_updated_at
@@ -543,24 +605,29 @@ LIMIT $1::bigint
 `
 
 type GetThreadsRow struct {
-	ID                int64
-	Address           string
-	Title             string
-	Content           string
-	ImageFileName     string
-	ImageOriginalUrl  string
-	ImageThumbnailUrl string
-	Votes             int64
-	IsDeleted         bool
-	CreatedAt         pgtype.Timestamp
-	DeletedAt         pgtype.Timestamp
-	Address_2         string
-	EnsName           pgtype.Text
-	EnsAvatarFileName pgtype.Text
-	EnsAvatarUrl      pgtype.Text
-	Reputation        int64
-	UserCreatedAt     pgtype.Timestamp
-	UserUpdatedAt     pgtype.Timestamp
+	ID                            int64
+	Address                       string
+	Title                         string
+	Content                       string
+	ImageFileName                 string
+	ImageOriginalUrl              string
+	ImageOriginalContentType      string
+	ImageFormattedUrl             string
+	ImageFormattedContentType     string
+	Votes                         int64
+	IsDeleted                     bool
+	CreatedAt                     pgtype.Timestamp
+	DeletedAt                     pgtype.Timestamp
+	Address_2                     string
+	EnsName                       pgtype.Text
+	EnsAvatarFileName             pgtype.Text
+	EnsAvatarOriginalUrl          pgtype.Text
+	EnsAvatarOriginalContentType  pgtype.Text
+	EnsAvatarFormattedUrl         pgtype.Text
+	EnsAvatarFormattedContentType pgtype.Text
+	Reputation                    int64
+	UserCreatedAt                 pgtype.Timestamp
+	UserUpdatedAt                 pgtype.Timestamp
 }
 
 // Order by random is not performant as we need to do a full table scan.
@@ -583,7 +650,9 @@ func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]GetThreadsR
 			&i.Content,
 			&i.ImageFileName,
 			&i.ImageOriginalUrl,
-			&i.ImageThumbnailUrl,
+			&i.ImageOriginalContentType,
+			&i.ImageFormattedUrl,
+			&i.ImageFormattedContentType,
 			&i.Votes,
 			&i.IsDeleted,
 			&i.CreatedAt,
@@ -591,7 +660,10 @@ func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]GetThreadsR
 			&i.Address_2,
 			&i.EnsName,
 			&i.EnsAvatarFileName,
-			&i.EnsAvatarUrl,
+			&i.EnsAvatarOriginalUrl,
+			&i.EnsAvatarOriginalContentType,
+			&i.EnsAvatarFormattedUrl,
+			&i.EnsAvatarFormattedContentType,
 			&i.Reputation,
 			&i.UserCreatedAt,
 			&i.UserUpdatedAt,
@@ -607,7 +679,7 @@ func (q *Queries) GetThreads(ctx context.Context, dollar_1 int64) ([]GetThreadsR
 }
 
 const getUser = `-- name: GetUser :one
-SELECT address, ens_name, created_at, updated_at, reputation, ens_avatar_file_name, ens_avatar_url
+SELECT address, ens_name, created_at, updated_at, reputation, ens_avatar_file_name, ens_avatar_original_url, ens_avatar_original_content_type, ens_avatar_formatted_url, ens_avatar_formatted_content_type
 FROM users
 WHERE address = $1
 `
@@ -622,7 +694,10 @@ func (q *Queries) GetUser(ctx context.Context, address string) (User, error) {
 		&i.UpdatedAt,
 		&i.Reputation,
 		&i.EnsAvatarFileName,
-		&i.EnsAvatarUrl,
+		&i.EnsAvatarOriginalUrl,
+		&i.EnsAvatarOriginalContentType,
+		&i.EnsAvatarFormattedUrl,
+		&i.EnsAvatarFormattedContentType,
 	)
 	return i, err
 }
@@ -650,16 +725,22 @@ UPDATE users
 SET
 	ens_name = $2,
 	ens_avatar_file_name = $3,
-	ens_avatar_url = $4,
+	ens_avatar_original_url = $4,
+	ens_avatar_original_content_type = $5,
+	ens_avatar_formatted_url = $6,
+	ens_avatar_formatted_content_type = $7,
 	updated_at = NOW()
 WHERE address = $1
 `
 
 type UpdateUserParams struct {
-	Address           string
-	EnsName           pgtype.Text
-	EnsAvatarFileName pgtype.Text
-	EnsAvatarUrl      pgtype.Text
+	Address                       string
+	EnsName                       pgtype.Text
+	EnsAvatarFileName             pgtype.Text
+	EnsAvatarOriginalUrl          pgtype.Text
+	EnsAvatarOriginalContentType  pgtype.Text
+	EnsAvatarFormattedUrl         pgtype.Text
+	EnsAvatarFormattedContentType pgtype.Text
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
@@ -667,7 +748,10 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 		arg.Address,
 		arg.EnsName,
 		arg.EnsAvatarFileName,
-		arg.EnsAvatarUrl,
+		arg.EnsAvatarOriginalUrl,
+		arg.EnsAvatarOriginalContentType,
+		arg.EnsAvatarFormattedUrl,
+		arg.EnsAvatarFormattedContentType,
 	)
 	return err
 }

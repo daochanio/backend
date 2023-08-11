@@ -44,23 +44,10 @@ func (i *images) UploadImage(ctx context.Context, body io.Reader) (*entities.Ima
 		return nil, fmt.Errorf("post images response error %w", err)
 	}
 
-	imageJSON := &ImageJSON{}
-	err = json.NewDecoder(resp.Body).Decode(imageJSON)
-
-	if err != nil {
-		return nil, fmt.Errorf("unmarshal post images response error %w", err)
-	}
-
-	image := entities.NewImage(
-		imageJSON.FileName,
-		imageJSON.OriginalURL,
-		imageJSON.ThumbnailURL,
-	)
-
-	return &image, nil
+	return i.toImage(resp.Body)
 }
 
-func (i *images) UploadAvatar(ctx context.Context, uri string, isNFT bool) (*entities.Avatar, error) {
+func (i *images) UploadAvatar(ctx context.Context, uri string, isNFT bool) (*entities.Image, error) {
 	url := fmt.Sprintf("%s/avatars", i.settings.ImagesBaseURL())
 
 	body, err := json.Marshal(&AvatarRequestJSON{
@@ -86,19 +73,7 @@ func (i *images) UploadAvatar(ctx context.Context, uri string, isNFT bool) (*ent
 		return nil, fmt.Errorf("put avatar request error %w", err)
 	}
 
-	avatarJSON := &AvatarJSON{}
-	err = json.NewDecoder(resp.Body).Decode(avatarJSON)
-
-	if err != nil {
-		return nil, fmt.Errorf("unmarshal put avatar response error %w", err)
-	}
-
-	avatar := entities.NewAvatar(
-		avatarJSON.FileName,
-		avatarJSON.URL,
-	)
-
-	return &avatar, nil
+	return i.toImage(resp.Body)
 }
 
 func (i *images) GetImageByFileName(ctx context.Context, fileName string) (*entities.Image, error) {
@@ -114,20 +89,7 @@ func (i *images) GetImageByFileName(ctx context.Context, fileName string) (*enti
 		return nil, fmt.Errorf("get images response error %w", err)
 	}
 
-	imageJSON := &ImageJSON{}
-	err = json.NewDecoder(resp.Body).Decode(imageJSON)
-
-	if err != nil {
-		return nil, fmt.Errorf("unmarshal get images response error %w", err)
-	}
-
-	image := entities.NewImage(
-		imageJSON.FileName,
-		imageJSON.OriginalURL,
-		imageJSON.ThumbnailURL,
-	)
-
-	return &image, nil
+	return i.toImage(resp.Body)
 }
 
 func (i *images) getAuthorizationHeaders() common.Header {
@@ -137,15 +99,34 @@ func (i *images) getAuthorizationHeaders() common.Header {
 	}
 }
 
-type ImageJSON struct {
-	FileName     string `json:"file_name"`
-	OriginalURL  string `json:"original_url"`
-	ThumbnailURL string `json:"thumbnail_url"`
+func (i *images) toImage(reader io.Reader) (*entities.Image, error) {
+	imageJSON := &ImageJSON{}
+	err := json.NewDecoder(reader).Decode(imageJSON)
+
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal get images response error %w", err)
+	}
+
+	image := entities.NewImage(
+		imageJSON.FileName,
+		imageJSON.Original.URL,
+		imageJSON.Original.ContentType,
+		imageJSON.Formatted.URL,
+		imageJSON.Formatted.ContentType,
+	)
+
+	return &image, nil
 }
 
-type AvatarJSON struct {
-	FileName string `json:"file_name"`
-	URL      string `json:"url"`
+type ImageJSON struct {
+	FileName  string     `json:"file_name"`
+	Original  HeaderJSON `json:"original"`
+	Formatted HeaderJSON `json:"formatted"`
+}
+
+type HeaderJSON struct {
+	URL         string `json:"url"`
+	ContentType string `json:"content_type"`
 }
 
 type AvatarRequestJSON struct {

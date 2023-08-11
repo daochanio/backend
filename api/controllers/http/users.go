@@ -31,37 +31,21 @@ func (h *httpServer) getUserByAddressRoute(w http.ResponseWriter, r *http.Reques
 }
 
 type userJson struct {
-	Address    string      `json:"address"`
-	EnsName    *string     `json:"ensName,omitempty"`
-	EnsAvatar  *avatarJson `json:"ensAvatar,omitempty"`
-	Reputation string      `json:"reputation"`
-	CreatedAt  time.Time   `json:"createdAt"`
-	UpdatedAt  *time.Time  `json:"updatedAt,omitempty"`
-}
-
-type avatarJson struct {
-	FileName string `json:"fileName"`
-	URL      string `json:"url"`
+	Address    string     `json:"address"`
+	EnsName    *string    `json:"ensName,omitempty"`
+	EnsAvatar  *imageJson `json:"ensAvatar,omitempty"`
+	Reputation string     `json:"reputation"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	UpdatedAt  *time.Time `json:"updatedAt,omitempty"`
 }
 
 func toUserJson(user entities.User) userJson {
 	return userJson{
 		Address:    user.Address(),
 		EnsName:    user.EnsName(),
-		EnsAvatar:  toAvatarJson(user.EnsAvatar()),
+		EnsAvatar:  toImageJson(user.EnsAvatar()),
 		Reputation: fmt.Sprint(user.Reputation()),
 		CreatedAt:  user.CreatedAt(),
 		UpdatedAt:  user.UpdatedAt(),
-	}
-}
-
-func toAvatarJson(avatar *entities.Avatar) *avatarJson {
-	if avatar == nil {
-		return nil
-	}
-
-	return &avatarJson{
-		FileName: avatar.FileName(),
-		URL:      avatar.URL(),
 	}
 }

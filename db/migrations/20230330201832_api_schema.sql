@@ -8,7 +8,10 @@ CREATE TABLE users (
 	updated_at TIMESTAMP NULL DEFAULT NULL,
 	reputation BIGINT NOT NULL DEFAULT 0,
 	ens_avatar_file_name VARCHAR(255) NULL DEFAULT NULL,
-	ens_avatar_url VARCHAR(255) NULL DEFAULT NULL
+	ens_avatar_original_url VARCHAR(255) NULL DEFAULT NULL,
+	ens_avatar_original_content_type VARCHAR(255) NULL DEFAULT NULL,
+	ens_avatar_formatted_url VARCHAR(255) NULL DEFAULT NULL,
+	ens_avatar_formatted_content_type VARCHAR(255) NULL DEFAULT NULL
 );
 
 CREATE TABLE challenges (
@@ -24,7 +27,9 @@ CREATE TABLE threads (
 	content TEXT NOT NULL,
 	image_file_name TEXT NOT NULL,
 	image_original_url TEXT NOT NULL,
-	image_thumbnail_url TEXT NOT NULL,
+	image_original_content_type TEXT NOT NULL,
+	image_formatted_url TEXT NOT NULL,
+	image_formatted_content_type TEXT NOT NULL,
 	votes BIGINT NOT NULL DEFAULT 0,
 	is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -48,7 +53,9 @@ CREATE TABLE comments (
 	content TEXT NOT NULL,
 	image_file_name TEXT NOT NULL,
 	image_original_url TEXT NOT NULL,
-	image_thumbnail_url TEXT NOT NULL,
+	image_original_content_type TEXT NOT NULL,
+	image_formatted_url TEXT NOT NULL,
+	image_formatted_content_type TEXT NOT NULL,
 	votes BIGINT NOT NULL DEFAULT 0,
 	is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 	created_at TIMESTAMP NOT NULL DEFAULT NOW(),

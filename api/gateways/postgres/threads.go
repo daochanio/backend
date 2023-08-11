@@ -16,17 +16,17 @@ func (p *postgresGateway) CreateThread(
 	address string,
 	title string,
 	content string,
-	imageFileName string,
-	imageOriginalURL string,
-	imageThumbnailURL string,
+	image *entities.Image,
 ) (entities.Thread, error) {
 	id, err := p.queries.CreateThread(ctx, bindings.CreateThreadParams{
-		Address:           address,
-		Title:             title,
-		Content:           content,
-		ImageFileName:     imageFileName,
-		ImageOriginalUrl:  imageOriginalURL,
-		ImageThumbnailUrl: imageThumbnailURL,
+		Address:                   address,
+		Title:                     title,
+		Content:                   content,
+		ImageFileName:             image.FileName(),
+		ImageOriginalUrl:          image.OriginalURL(),
+		ImageOriginalContentType:  image.OriginalContentType(),
+		ImageFormattedUrl:         image.FormattedURL(),
+		ImageFormattedContentType: image.FormattedContentType(),
 	})
 
 	if err != nil {
@@ -50,12 +50,21 @@ func (p *postgresGateway) GetThreads(ctx context.Context, limit int64) ([]entiti
 			deletedAt = &dbThread.DeletedAt.Time
 		}
 
-		image := entities.NewImage(dbThread.ImageFileName, dbThread.ImageOriginalUrl, dbThread.ImageThumbnailUrl)
+		image := entities.NewImage(
+			dbThread.ImageFileName,
+			dbThread.ImageOriginalUrl,
+			dbThread.ImageOriginalContentType,
+			dbThread.ImageFormattedUrl,
+			dbThread.ImageFormattedContentType,
+		)
 		user := toUser(
 			dbThread.Address,
 			dbThread.EnsName,
 			dbThread.EnsAvatarFileName,
-			dbThread.EnsAvatarUrl,
+			dbThread.EnsAvatarOriginalUrl,
+			dbThread.EnsAvatarOriginalContentType,
+			dbThread.EnsAvatarFormattedUrl,
+			dbThread.EnsAvatarFormattedContentType,
 			dbThread.Reputation,
 			dbThread.UserCreatedAt,
 			dbThread.UserUpdatedAt,
@@ -92,12 +101,21 @@ func (p *postgresGateway) GetThreadById(ctx context.Context, id int64) (entities
 		deletedAt = &dbThread.DeletedAt.Time
 	}
 
-	image := entities.NewImage(dbThread.ImageFileName, dbThread.ImageOriginalUrl, dbThread.ImageThumbnailUrl)
+	image := entities.NewImage(
+		dbThread.ImageFileName,
+		dbThread.ImageOriginalUrl,
+		dbThread.ImageOriginalContentType,
+		dbThread.ImageFormattedUrl,
+		dbThread.ImageFormattedContentType,
+	)
 	user := toUser(
 		dbThread.Address,
 		dbThread.EnsName,
 		dbThread.EnsAvatarFileName,
-		dbThread.EnsAvatarUrl,
+		dbThread.EnsAvatarOriginalUrl,
+		dbThread.EnsAvatarOriginalContentType,
+		dbThread.EnsAvatarFormattedUrl,
+		dbThread.EnsAvatarFormattedContentType,
 		dbThread.Reputation,
 		dbThread.UserCreatedAt,
 		dbThread.UserUpdatedAt,

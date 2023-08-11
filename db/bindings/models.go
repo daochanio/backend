@@ -15,18 +15,20 @@ type Challenge struct {
 }
 
 type Comment struct {
-	ID                 int64
-	ThreadID           int64
-	RepliedToCommentID pgtype.Int8
-	Address            string
-	Content            string
-	ImageFileName      string
-	ImageOriginalUrl   string
-	ImageThumbnailUrl  string
-	Votes              int64
-	IsDeleted          bool
-	CreatedAt          pgtype.Timestamp
-	DeletedAt          pgtype.Timestamp
+	ID                        int64
+	ThreadID                  int64
+	RepliedToCommentID        pgtype.Int8
+	Address                   string
+	Content                   string
+	ImageFileName             string
+	ImageOriginalUrl          string
+	ImageOriginalContentType  string
+	ImageFormattedUrl         string
+	ImageFormattedContentType string
+	Votes                     int64
+	IsDeleted                 bool
+	CreatedAt                 pgtype.Timestamp
+	DeletedAt                 pgtype.Timestamp
 }
 
 type CommentVote struct {
@@ -44,17 +46,19 @@ type IndexerProgress struct {
 }
 
 type Thread struct {
-	ID                int64
-	Address           string
-	Title             string
-	Content           string
-	ImageFileName     string
-	ImageOriginalUrl  string
-	ImageThumbnailUrl string
-	Votes             int64
-	IsDeleted         bool
-	CreatedAt         pgtype.Timestamp
-	DeletedAt         pgtype.Timestamp
+	ID                        int64
+	Address                   string
+	Title                     string
+	Content                   string
+	ImageFileName             string
+	ImageOriginalUrl          string
+	ImageOriginalContentType  string
+	ImageFormattedUrl         string
+	ImageFormattedContentType string
+	Votes                     int64
+	IsDeleted                 bool
+	CreatedAt                 pgtype.Timestamp
+	DeletedAt                 pgtype.Timestamp
 }
 
 type ThreadVote struct {
@@ -66,11 +70,14 @@ type ThreadVote struct {
 }
 
 type User struct {
-	Address           string
-	EnsName           pgtype.Text
-	CreatedAt         pgtype.Timestamp
-	UpdatedAt         pgtype.Timestamp
-	Reputation        int64
-	EnsAvatarFileName pgtype.Text
-	EnsAvatarUrl      pgtype.Text
+	Address                       string
+	EnsName                       pgtype.Text
+	CreatedAt                     pgtype.Timestamp
+	UpdatedAt                     pgtype.Timestamp
+	Reputation                    int64
+	EnsAvatarFileName             pgtype.Text
+	EnsAvatarOriginalUrl          pgtype.Text
+	EnsAvatarOriginalContentType  pgtype.Text
+	EnsAvatarFormattedUrl         pgtype.Text
+	EnsAvatarFormattedContentType pgtype.Text
 }

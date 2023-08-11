@@ -18,9 +18,7 @@ func (p *postgresGateway) CreateComment(
 	address string,
 	repliedToCommentId *int64,
 	content string,
-	imageFileName string,
-	imageOriginalURL string,
-	imageThumbnailURL string,
+	image *entities.Image,
 ) (entities.Comment, error) {
 	rep := pgtype.Int8{
 		Valid: repliedToCommentId != nil,
@@ -31,13 +29,15 @@ func (p *postgresGateway) CreateComment(
 	}
 
 	id, err := p.queries.CreateComment(ctx, bindings.CreateCommentParams{
-		ThreadID:           threadId,
-		Address:            address,
-		RepliedToCommentID: rep,
-		Content:            content,
-		ImageFileName:      imageFileName,
-		ImageOriginalUrl:   imageOriginalURL,
-		ImageThumbnailUrl:  imageThumbnailURL,
+		ThreadID:                  threadId,
+		Address:                   address,
+		RepliedToCommentID:        rep,
+		Content:                   content,
+		ImageFileName:             image.FileName(),
+		ImageOriginalUrl:          image.OriginalURL(),
+		ImageOriginalContentType:  image.OriginalContentType(),
+		ImageFormattedUrl:         image.FormattedURL(),
+		ImageFormattedContentType: image.FormattedContentType(),
 	})
 
 	if err != nil {
@@ -67,12 +67,15 @@ func (p *postgresGateway) GetComments(ctx context.Context, threadId int64, offse
 		if dbComment.DeletedAt.Valid {
 			deletedAt = &dbComment.DeletedAt.Time
 		}
-		image := entities.NewImage(dbComment.ImageFileName, dbComment.ImageOriginalUrl, dbComment.ImageThumbnailUrl)
+		image := entities.NewImage(dbComment.ImageFileName, dbComment.ImageOriginalUrl, dbComment.ImageOriginalContentType, dbComment.ImageFormattedUrl, dbComment.ImageFormattedContentType)
 		user := toUser(
 			dbComment.Address,
 			dbComment.EnsName,
 			dbComment.EnsAvatarFileName,
-			dbComment.EnsAvatarUrl,
+			dbComment.EnsAvatarOriginalUrl,
+			dbComment.EnsAvatarOriginalContentType,
+			dbComment.EnsAvatarFormattedUrl,
+			dbComment.EnsAvatarFormattedContentType,
 			dbComment.Reputation,
 			dbComment.UserCreatedAt,
 			dbComment.UserUpdatedAt,
@@ -82,7 +85,9 @@ func (p *postgresGateway) GetComments(ctx context.Context, threadId int64, offse
 			dbComment.RContent,
 			dbComment.RImageFileName,
 			dbComment.RImageOriginalUrl,
-			dbComment.RImageThumbnailUrl,
+			dbComment.RImageOriginalContentType,
+			dbComment.RImageFormattedUrl,
+			dbComment.RImageFormattedContentType,
 			dbComment.RIsDeleted,
 			dbComment.RCreatedAt,
 			dbComment.RDeletedAt,
@@ -121,12 +126,21 @@ func (p *postgresGateway) GetCommentById(ctx context.Context, id int64) (entitie
 		deletedAt = &dbComment.DeletedAt.Time
 	}
 
-	image := entities.NewImage(dbComment.ImageFileName, dbComment.ImageOriginalUrl, dbComment.ImageThumbnailUrl)
+	image := entities.NewImage(
+		dbComment.ImageFileName,
+		dbComment.ImageOriginalUrl,
+		dbComment.ImageOriginalContentType,
+		dbComment.ImageFormattedUrl,
+		dbComment.ImageFormattedContentType,
+	)
 	user := toUser(
 		dbComment.Address,
 		dbComment.EnsName,
 		dbComment.EnsAvatarFileName,
-		dbComment.EnsAvatarUrl,
+		dbComment.EnsAvatarOriginalUrl,
+		dbComment.EnsAvatarOriginalContentType,
+		dbComment.EnsAvatarFormattedUrl,
+		dbComment.EnsAvatarFormattedContentType,
 		dbComment.Reputation,
 		dbComment.UserCreatedAt,
 		dbComment.UserUpdatedAt,
@@ -136,7 +150,9 @@ func (p *postgresGateway) GetCommentById(ctx context.Context, id int64) (entitie
 		dbComment.RContent,
 		dbComment.RImageFileName,
 		dbComment.RImageOriginalUrl,
-		dbComment.RImageThumbnailUrl,
+		dbComment.RImageOriginalContentType,
+		dbComment.RImageFormattedUrl,
+		dbComment.RImageFormattedContentType,
 		dbComment.RIsDeleted,
 		dbComment.RCreatedAt,
 		dbComment.RDeletedAt,
@@ -173,7 +189,9 @@ func toRepliedToComment(
 	content pgtype.Text,
 	imageFileName pgtype.Text,
 	imageOriginalUrl pgtype.Text,
-	imageResizedUrl pgtype.Text,
+	imageOriginalContentType pgtype.Text,
+	imageFormattedUrl pgtype.Text,
+	imageFormattedContentType pgtype.Text,
 	isDeleted pgtype.Bool,
 	deletedAt pgtype.Timestamp,
 	createdAt pgtype.Timestamp,
@@ -185,7 +203,13 @@ func toRepliedToComment(
 	if deletedAt.Valid {
 		commentDeletedAt = &deletedAt.Time
 	}
-	repliedToImage := entities.NewImage(imageFileName.String, imageOriginalUrl.String, imageResizedUrl.String)
+	repliedToImage := entities.NewImage(
+		imageFileName.String,
+		imageOriginalUrl.String,
+		imageOriginalContentType.String,
+		imageFormattedUrl.String,
+		imageFormattedContentType.String,
+	)
 	comment := entities.NewComment(entities.CommentParams{
 		Id:        id.Int64,
 		Content:   content.String,
