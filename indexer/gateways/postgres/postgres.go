@@ -7,8 +7,10 @@ import (
 
 	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/db/bindings"
+	"github.com/daochanio/backend/indexer/entities"
 	"github.com/daochanio/backend/indexer/settings"
 	"github.com/daochanio/backend/indexer/usecases"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -44,22 +46,91 @@ func (g *postgresGateway) Shutdown(ctx context.Context) {
 }
 
 func (g *postgresGateway) GetLastIndexedBlock(ctx context.Context) (*big.Int, error) {
-	blockNumberStr, err := g.queries.GetLastIndexedBlock(ctx)
+	block, err := g.queries.GetLastIndexedBlock(ctx)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting last indexed block: %w", err)
 	}
 
-	blockNumber := new(big.Int)
-	blockNumber, ok := blockNumber.SetString(blockNumberStr, 10)
-
-	if !ok {
-		return nil, fmt.Errorf("failed to parse block number %s", blockNumberStr)
-	}
-
-	return blockNumber, nil
+	return block.Int, nil
 }
 
-func (g *postgresGateway) UpdateLastIndexedBlock(ctx context.Context, blockNumber *big.Int) error {
-	return g.queries.UpdateLastIndexedBlock(ctx, blockNumber.String())
+func (g *postgresGateway) UpdateLastIndexedBlock(ctx context.Context, block *big.Int) error {
+	return g.queries.UpdateLastIndexedBlock(ctx, pgtype.Numeric{
+		Int:   block,
+		Valid: true,
+	})
+}
+
+func (g *postgresGateway) InsertTransferEvents(ctx context.Context, from *big.Int, to *big.Int, transfers []entities.Transfer) error {
+	tx, err := g.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	qtx := g.queries.WithTx(tx)
+
+	if err := qtx.DeleteTransfers(ctx, bindings.DeleteTransfersParams{
+		BlockNumber: pgtype.Numeric{
+			Int:   from,
+			Valid: true,
+		},
+		BlockNumber_2: pgtype.Numeric{
+			Int:   to,
+			Valid: true,
+		},
+	}); err != nil {
+		return fmt.Errorf("failed to delete transfers: %w", err)
+	}
+
+	params := []bindings.InsertTransfersParams{}
+	for _, transfer := range transfers {
+		log := transfer.Log()
+		params = append(params, bindings.InsertTransfersParams{
+			BlockNumber: pgtype.Numeric{
+				Int:   log.BlockNumber(),
+				Valid: true,
+			},
+			TransactionID: log.TransactionId(),
+			LogIndex:      int64(log.Index()),
+			FromAddress:   transfer.FromAddress(),
+			ToAddress:     transfer.ToAddress(),
+			Amount: pgtype.Numeric{
+				Int:   transfer.Amount(),
+				Valid: true,
+			},
+		})
+	}
+
+	if _, err := qtx.InsertTransfers(ctx, params); err != nil {
+		return fmt.Errorf("failed to insert transfers: %w", err)
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (g *postgresGateway) UpdateReputation(ctx context.Context, addresses []string) error {
+	tx, err := g.db.Begin(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback(ctx)
+
+	qtx := g.queries.WithTx(tx)
+
+	if err := qtx.ZeroReputation(ctx, addresses); err != nil {
+		return fmt.Errorf("failed to zero reputation: %w", err)
+	}
+
+	if err := qtx.AddReputation(ctx, addresses); err != nil {
+		return fmt.Errorf("failed to add reputation: %w", err)
+	}
+
+	if err := qtx.DeductReputation(ctx, addresses); err != nil {
+		return fmt.Errorf("failed to deduct reputation: %w", err)
+	}
+
+	return tx.Commit(ctx)
 }

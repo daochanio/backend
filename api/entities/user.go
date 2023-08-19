@@ -1,12 +1,15 @@
 package entities
 
-import "time"
+import (
+	"math/big"
+	"time"
+)
 
 type User struct {
 	address    string
 	ensName    *string
 	ensAvatar  *Image
-	reputation int64
+	reputation *big.Int
 	createdAt  time.Time
 	updatedAt  *time.Time
 }
@@ -15,7 +18,7 @@ type UserParams struct {
 	Address    string
 	EnsName    *string
 	EnsAvatar  *Image
-	Reputation int64
+	Reputation *big.Int
 	CreatedAt  time.Time
 	UpdatedAt  *time.Time
 }
@@ -43,7 +46,7 @@ func (u *User) EnsAvatar() *Image {
 	return u.ensAvatar
 }
 
-func (u *User) Reputation() int64 {
+func (u *User) Reputation() *big.Int {
 	return u.reputation
 }
 

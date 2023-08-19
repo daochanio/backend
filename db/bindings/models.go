@@ -41,7 +41,7 @@ type CommentVote struct {
 
 type IndexerProgress struct {
 	Version          string
-	LastIndexedBlock string
+	LastIndexedBlock pgtype.Numeric
 	IndexedOn        pgtype.Timestamp
 }
 
@@ -69,12 +69,21 @@ type ThreadVote struct {
 	Vote      int16
 }
 
+type Transfer struct {
+	BlockNumber   pgtype.Numeric
+	TransactionID string
+	LogIndex      int64
+	FromAddress   string
+	ToAddress     string
+	Amount        pgtype.Numeric
+}
+
 type User struct {
 	Address                       string
 	EnsName                       pgtype.Text
 	CreatedAt                     pgtype.Timestamp
 	UpdatedAt                     pgtype.Timestamp
-	Reputation                    int64
+	Reputation                    pgtype.Numeric
 	EnsAvatarFileName             pgtype.Text
 	EnsAvatarOriginalUrl          pgtype.Text
 	EnsAvatarOriginalContentType  pgtype.Text

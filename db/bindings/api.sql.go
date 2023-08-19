@@ -323,7 +323,7 @@ type GetCommentRow struct {
 	EnsAvatarOriginalContentType  pgtype.Text
 	EnsAvatarFormattedUrl         pgtype.Text
 	EnsAvatarFormattedContentType pgtype.Text
-	Reputation                    int64
+	Reputation                    pgtype.Numeric
 	UserCreatedAt                 pgtype.Timestamp
 	UserUpdatedAt                 pgtype.Timestamp
 }
@@ -445,7 +445,7 @@ type GetCommentsRow struct {
 	EnsAvatarOriginalContentType  pgtype.Text
 	EnsAvatarFormattedUrl         pgtype.Text
 	EnsAvatarFormattedContentType pgtype.Text
-	Reputation                    int64
+	Reputation                    pgtype.Numeric
 	UserCreatedAt                 pgtype.Timestamp
 	UserUpdatedAt                 pgtype.Timestamp
 	FullCount                     int64
@@ -548,7 +548,7 @@ type GetThreadRow struct {
 	EnsAvatarOriginalContentType  pgtype.Text
 	EnsAvatarFormattedUrl         pgtype.Text
 	EnsAvatarFormattedContentType pgtype.Text
-	Reputation                    int64
+	Reputation                    pgtype.Numeric
 	UserCreatedAt                 pgtype.Timestamp
 	UserUpdatedAt                 pgtype.Timestamp
 }
@@ -625,7 +625,7 @@ type GetThreadsRow struct {
 	EnsAvatarOriginalContentType  pgtype.Text
 	EnsAvatarFormattedUrl         pgtype.Text
 	EnsAvatarFormattedContentType pgtype.Text
-	Reputation                    int64
+	Reputation                    pgtype.Numeric
 	UserCreatedAt                 pgtype.Timestamp
 	UserUpdatedAt                 pgtype.Timestamp
 }

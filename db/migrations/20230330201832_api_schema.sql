@@ -6,13 +6,17 @@ CREATE TABLE users (
 	ens_name VARCHAR(255) NULL DEFAULT NULL,
 	created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 	updated_at TIMESTAMP NULL DEFAULT NULL,
-	reputation BIGINT NOT NULL DEFAULT 0,
+	reputation NUMERIC NOT NULL DEFAULT 0,
 	ens_avatar_file_name VARCHAR(255) NULL DEFAULT NULL,
 	ens_avatar_original_url VARCHAR(255) NULL DEFAULT NULL,
 	ens_avatar_original_content_type VARCHAR(255) NULL DEFAULT NULL,
 	ens_avatar_formatted_url VARCHAR(255) NULL DEFAULT NULL,
 	ens_avatar_formatted_content_type VARCHAR(255) NULL DEFAULT NULL
 );
+
+-- seed zero address as user
+INSERT INTO users (address, created_at)
+VALUES ('0x0000000000000000000000000000000000000000', NOW());
 
 CREATE TABLE challenges (
 	address VARCHAR(42) PRIMARY KEY,

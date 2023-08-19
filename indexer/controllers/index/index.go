@@ -2,6 +2,7 @@ package index
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/daochanio/backend/common"
@@ -37,9 +38,13 @@ func (i *indexer) Start(ctx context.Context) {
 			i.logger.Info(ctx).Msg("indexer stopped")
 			return
 		default:
-			err := i.indexBlocks.Execute(ctx)
-			// sleep a bit if we didn't index anything to avoid spamming the blockchain or to recover from transient errors
-			if err != nil {
+			if err := i.indexBlocks.Execute(ctx); err != nil {
+				if !errors.Is(err, common.ErrNoNewBlocks) {
+					// error log if the error was anything other than no new blocks
+					i.logger.Error(ctx).Err(err).Msg("could not index blocks")
+				}
+
+				// sleep a bit if we errored while indexing to avoid spamming the blockchain provider and allow time recover from transient errors or to simply wait for a new block
 				time.Sleep(time.Duration(i.settings.IntervalSeconds()) * time.Second)
 			}
 		}

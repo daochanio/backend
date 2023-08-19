@@ -2,7 +2,6 @@ package http
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -44,7 +43,7 @@ func toUserJson(user entities.User) userJson {
 		Address:    user.Address(),
 		EnsName:    user.EnsName(),
 		EnsAvatar:  toImageJson(user.EnsAvatar()),
-		Reputation: fmt.Sprint(user.Reputation()),
+		Reputation: user.Reputation().String(),
 		CreatedAt:  user.CreatedAt(),
 		UpdatedAt:  user.UpdatedAt(),
 	}

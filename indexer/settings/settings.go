@@ -10,21 +10,19 @@ import (
 type Settings interface {
 	PostgresConfig() *pgxpool.Config
 	BlockchainURI() string
-	TokenAddress() string
-	GovernorAddress() string
-	ControllerAddress() string
+	ReputationAddress() string
 	ReorgOffset() int64
 	IntervalSeconds() int64
+	MaxBlockRange() int64
 }
 
 type settings struct {
 	pgConnectionString string
 	blockchainURI      string
-	tokenAddress       string
-	governorAddress    string
-	controllerAddress  string
+	reputationAddress  string
 	reorgOffset        int64
 	intervalSeconds    int64
+	maxBlockRange      int64
 }
 
 func NewSettings() Settings {
@@ -38,14 +36,18 @@ func NewSettings() Settings {
 		panic(err)
 	}
 
+	maxBlockRange, err := strconv.Atoi(os.Getenv("MAX_BLOCK_RANGE"))
+	if err != nil {
+		panic(err)
+	}
+
 	return &settings{
 		pgConnectionString: os.Getenv("PG_CONNECTION_STRING"),
 		blockchainURI:      os.Getenv("BLOCKCHAIN_URI"),
-		tokenAddress:       os.Getenv("TOKEN_ADDRESS"),
-		governorAddress:    os.Getenv("GOVERNOR_ADDRESS"),
-		controllerAddress:  os.Getenv("CONTROLLER_ADDRESS"),
+		reputationAddress:  os.Getenv("REPUTATION_ADDRESS"),
 		reorgOffset:        int64(reorgOffset),
 		intervalSeconds:    int64(intervalSeconds),
+		maxBlockRange:      int64(maxBlockRange),
 	}
 }
 
@@ -62,16 +64,8 @@ func (s *settings) BlockchainURI() string {
 	return s.blockchainURI
 }
 
-func (s *settings) TokenAddress() string {
-	return s.tokenAddress
-}
-
-func (s *settings) GovernorAddress() string {
-	return s.governorAddress
-}
-
-func (s *settings) ControllerAddress() string {
-	return s.controllerAddress
+func (s *settings) ReputationAddress() string {
+	return s.reputationAddress
 }
 
 // the number of blocks to offset by to be resilient to reorgs
@@ -81,4 +75,8 @@ func (s *settings) ReorgOffset() int64 {
 
 func (s *settings) IntervalSeconds() int64 {
 	return s.intervalSeconds
+}
+
+func (s *settings) MaxBlockRange() int64 {
+	return s.maxBlockRange
 }

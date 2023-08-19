@@ -7,7 +7,61 @@ package bindings
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const addReputation = `-- name: AddReputation :exec
+UPDATE users
+SET reputation = reputation + sub.amount
+FROM (
+  SELECT t.to_address as address, SUM(t.amount) as amount
+  FROM transfers t
+  WHERE t.to_address = ANY($1::varchar(42)[])
+  GROUP BY to_address
+) as sub
+WHERE users.address = sub.address
+`
+
+// if the user address is the to_address, then add the amount
+func (q *Queries) AddReputation(ctx context.Context, dollar_1 []string) error {
+	_, err := q.db.Exec(ctx, addReputation, dollar_1)
+	return err
+}
+
+const deductReputation = `-- name: DeductReputation :exec
+UPDATE users
+SET reputation = reputation - sub.amount
+FROM (
+  SELECT t.from_address as address, SUM(t.amount) as amount
+  FROM transfers t
+  WHERE t.from_address = ANY($1::varchar(42)[])
+  GROUP BY from_address
+) as sub
+WHERE users.address = sub.address
+`
+
+// if the user address is the from_address, then deduct the amount
+func (q *Queries) DeductReputation(ctx context.Context, dollar_1 []string) error {
+	_, err := q.db.Exec(ctx, deductReputation, dollar_1)
+	return err
+}
+
+const deleteTransfers = `-- name: DeleteTransfers :exec
+DELETE FROM transfers
+WHERE block_number >= $1
+AND block_number <= $2
+`
+
+type DeleteTransfersParams struct {
+	BlockNumber   pgtype.Numeric
+	BlockNumber_2 pgtype.Numeric
+}
+
+func (q *Queries) DeleteTransfers(ctx context.Context, arg DeleteTransfersParams) error {
+	_, err := q.db.Exec(ctx, deleteTransfers, arg.BlockNumber, arg.BlockNumber_2)
+	return err
+}
 
 const getLastIndexedBlock = `-- name: GetLastIndexedBlock :one
 SELECT last_indexed_block
@@ -16,11 +70,20 @@ WHERE version = '1.0'
 LIMIT 1
 `
 
-func (q *Queries) GetLastIndexedBlock(ctx context.Context) (string, error) {
+func (q *Queries) GetLastIndexedBlock(ctx context.Context) (pgtype.Numeric, error) {
 	row := q.db.QueryRow(ctx, getLastIndexedBlock)
-	var last_indexed_block string
+	var last_indexed_block pgtype.Numeric
 	err := row.Scan(&last_indexed_block)
 	return last_indexed_block, err
+}
+
+type InsertTransfersParams struct {
+	BlockNumber   pgtype.Numeric
+	TransactionID string
+	LogIndex      int64
+	FromAddress   string
+	ToAddress     string
+	Amount        pgtype.Numeric
 }
 
 const updateLastIndexedBlock = `-- name: UpdateLastIndexedBlock :exec
@@ -31,7 +94,19 @@ SET
 WHERE version = '1.0'
 `
 
-func (q *Queries) UpdateLastIndexedBlock(ctx context.Context, lastIndexedBlock string) error {
+func (q *Queries) UpdateLastIndexedBlock(ctx context.Context, lastIndexedBlock pgtype.Numeric) error {
 	_, err := q.db.Exec(ctx, updateLastIndexedBlock, lastIndexedBlock)
+	return err
+}
+
+const zeroReputation = `-- name: ZeroReputation :exec
+UPDATE users
+SET reputation = 0
+WHERE address = ANY($1::varchar(42)[])
+`
+
+// set the reputation of all users to 0
+func (q *Queries) ZeroReputation(ctx context.Context, dollar_1 []string) error {
+	_, err := q.db.Exec(ctx, zeroReputation, dollar_1)
 	return err
 }
