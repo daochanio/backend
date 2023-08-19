@@ -54,6 +54,10 @@ func (g *ethereumGateway) GetLatestBlockNumber(ctx context.Context) (*big.Int, e
 		return nil, err
 	}
 
+	if err != nil {
+		return nil, fmt.Errorf("failed to get latest block number: %w", err)
+	}
+
 	return header.Number, nil
 }
 
