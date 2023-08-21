@@ -83,12 +83,12 @@ func (s *subscriber) execute(ctx context.Context, group string, consumer string)
 			case common.VoteStream:
 				if err := s.processVoteMessage(ctx, message.ID, body); err != nil {
 					s.logger.Error(ctx).Err(err).Msgf("error processing vote message: %v %v %v", result.Stream, message.ID, message.Values)
+					continue // skip acking the message if we failed to process it
 				}
 			default:
 				s.logger.Error(ctx).Msgf("inavlid stream %v", result.Stream)
 			}
 
-			// TODO: Should we ack the message if it fails to process?
 			if err := s.client.XAck(ctx, result.Stream, group, message.ID).Err(); err != nil {
 				s.logger.Error(ctx).Err(err).Msgf("error acknowledging message: %v %v %v", result.Stream, message.ID, message.Values)
 			}
