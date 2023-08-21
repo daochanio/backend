@@ -7,6 +7,7 @@ import (
 
 	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/distributor/settings"
+	"github.com/daochanio/backend/distributor/usecases"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -20,27 +21,19 @@ type subscriber struct {
 	settings       settings.Settings
 	commonSettings common.Settings
 	client         *redis.Client
+	processVotes   *usecases.ProcessVotes
 }
 
-func NewSubscriber(logger common.Logger, settings settings.Settings, commonSettings common.Settings) Subscriber {
+func NewSubscriber(logger common.Logger, settings settings.Settings, commonSettings common.Settings, processVotes *usecases.ProcessVotes) Subscriber {
 	return &subscriber{
 		logger:         logger,
 		settings:       settings,
 		commonSettings: commonSettings,
 		client:         nil,
+		processVotes:   processVotes,
 	}
 }
 
-// TODO:
-// Create a distribution record that will represent the next distribution to execute
-//   - Can have things like the transaction id, the block number, the block hash, etc associated with it
-//
-// As we process votes from the stream, we can hydrate the full vote record by calling the API
-// We can then make decisions on whether the vote should be counted towards a distribution or not and create a vote record for it
-//   - I.e if the vote is on a comment/thread that is older than a certain cuttoff
-//   - We will always write a record to the table for every vote we process, regardless of whether it is counted or not with some kind of accepted/discarded flag
-//
-// When the next distribution round runs, the records that are accepted and not associated with a distribution can be processed and then tied to a distribution through FK
 func (s *subscriber) Start(ctx context.Context) {
 	s.logger.Info(ctx).Msg("starting subscriber")
 
@@ -85,8 +78,17 @@ func (s *subscriber) execute(ctx context.Context, group string, consumer string)
 
 	for _, result := range results {
 		for _, message := range result.Messages {
-			s.logger.Info(ctx).Msgf("received message: %v %v %v", result.Stream, message.ID, message.Values)
+			body := []byte(message.Values["body"].(string))
+			switch result.Stream {
+			case common.VoteStream:
+				if err := s.processVoteMessage(ctx, message.ID, body); err != nil {
+					s.logger.Error(ctx).Err(err).Msgf("error processing vote message: %v %v %v", result.Stream, message.ID, message.Values)
+				}
+			default:
+				s.logger.Error(ctx).Msgf("inavlid stream %v", result.Stream)
+			}
 
+			// TODO: Should we ack the message if it fails to process?
 			if err := s.client.XAck(ctx, result.Stream, group, message.ID).Err(); err != nil {
 				s.logger.Error(ctx).Err(err).Msgf("error acknowledging message: %v %v %v", result.Stream, message.ID, message.Values)
 			}
@@ -95,7 +97,7 @@ func (s *subscriber) execute(ctx context.Context, group string, consumer string)
 }
 
 // Reads messages from the streams starting by checking the pending messages that are unacknowledged
-// If there are no messages, block for 10 seconds
+// If there are no messages, block for 10 seconds (long polling)
 func (s *subscriber) readMessages(ctx context.Context, group string, consumer string) ([]redis.XStream, error) {
 	for _, stream := range []string{common.VoteStream} {
 		messages, _, err := s.client.XAutoClaim(ctx, &redis.XAutoClaimArgs{
@@ -137,4 +139,20 @@ func (s *subscriber) readMessages(ctx context.Context, group string, consumer st
 	}
 
 	return results, err
+}
+
+func (s *subscriber) processVoteMessage(ctx context.Context, messageID string, data []byte) error {
+	vote, err := common.Unmarshal[common.VoteMessage](data)
+
+	if err != nil {
+		return fmt.Errorf("error parsing vote message: %v", messageID)
+	}
+
+	s.logger.Info(ctx).Msgf("processing vote: %v %v %v", vote.Id, vote.Type, vote.Address)
+
+	if err := s.processVotes.Execute(ctx); err != nil {
+		return fmt.Errorf("error processing vote: %v", messageID)
+	}
+
+	return nil
 }

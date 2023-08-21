@@ -1,10 +1,10 @@
 package http
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/daochanio/backend/api/usecases"
+	"github.com/daochanio/backend/common"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -30,8 +30,7 @@ func (h *httpServer) putChallengeRoute(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	address := chi.URLParam(r, "address")
 
-	var body signinJsonRequest
-	err := json.NewDecoder(r.Body).Decode(&body)
+	body, err := common.Decode[signinJsonRequest](r.Body)
 	if err != nil {
 		h.presentUnathorized(w, r, err)
 		return

@@ -100,11 +100,10 @@ func (i *images) getAuthorizationHeaders() common.Header {
 }
 
 func (i *images) toImage(reader io.Reader) (*entities.Image, error) {
-	imageJSON := &ImageJSON{}
-	err := json.NewDecoder(reader).Decode(imageJSON)
+	imageJSON, err := common.Decode[ImageJSON](reader)
 
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal get images response error %w", err)
+		return nil, fmt.Errorf("decoding get images response error %w", err)
 	}
 
 	image := entities.NewImage(

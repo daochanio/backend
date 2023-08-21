@@ -2,10 +2,12 @@ package distribute
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/distributor/settings"
+	"github.com/daochanio/backend/distributor/usecases"
 )
 
 type Distributor interface {
@@ -14,14 +16,16 @@ type Distributor interface {
 }
 
 type distributor struct {
-	logger   common.Logger
-	settings settings.Settings
+	logger             common.Logger
+	settings           settings.Settings
+	createDistribution *usecases.CreateDistribution
 }
 
-func NewDistributor(logger common.Logger, settings settings.Settings) Distributor {
+func NewDistributor(logger common.Logger, settings settings.Settings, createDistribution *usecases.CreateDistribution) Distributor {
 	return &distributor{
 		logger,
 		settings,
+		createDistribution,
 	}
 }
 
@@ -33,18 +37,17 @@ func (d *distributor) Start(ctx context.Context) {
 			d.logger.Info(ctx).Msg("distributor stopped")
 			return
 		default:
-			d.distribute(ctx)
+			if err := d.createDistribution.Execute(ctx); err != nil {
+				if errors.Is(err, common.ErrNotDistributionTime) {
+					time.Sleep(10 * time.Second)
+				} else {
+					d.logger.Error(ctx).Err(err).Msg("error running distribution")
+				}
+			}
 		}
 	}
 }
 
 func (d *distributor) Shutdown(ctx context.Context) {
 	d.logger.Info(ctx).Msg("shutting down distributor")
-}
-
-func (d *distributor) distribute(ctx context.Context) {
-	// TODO: wait until it is past X time UTC and it has been at least Y hours since last run
-	time.Sleep(time.Second * 10)
-
-	// TODO: run distribution logic here
 }

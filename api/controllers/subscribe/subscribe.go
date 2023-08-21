@@ -2,7 +2,6 @@ package subscribe
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -172,11 +171,12 @@ func (s *subscriber) flushBuffer(ctx context.Context) {
 	for _, bufferMessage := range *s.messageBuffer {
 		stream := bufferMessage.stream.Stream
 		message := bufferMessage.message
+		body := []byte(message.Values["body"].(string))
 		switch stream {
 		case common.VoteStream:
 			{
-				var voteMessage common.VoteMessage
-				if err := parseMessage(ctx, message, &voteMessage); err != nil {
+				voteMessage, err := common.Unmarshal[common.VoteMessage](body)
+				if err != nil {
 					s.logger.Error(ctx).Err(err).Msgf("error parsing vote message: %v %v %v", stream, message.ID, message.Values)
 					continue
 				}
@@ -185,8 +185,8 @@ func (s *subscriber) flushBuffer(ctx context.Context) {
 			}
 		case common.SigninStream:
 			{
-				var signinMessage common.SigninMessage
-				if err := parseMessage(ctx, message, &signinMessage); err != nil {
+				signinMessage, err := common.Unmarshal[common.SigninMessage](body)
+				if err != nil {
 					s.logger.Error(ctx).Err(err).Msgf("error parsing signin message: %v %v %v", stream, message.ID, message.Values)
 					continue
 				}
@@ -210,15 +210,6 @@ func (s *subscriber) flushBuffer(ctx context.Context) {
 	go s.hydrateUsers(ctx, &wg, userAddresses)
 
 	wg.Wait()
-}
-
-func parseMessage[T any](ctx context.Context, message redis.XMessage, result *T) error {
-	body := []byte(message.Values["body"].(string))
-	if err := json.Unmarshal(body, result); err != nil {
-		return fmt.Errorf("error unmarshalling message: %v %w", message, err)
-	}
-
-	return nil
 }
 
 func (s *subscriber) aggregateVotes(ctx context.Context, wg *sync.WaitGroup, votes []entities.Vote) {

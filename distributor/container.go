@@ -7,6 +7,7 @@ import (
 	"github.com/daochanio/backend/distributor/controllers/distribute"
 	"github.com/daochanio/backend/distributor/controllers/subscribe"
 	"github.com/daochanio/backend/distributor/settings"
+	"github.com/daochanio/backend/distributor/usecases"
 	"go.uber.org/dig"
 )
 
@@ -25,6 +26,12 @@ func newContainer(ctx context.Context) *dig.Container {
 		panic(err)
 	}
 	if err := container.Provide(settings.NewSettings); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewCreateDistribution); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(usecases.NewProcessVotes); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(distribute.NewDistributor); err != nil {

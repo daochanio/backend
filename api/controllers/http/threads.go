@@ -1,7 +1,6 @@
 package http
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -72,8 +71,7 @@ func (h *httpServer) getThreadsRoute(w http.ResponseWriter, r *http.Request) {
 
 func (h *httpServer) createThreadRoute(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	var body createThreadJson
-	err := json.NewDecoder(r.Body).Decode(&body)
+	body, err := common.Decode[createThreadJson](r.Body)
 	if err != nil {
 		h.presentBadRequest(w, r, err)
 		return

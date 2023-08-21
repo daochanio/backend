@@ -34,11 +34,11 @@ func NewIndexBlocksUseCase(
 }
 
 // Execute checks the last block indexed (minus an offset) and the latest block produced and indexes all blocks in between.
-// Executre returns an error if it failed to fully index the blocks.
+// Return an error if we failed to fully index new blocks.
 // We want to make indexing idempotent and be resilient to re-orgs so we:
-//   - keep track of last block indexed
-//   - read events from last block indexed minus offset to lastest block
-//   - always delete existing events for the blocks being indexed
+//   - Keep track of last block indexed
+//   - Read events from last block indexed minus offset to lastest block
+//   - Always delete existing events for the blocks being indexed
 func (u *IndexBlocks) Execute(ctx context.Context) error {
 	fromBlock, toBlock, err := u.getBlockRange(ctx)
 

@@ -26,9 +26,10 @@ func NewIndexReputationUseCase(
 	}
 }
 
-// - remove all pre-existing transfers events for the blocks being indexed as a re-org could create orphaned events that need to be cleaned up
-// - insert new transfers
-// - track dirty addresses and set new reputation values
+// Remove all pre-existing transfers events for the blocks being indexed as a re-org could create orphaned events that need to be cleaned up.
+// Insert new transfers.
+// Track dirty addresses and set new reputation values.
+// We must zero all addresses first, as an address could have a negative transfer record but not positive and vise versa, throwing off the math.
 func (u *IndexReputation) Execute(ctx context.Context, from *big.Int, to *big.Int, transfers []entities.Transfer) error {
 
 	err := u.database.InsertTransferEvents(ctx, from, to, transfers)

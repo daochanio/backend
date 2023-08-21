@@ -51,7 +51,6 @@ func (i *indexer) Start(ctx context.Context) {
 	}
 }
 
-// Do any future shutdown resource cleanup here
 func (i *indexer) Shutdown(ctx context.Context) {
 	i.logger.Info(ctx).Msg("shutting down indexer")
 }

@@ -1,7 +1,6 @@
 package http
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -48,8 +47,7 @@ func (h *httpServer) getCommentsRoute(w http.ResponseWriter, r *http.Request) {
 func (h *httpServer) createCommentRoute(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var body createCommentJson
-	err := json.NewDecoder(r.Body).Decode(&body)
+	body, err := common.Decode[createCommentJson](r.Body)
 	if err != nil {
 		h.presentBadRequest(w, r, fmt.Errorf("invalid json: %w", err))
 		return
