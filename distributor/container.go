@@ -28,10 +28,10 @@ func newContainer(ctx context.Context) *dig.Container {
 	if err := container.Provide(settings.NewSettings); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(usecases.NewCreateDistribution); err != nil {
+	if err := container.Provide(usecases.NewDistribute); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(usecases.NewProcessVotes); err != nil {
+	if err := container.Provide(usecases.NewProcessVote); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(distribute.NewDistributor); err != nil {

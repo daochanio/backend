@@ -18,10 +18,10 @@ type Distributor interface {
 type distributor struct {
 	logger             common.Logger
 	settings           settings.Settings
-	createDistribution *usecases.CreateDistribution
+	createDistribution *usecases.Distribute
 }
 
-func NewDistributor(logger common.Logger, settings settings.Settings, createDistribution *usecases.CreateDistribution) Distributor {
+func NewDistributor(logger common.Logger, settings settings.Settings, createDistribution *usecases.Distribute) Distributor {
 	return &distributor{
 		logger,
 		settings,

@@ -21,10 +21,10 @@ type subscriber struct {
 	settings       settings.Settings
 	commonSettings common.Settings
 	client         *redis.Client
-	processVotes   *usecases.ProcessVotes
+	processVotes   *usecases.ProcessVote
 }
 
-func NewSubscriber(logger common.Logger, settings settings.Settings, commonSettings common.Settings, processVotes *usecases.ProcessVotes) Subscriber {
+func NewSubscriber(logger common.Logger, settings settings.Settings, commonSettings common.Settings, processVotes *usecases.ProcessVote) Subscriber {
 	return &subscriber{
 		logger:         logger,
 		settings:       settings,

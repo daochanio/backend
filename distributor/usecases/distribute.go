@@ -8,16 +8,16 @@ import (
 	"github.com/daochanio/backend/distributor/settings"
 )
 
-type CreateDistribution struct {
+type Distribute struct {
 	settings settings.Settings
 	logger   common.Logger
 }
 
-func NewCreateDistribution(
+func NewDistribute(
 	settings settings.Settings,
 	logger common.Logger,
-) *CreateDistribution {
-	return &CreateDistribution{
+) *Distribute {
+	return &Distribute{
 		settings,
 		logger,
 	}
@@ -34,7 +34,7 @@ func NewCreateDistribution(
 //
 // When the next distribution round runs, the votes that are accepted and not associated
 // with a distribution are processed and then tied to a distribution through FK.
-func (u *CreateDistribution) Execute(ctx context.Context) error {
+func (u *Distribute) Execute(ctx context.Context) error {
 	next := time.Now().Truncate(u.settings.Interval()).Add(u.settings.Interval())
 
 	u.logger.Info(ctx).Msgf("next distribution will run in %s", time.Until(next))
