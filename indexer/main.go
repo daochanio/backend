@@ -7,9 +7,8 @@ import (
 	"syscall"
 
 	"github.com/daochanio/backend/common"
-	"github.com/daochanio/backend/indexer/controllers/index"
-	"github.com/daochanio/backend/indexer/settings"
-	"github.com/daochanio/backend/indexer/usecases"
+	"github.com/daochanio/backend/core/gateways"
+	"github.com/daochanio/backend/indexer/index"
 )
 
 func main() {
@@ -23,16 +22,24 @@ func main() {
 	}
 }
 
-func start(ctx context.Context, logger common.Logger, indexer index.Indexer, settings settings.Settings, database usecases.Database, blockchain usecases.Blockchain) {
-	database.Start(ctx)
-	blockchain.Start(ctx)
+func start(
+	ctx context.Context,
+	logger common.Logger,
+	commonSettings common.Settings,
+	indexer index.Indexer,
+	settings Settings,
+	database gateways.Database,
+	blockchain gateways.Blockchain,
+) {
+	database.Start(ctx, settings.DatabaseConfig())
+	blockchain.Start(ctx, settings.BlockchainConfig())
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
-		indexer.Start(ctx)
+		indexer.Start(ctx, settings.IndexerConfig())
 	}()
 
 	logger.Info(ctx).Msg("awaiting kill signal")

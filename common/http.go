@@ -9,6 +9,7 @@ import (
 
 type HttpClient interface {
 	Do(ctx context.Context, method string, url string, body io.Reader, options *HttpOptions) (*http.Response, error)
+	Close()
 }
 
 type Header struct {
@@ -36,6 +37,10 @@ func (c *httpClient) Do(ctx context.Context, method string, url string, body io.
 	return FunctionRetrier(ctx, func() (*http.Response, error) {
 		return c.doInternal(ctx, method, url, body, options)
 	})
+}
+
+func (c *httpClient) Close() {
+	c.client.CloseIdleConnections()
 }
 
 func (c *httpClient) doInternal(ctx context.Context, method string, uri string, body io.Reader, options *HttpOptions) (*http.Response, error) {

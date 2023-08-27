@@ -2,7 +2,10 @@ module github.com/daochanio/backend/ethereum
 
 go 1.20
 
-require github.com/ethereum/go-ethereum v1.12.2
+require (
+	github.com/ethereum/go-ethereum v1.12.2
+	github.com/wealdtech/go-ens/v3 v3.5.5
+)
 
 require (
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect

@@ -4,10 +4,9 @@ import (
 	"context"
 
 	"github.com/daochanio/backend/common"
-	"github.com/daochanio/backend/distributor/controllers/distribute"
-	"github.com/daochanio/backend/distributor/controllers/subscribe"
-	"github.com/daochanio/backend/distributor/settings"
-	"github.com/daochanio/backend/distributor/usecases"
+	"github.com/daochanio/backend/core/usecases"
+	"github.com/daochanio/backend/distributor/distribute"
+	"github.com/daochanio/backend/distributor/subscribe"
 	"go.uber.org/dig"
 )
 
@@ -25,7 +24,7 @@ func newContainer(ctx context.Context) *dig.Container {
 	if err := container.Provide(common.NewLogger); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(settings.NewSettings); err != nil {
+	if err := container.Provide(NewSettings); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(usecases.NewDistribute); err != nil {

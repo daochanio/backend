@@ -1,10 +1,13 @@
 go 1.20
 
 use (
+	./core
 	./api
 	./common
 	./distributor
 	./indexer
-	./db
+	./postgres
 	./ethereum
+	./images
+	./redis
 )

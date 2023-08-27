@@ -3,15 +3,10 @@ module github.com/daochanio/backend/api
 go 1.20
 
 require (
-	github.com/ethereum/go-ethereum v1.12.2
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-chi/cors v1.2.1
-	github.com/go-redis/redis_rate/v10 v10.0.1
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/google/uuid v1.3.0
-	github.com/jackc/pgx/v5 v5.4.3
-	github.com/redis/go-redis/v9 v9.0.5
-	github.com/wealdtech/go-ens/v3 v3.5.5
 	go.uber.org/dig v1.17.0
 )
 

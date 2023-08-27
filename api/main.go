@@ -6,10 +6,10 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/daochanio/backend/api/controllers/http"
-	"github.com/daochanio/backend/api/controllers/subscribe"
-	"github.com/daochanio/backend/api/usecases"
+	"github.com/daochanio/backend/api/http"
+	"github.com/daochanio/backend/api/subscribe"
 	"github.com/daochanio/backend/common"
+	"github.com/daochanio/backend/core/gateways"
 )
 
 func main() {
@@ -25,32 +25,34 @@ func main() {
 
 func start(
 	ctx context.Context,
+	commonSettings common.Settings,
+	settings Settings,
 	logger common.Logger,
 	httpServer http.HttpServer,
 	subscriber subscribe.Subscriber,
-	database usecases.Database,
-	cache usecases.Cache,
-	stream usecases.Stream,
-	blockchain usecases.Blockchain,
-	images usecases.Images,
+	database gateways.Database,
+	cache gateways.Cache,
+	stream gateways.Stream,
+	blockchain gateways.Blockchain,
+	images gateways.Images,
 ) {
-	database.Start(ctx)
-	cache.Start(ctx)
-	stream.Start(ctx)
-	blockchain.Start(ctx)
-	images.Start(ctx)
+	database.Start(ctx, settings.DatabaseConfig())
+	cache.Start(ctx, settings.CacheConfig())
+	stream.Start(ctx, settings.StreamConfig())
+	blockchain.Start(ctx, settings.BlockchainConfig())
+	images.Start(ctx, settings.ImagesConfig())
 
 	var wg sync.WaitGroup
 	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
-		httpServer.Start(ctx)
+		httpServer.Start(ctx, settings.HttpConfig())
 	}()
 
 	go func() {
 		defer wg.Done()
-		subscriber.Start(ctx)
+		subscriber.Start(ctx, settings.SubscriberConfig())
 	}()
 
 	logger.Info(ctx).Msg("awaiting kill signal")

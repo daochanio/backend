@@ -7,8 +7,8 @@ import (
 	"syscall"
 
 	"github.com/daochanio/backend/common"
-	"github.com/daochanio/backend/distributor/controllers/distribute"
-	"github.com/daochanio/backend/distributor/controllers/subscribe"
+	"github.com/daochanio/backend/distributor/distribute"
+	"github.com/daochanio/backend/distributor/subscribe"
 )
 
 func main() {
@@ -22,17 +22,24 @@ func main() {
 	}
 }
 
-func start(ctx context.Context, logger common.Logger, distributor distribute.Distributor, subscriber subscribe.Subscriber) {
+func start(
+	ctx context.Context,
+	logger common.Logger,
+	commonSettings common.Settings,
+	settings Settings,
+	distributor distribute.Distributor,
+	subscriber subscribe.Subscriber,
+) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		distributor.Start(ctx)
+		distributor.Start(ctx, settings.DistributorConfig())
 	}()
 
 	go func() {
 		defer wg.Done()
-		subscriber.Start(ctx)
+		subscriber.Start(ctx, settings.SubscribeConfig())
 	}()
 
 	logger.Info(ctx).Msg("awaiting kill signal")

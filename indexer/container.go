@@ -4,11 +4,10 @@ import (
 	"context"
 
 	"github.com/daochanio/backend/common"
-	"github.com/daochanio/backend/indexer/controllers/index"
-	"github.com/daochanio/backend/indexer/gateways/ethereum"
-	"github.com/daochanio/backend/indexer/gateways/postgres"
-	"github.com/daochanio/backend/indexer/settings"
-	"github.com/daochanio/backend/indexer/usecases"
+	"github.com/daochanio/backend/core/usecases"
+	"github.com/daochanio/backend/ethereum"
+	"github.com/daochanio/backend/indexer/index"
+	postgres "github.com/daochanio/backend/postgres/gateway"
 	"go.uber.org/dig"
 )
 
@@ -26,10 +25,10 @@ func newContainer(ctx context.Context) *dig.Container {
 	if err := container.Provide(common.NewLogger); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(settings.NewSettings); err != nil {
+	if err := container.Provide(NewSettings); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(postgres.NewPostgresGateway); err != nil {
+	if err := container.Provide(postgres.NewDatabaseGateway); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(ethereum.NewEthereumGateway); err != nil {

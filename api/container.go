@@ -3,15 +3,14 @@ package main
 import (
 	"context"
 
-	"github.com/daochanio/backend/api/controllers/http"
-	"github.com/daochanio/backend/api/controllers/subscribe"
-	"github.com/daochanio/backend/api/gateways/ethereum"
-	"github.com/daochanio/backend/api/gateways/images"
-	"github.com/daochanio/backend/api/gateways/postgres"
-	"github.com/daochanio/backend/api/gateways/redis"
-	"github.com/daochanio/backend/api/settings"
-	"github.com/daochanio/backend/api/usecases"
+	"github.com/daochanio/backend/api/http"
+	"github.com/daochanio/backend/api/subscribe"
 	"github.com/daochanio/backend/common"
+	"github.com/daochanio/backend/core/usecases"
+	"github.com/daochanio/backend/ethereum"
+	"github.com/daochanio/backend/images"
+	postgres "github.com/daochanio/backend/postgres/gateway"
+	"github.com/daochanio/backend/redis"
 	"go.uber.org/dig"
 )
 
@@ -39,7 +38,7 @@ func provideGeneral(ctx context.Context, container *dig.Container) {
 	if err := container.Provide(common.NewHttpClient); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(settings.NewSettings); err != nil {
+	if err := container.Provide(NewSettings); err != nil {
 		panic(err)
 	}
 }
@@ -57,7 +56,7 @@ func provideGateways(container *dig.Container) {
 	if err := container.Provide(images.NewImagesGateway); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(ethereum.NewBlockchainGateway); err != nil {
+	if err := container.Provide(ethereum.NewEthereumGateway); err != nil {
 		panic(err)
 	}
 }
