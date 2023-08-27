@@ -1,10 +1,10 @@
 [![GPL-3.0 License](https://img.shields.io/github/license/daochanio/backend.svg)](https://github.com/daochanio/backend/blob/main/LICENSE)
 
+[![Lint & Test](https://github.com/daochanio/backend/actions/workflows/lint-test.yml/badge.svg)](https://github.com/daochanio/backend/actions/workflows/lint-test.yml)
 [![API Build](https://github.com/daochanio/backend/actions/workflows/build-api.yml/badge.svg)](https://github.com/daochanio/backend/actions/workflows/build-api.yml)
-[![Migrator Build](https://github.com/daochanio/backend/actions/workflows/build-migrator.yml/badge.svg)](https://github.com/daochanio/backend/actions/workflows/build-migrator.yml)
 [![Distributor Build](https://github.com/daochanio/backend/actions/workflows/build-distributor.yml/badge.svg)](https://github.com/daochanio/backend/actions/workflows/build-distributor.yml)
 [![Indexer Build](https://github.com/daochanio/backend/actions/workflows/build-indexer.yml/badge.svg)](https://github.com/daochanio/backend/actions/workflows/build-indexer.yml)
-[![Lint & Test](https://github.com/daochanio/backend/actions/workflows/lint-test.yml/badge.svg)](https://github.com/daochanio/backend/actions/workflows/lint-test.yml)
+[![Migrator Build](https://github.com/daochanio/backend/actions/workflows/build-migrator.yml/badge.svg)](https://github.com/daochanio/backend/actions/workflows/build-migrator.yml)
 
 # daochan-backend
 
