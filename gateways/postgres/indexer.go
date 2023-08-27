@@ -17,7 +17,7 @@ func (g *postgresGateway) GetLastIndexedBlock(ctx context.Context) (*big.Int, er
 		return nil, fmt.Errorf("error getting last indexed block: %w", err)
 	}
 
-	return block.Int, nil
+	return numericToBigInt(block), nil
 }
 
 func (g *postgresGateway) UpdateLastIndexedBlock(ctx context.Context, block *big.Int) error {
@@ -32,7 +32,9 @@ func (g *postgresGateway) InsertTransferEvents(ctx context.Context, from *big.In
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+
+	defer g.rollback(ctx, tx)
+
 	qtx := g.queries.WithTx(tx)
 
 	if err := qtx.DeleteTransfers(ctx, bindings.DeleteTransfersParams{
@@ -81,7 +83,7 @@ func (g *postgresGateway) UpdateReputation(ctx context.Context, addresses []stri
 		return err
 	}
 
-	defer tx.Rollback(ctx)
+	defer g.rollback(ctx, tx)
 
 	qtx := g.queries.WithTx(tx)
 

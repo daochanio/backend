@@ -69,6 +69,7 @@ func (s *settings) DatabaseConfig() gateways.DatabaseConfig {
 
 func (s *settings) BlockchainConfig() gateways.BlockchainConfig {
 	return gateways.BlockchainConfig{
-		BlockchainURL: s.blockchainURL,
+		BlockchainURL:     s.blockchainURL,
+		ReputationAddress: s.reputationAddress,
 	}
 }

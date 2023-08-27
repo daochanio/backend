@@ -3,11 +3,15 @@ package postgres
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/domain/gateways"
 	"github.com/daochanio/backend/gateways/postgres/bindings"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
@@ -73,4 +77,16 @@ func (p *postgresGateway) Migrate(ctx context.Context, config gateways.DatabaseC
 	}
 
 	return nil
+}
+
+// Rollback returns an err but its idiomatic to call in a defer so we don't
+// have the opportunity to check the error when defering Rollback directly.
+func (p *postgresGateway) rollback(ctx context.Context, tx pgx.Tx) {
+	if err := tx.Rollback(ctx); !errors.Is(err, pgx.ErrTxClosed) {
+		p.logger.Error(ctx).Err(err).Msg("error rolling back transaction")
+	}
+}
+
+func numericToBigInt(num pgtype.Numeric) *big.Int {
+	return new(big.Int).Mul(num.Int, big.NewInt(1).Exp(big.NewInt(10), big.NewInt(int64(num.Exp)), nil))
 }

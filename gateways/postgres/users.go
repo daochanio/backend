@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"errors"
-	"math/big"
 	"time"
 
 	"github.com/daochanio/backend/common"
@@ -117,12 +116,11 @@ func toUser(
 	if updatedAt.Valid {
 		updatedAtTime = &updatedAt.Time
 	}
-	rep := new(big.Int).Mul(reputation.Int, big.NewInt(1).Exp(big.NewInt(10), big.NewInt(int64(reputation.Exp)), nil))
 	return entities.NewUser(entities.UserParams{
 		Address:    address,
 		EnsName:    ensName,
 		EnsAvatar:  ensAvatar,
-		Reputation: rep,
+		Reputation: numericToBigInt(reputation),
 		CreatedAt:  createdAt.Time,
 		UpdatedAt:  updatedAtTime,
 	})

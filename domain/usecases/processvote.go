@@ -18,7 +18,7 @@ type ProcessVoteInput struct {
 // accept or reject the vote based on criteria
 // - address must have a certain amount of reputation to have their votes counted
 // - if the vote is on a comment/thread that is older than a certain cuttoff, it is rejected
-// - if the vote is from the same addres as the comment/thread author, it is rejected
+// - if the vote is from the same address as the comment/thread author, it is rejected
 // - if the vote is from a blacklisted address, it is rejected
 // - if the vote is on a deleted thread/comment, it is rejected
 func (u *ProcessVote) Execute(ctx context.Context) error {
