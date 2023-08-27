@@ -1,44 +1,50 @@
 test-common:
 	go test -v ./common/...
 
+test-domain:
+	go test -v ./domain/...
+
 test-api:
-	go test -v ./api/...
+	go test -v ./cmd/api/...
 
 test-distributor:
-	go test -v ./distributor/...
+	go test -v ./cmd/distributor/...
 
 test-indexer:
-	go test -v ./indexer/...
+	go test -v ./cmd/indexer/...
 
-build-common:
-	go build -o bin/common ./common/
+test-migrator:
+	go test -v ./cmd/migrator/...
 
-build-api:
-	go build -o bin/api ./api/
+test-ethereum:
+	go test -v ./gateways/ethereum/...
 
-build-distributor:
-	go build -o bin/distributor ./distributor/
+test-redis:
+	go test -v ./gateways/redis/...
 
-build-indexer:
-	go build -o bin/indexer ./indexer/
+test-images:
+	go test -v ./gateways/images/...
+
+test-postgres:
+	go test -v ./gateways/postgres/...
 
 run-api:
-	ENV=dev APP_NAME=api go run api/*.go
+	ENV=dev APP_NAME=api go run cmd/api/*.go
 
 run-distributor:
-	ENV=dev APP_NAME=distributor go run distributor/*.go
+	ENV=dev APP_NAME=distributor go run cmd/distributor/*.go
 
 run-indexer:
-	ENV=dev APP_NAME=indexer go run indexer/*.go
+	ENV=dev APP_NAME=indexer go run cmd/indexer/*.go
 
-db-migrate:
-	ENV=dev APP_NAME=db go run db/*.go
+run-migrator:
+	ENV=dev APP_NAME=migrator go run cmd/migrator/*.go
 
-db-add:
-	goose -dir db/migrations create $(name).sql
+postgres-add:
+	goose -dir gateways/postgres/migrations create $(name).sql
 
-db-bindings:
-	sqlc generate --experimental -f "db/sqlc.yml"
+postgres-bindings:
+	sqlc generate --experimental -f "gateways/postgres/sqlc.yml"
 
 docker-build-api:
 	docker build -f .docker/DockerfileApi  -t api .
@@ -49,8 +55,8 @@ docker-build-distributor:
 docker-build-indexer:
 	docker build -f .docker/DockerfileIndexer  -t indexer .
 
-docker-build-db:
-	docker build -f .docker/DockerfileDb  -t db .
+docker-build-migrator:
+	docker build -f .docker/DockerfileMigrator  -t migrator .
 
 docker-run-api:
 	docker rm -f api && docker run -d -p 8080:8080 --env-file .env/.env.api.docker --name api api
@@ -61,8 +67,8 @@ docker-run-distributor:
 docker-run-indexer:
 	docker rm -f indexer && docker run -d --env-file .env/.env.indexer.docker --name indexer indexer
 
-docker-run-db:
-	docker rm -f db && docker run -d --env-file .env/.env.db.docker --name db db
+docker-run-migrator:
+	docker rm -f migrator && docker run -d --env-file .env/.env.migrator.docker --name migrator migrator
 
 docker-run-postgres:
 	docker rm -f postgres && docker run -d  -p 5432:5432 --env-file .env/.env.postgres.docker --name postgres postgres

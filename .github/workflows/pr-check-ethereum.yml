@@ -1,0 +1,31 @@
+name: pr-check-ethereum
+
+on:
+  pull_request:
+    branches:
+      - "*"
+      - "!master"
+
+jobs:
+  pr-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.20.x
+
+      - name: Go build
+        run: go build -v ./gateways/ethereum/...
+
+      - name: Go lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: ./gateways/ethereum
+          args: --enable gocyclo --enable gofmt --enable misspell
+
+      - name: Go test
+        run: go test -v ./gateways/ethereum/...

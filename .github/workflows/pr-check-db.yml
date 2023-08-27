@@ -1,4 +1,4 @@
-name: pr-check-db
+name: pr-check-migrator
 
 on:
   pull_request:
@@ -18,17 +18,17 @@ jobs:
           go-version: 1.20.x
 
       - name: Go build
-        run: go build -v ./db/...
+        run: go build -v ./cmd/migrator/...
 
       - name: Go lint
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          working-directory: ./db
+          working-directory: ./cmd/migrator
           args: --enable gocyclo --enable gofmt --enable misspell
 
       - name: Go test
-        run: go test -v ./db/...
+        run: go test -v ./cmd/migrator/...
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -37,5 +37,5 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./.docker/DockerfileDb
+          file: ./.docker/DockerfileMigrator
           push: false
