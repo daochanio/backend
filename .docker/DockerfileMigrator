@@ -12,7 +12,7 @@ COPY . ./
 
 RUN go mod download
 
-RUN go build -o /main ./cmd/distributor/
+RUN go build -o /main ./cmd/migrator/
 
 
 ##
@@ -23,6 +23,9 @@ FROM gcr.io/distroless/base
 WORKDIR /
 
 COPY --from=build /main /main
+
+# bring the migrations folder
+COPY --from=build /app/gateways/postgres/migrations /migrations
 
 USER nonroot:nonroot
 

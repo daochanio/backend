@@ -6,7 +6,7 @@
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${workspaceRoot}/api",
+      "program": "${workspaceRoot}/cmd/api",
       "cwd": "${workspaceRoot}",
       "env": {
         "ENV": "dev",
@@ -20,7 +20,7 @@
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${workspaceRoot}/distributor",
+      "program": "${workspaceRoot}/cmd/distributor",
       "cwd": "${workspaceRoot}",
       "env": {
         "ENV": "dev",
@@ -34,7 +34,7 @@
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "program": "${workspaceRoot}/indexer",
+      "program": "${workspaceRoot}/cmd/indexer",
       "cwd": "${workspaceRoot}",
       "env": {
         "ENV": "dev",

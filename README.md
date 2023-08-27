@@ -1,15 +1,10 @@
+[![GPL-3.0 License](https://img.shields.io/github/license/daochanio/backend.svg)](https://github.com/daochanio/backend/blob/main/LICENSE)
+
 [![API Build](https://github.com/daochanio/backend/actions/workflows/build-api.yml/badge.svg)](https://github.com/daochanio/backend/actions/workflows/build-api.yml)
-[![DB Build](https://github.com/daochanio/backend/actions/workflows/build-db.yml/badge.svg)](https://github.com/daochanio/backend/actions/workflows/build-db.yml)
+[![Migrator Build](https://github.com/daochanio/backend/actions/workflows/build-migrator.yml/badge.svg)](https://github.com/daochanio/backend/actions/workflows/build-migrator.yml)
 [![Distributor Build](https://github.com/daochanio/backend/actions/workflows/build-distributor.yml/badge.svg)](https://github.com/daochanio/backend/actions/workflows/build-distributor.yml)
 [![Indexer Build](https://github.com/daochanio/backend/actions/workflows/build-indexer.yml/badge.svg)](https://github.com/daochanio/backend/actions/workflows/build-indexer.yml)
-
-[![Common Report Card](https://goreportcard.com/badge/github.com/daochanio/backend/common)](https://goreportcard.com/report/github.com/daochanio/backend/common)
-[![API Report Card](https://goreportcard.com/badge/github.com/daochanio/backend/api)](https://goreportcard.com/report/github.com/daochanio/backend/api)
-[![DB Report Card](https://goreportcard.com/badge/github.com/daochanio/backend/db)](https://goreportcard.com/report/github.com/daochanio/backend/db)
-[![Distributor Report Card](https://goreportcard.com/badge/github.com/daochanio/backend/distributor)](https://goreportcard.com/report/github.com/daochanio/backend/distributor)
-[![Indexer Report Card](https://goreportcard.com/badge/github.com/daochanio/backend/indexer)](https://goreportcard.com/report/github.com/daochanio/backend/indexer)
-
-[![GPL-3.0 License](https://img.shields.io/github/license/daochanio/backend.svg)](https://github.com/daochanio/backend/blob/main/LICENSE)
+[![Lint & Test](https://github.com/daochanio/backend/actions/workflows/lint-test.yml/badge.svg)](https://github.com/daochanio/backend/actions/workflows/lint-test.yml)
 
 # daochan-backend
 
