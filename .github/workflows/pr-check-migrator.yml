@@ -1,4 +1,4 @@
-name: pr-check-indexer
+name: pr-check-migrator
 
 on:
   pull_request:
@@ -19,5 +19,5 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./.docker/DockerfileIndexer
+          file: ./.docker/DockerfileMigrator
           push: false
