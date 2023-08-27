@@ -1,16 +1,15 @@
-name: pr-check-lint-test
+name: lint-test
 
 on:
-  pull_request:
-    branches:
-      - "*"
-      - "!master"
+  push:
+    branches: [main]
 
 jobs:
-  pr-check:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Set up Go
         uses: actions/setup-go@v3
