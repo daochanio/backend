@@ -9,11 +9,13 @@ import (
 )
 
 type GetComments struct {
-	database gateways.Database
+	validator common.Validator
+	database  gateways.Database
 }
 
-func NewGetCommentsUseCase(database gateways.Database) *GetComments {
+func NewGetCommentsUseCase(validator common.Validator, database gateways.Database) *GetComments {
 	return &GetComments{
+		validator,
 		database,
 	}
 }
@@ -25,7 +27,7 @@ type GetCommentsInput struct {
 }
 
 func (u *GetComments) Execute(ctx context.Context, input GetCommentsInput) ([]entities.Comment, int64, error) {
-	if err := common.ValidateStruct(input); err != nil {
+	if err := u.validator.ValidateStruct(input); err != nil {
 		return nil, -1, err
 	}
 

@@ -6,10 +6,13 @@ import (
 
 	"github.com/daochanio/backend/cmd/api/http"
 	"github.com/daochanio/backend/cmd/api/subscribe"
+	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/domain/gateways"
+	"github.com/joho/godotenv"
 )
 
 type Settings interface {
+	LoggerConfig() common.LoggerConfig
 	HttpConfig() http.HttpConfig
 	SubscriberConfig() subscribe.SubscriberConfig
 	DatabaseConfig() gateways.DatabaseConfig
@@ -20,6 +23,9 @@ type Settings interface {
 }
 
 type settings struct {
+	env                         string
+	appname                     string
+	hostname                    string
 	port                        string
 	pgConnectionString          string
 	redisCacheConnectionString  string
@@ -32,7 +38,17 @@ type settings struct {
 }
 
 func NewSettings() Settings {
+	_ = godotenv.Load(".env/.env.api.dev")
+
+	hostname, err := os.Hostname()
+	if hostname == "" || err != nil {
+		hostname = "localhost"
+	}
+
 	return &settings{
+		env:                         os.Getenv("ENV"),
+		appname:                     os.Getenv("APP_NAME"),
+		hostname:                    hostname,
 		port:                        os.Getenv("PORT"),
 		pgConnectionString:          os.Getenv("PG_CONNECTION_STRING"),
 		redisCacheConnectionString:  os.Getenv("REDIS_CACHE_CONNECTION_STRING"),
@@ -42,6 +58,14 @@ func NewSettings() Settings {
 		realIPHeader:                os.Getenv("REAL_IP_HEADER"),
 		imagesBaseUrl:               os.Getenv("IMAGES_BASE_URL"),
 		imagesAPIKey:                os.Getenv("IMAGES_API_KEY"),
+	}
+}
+
+func (s *settings) LoggerConfig() common.LoggerConfig {
+	return common.LoggerConfig{
+		Env:      s.env,
+		Appname:  s.appname,
+		Hostname: s.hostname,
 	}
 }
 
@@ -74,6 +98,8 @@ func (s *settings) CacheConfig() gateways.CacheConfig {
 
 func (s *settings) SubscriberConfig() subscribe.SubscriberConfig {
 	return subscribe.SubscriberConfig{
+		Group:            s.appname,
+		Consumer:         s.hostname,
 		ConnectionString: s.redisStreamConnectionString,
 		DialTimeout:      10 * time.Second,
 		MinIdleConns:     10,

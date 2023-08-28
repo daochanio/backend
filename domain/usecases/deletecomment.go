@@ -9,11 +9,13 @@ import (
 )
 
 type DeleteComment struct {
-	database gateways.Database
+	validator common.Validator
+	database  gateways.Database
 }
 
-func NewDeleteCommentUseCase(database gateways.Database) *DeleteComment {
+func NewDeleteCommentUseCase(validator common.Validator, database gateways.Database) *DeleteComment {
 	return &DeleteComment{
+		validator,
 		database,
 	}
 }
@@ -24,7 +26,7 @@ type DeleteCommentInput struct {
 }
 
 func (u *DeleteComment) Execute(ctx context.Context, input DeleteCommentInput) error {
-	if err := common.ValidateStruct(input); err != nil {
+	if err := u.validator.ValidateStruct(input); err != nil {
 		return err
 	}
 

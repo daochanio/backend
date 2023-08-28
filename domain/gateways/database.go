@@ -4,7 +4,6 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/domain/entities"
 )
 
@@ -36,7 +35,7 @@ type Database interface {
 	CreateVote(ctx context.Context, vote entities.Vote) error
 	DeleteThread(ctx context.Context, threadId int64) error
 	DeleteComment(ctx context.Context, commentId int64) error
-	AggregateVotes(ctx context.Context, id int64, voteType common.VoteType) error
+	AggregateVotes(ctx context.Context, id int64, voteType entities.VoteType) error
 
 	GetLastIndexedBlock(ctx context.Context) (*big.Int, error)
 	UpdateLastIndexedBlock(ctx context.Context, block *big.Int) error

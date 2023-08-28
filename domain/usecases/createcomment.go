@@ -10,14 +10,16 @@ import (
 )
 
 type CreateComment struct {
-	database gateways.Database
-	images   gateways.Images
+	database  gateways.Database
+	images    gateways.Images
+	validator common.Validator
 }
 
-func NewCreateCommentUseCase(database gateways.Database, images gateways.Images) *CreateComment {
+func NewCreateCommentUseCase(database gateways.Database, images gateways.Images, validator common.Validator) *CreateComment {
 	return &CreateComment{
 		database,
 		images,
+		validator,
 	}
 }
 
@@ -30,7 +32,7 @@ type CreateCommentInput struct {
 }
 
 func (u *CreateComment) Execute(ctx context.Context, input CreateCommentInput) (entities.Comment, error) {
-	if err := common.ValidateStruct(input); err != nil {
+	if err := u.validator.ValidateStruct(input); err != nil {
 		return entities.Comment{}, err
 	}
 

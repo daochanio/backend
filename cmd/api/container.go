@@ -29,13 +29,10 @@ func provideGeneral(ctx context.Context, container *dig.Container) {
 	}); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(common.NewSettings); err != nil {
-		panic(err)
-	}
 	if err := container.Provide(common.NewLogger); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(common.NewHttpClient); err != nil {
+	if err := container.Provide(common.NewValidator); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(NewSettings); err != nil {

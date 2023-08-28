@@ -6,16 +6,22 @@ import (
 	"time"
 
 	"github.com/daochanio/backend/cmd/indexer/index"
+	"github.com/daochanio/backend/common"
 	"github.com/daochanio/backend/domain/gateways"
+	"github.com/joho/godotenv"
 )
 
 type Settings interface {
+	LoggerConfig() common.LoggerConfig
 	IndexerConfig() index.IndexerConfig
 	DatabaseConfig() gateways.DatabaseConfig
 	BlockchainConfig() gateways.BlockchainConfig
 }
 
 type settings struct {
+	env                string
+	appname            string
+	hostname           string
 	pgConnectionString string
 	blockchainURL      string
 	reputationAddress  string
@@ -25,6 +31,13 @@ type settings struct {
 }
 
 func NewSettings() Settings {
+	_ = godotenv.Load(".env/.env.indexer.dev")
+
+	hostname, err := os.Hostname()
+	if hostname == "" || err != nil {
+		hostname = "localhost"
+	}
+
 	reorgOffset, err := strconv.Atoi(os.Getenv("REORG_OFFSET"))
 	if err != nil {
 		panic(err)
@@ -42,12 +55,23 @@ func NewSettings() Settings {
 	}
 
 	return &settings{
+		env:                os.Getenv("ENV"),
+		appname:            os.Getenv("APP_NAME"),
+		hostname:           hostname,
 		pgConnectionString: os.Getenv("PG_CONNECTION_STRING"),
 		blockchainURL:      os.Getenv("BLOCKCHAIN_URI"),
 		reputationAddress:  os.Getenv("REPUTATION_ADDRESS"),
 		reorgOffset:        int64(reorgOffset),
 		interval:           interval,
 		maxBlockRange:      int64(maxBlockRange),
+	}
+}
+
+func (s *settings) LoggerConfig() common.LoggerConfig {
+	return common.LoggerConfig{
+		Env:      s.env,
+		Appname:  s.appname,
+		Hostname: s.hostname,
 	}
 }
 

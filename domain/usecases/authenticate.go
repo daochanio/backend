@@ -9,10 +9,13 @@ import (
 )
 
 type Authenticate struct {
+	validator common.Validator
 }
 
-func NewAuthenticateUseCase() *Authenticate {
-	return &Authenticate{}
+func NewAuthenticateUseCase(validator common.Validator) *Authenticate {
+	return &Authenticate{
+		validator,
+	}
 }
 
 type AuthenticateInput struct {
@@ -21,7 +24,7 @@ type AuthenticateInput struct {
 }
 
 func (u *Authenticate) Execute(ctx context.Context, input *AuthenticateInput) (string, error) {
-	if err := common.ValidateStruct(input); err != nil {
+	if err := u.validator.ValidateStruct(input); err != nil {
 		return "", err
 	}
 

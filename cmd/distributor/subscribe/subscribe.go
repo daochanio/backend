@@ -17,12 +17,13 @@ type Subscriber interface {
 
 type subscriber struct {
 	logger       common.Logger
-	settings     common.Settings
 	client       *redis.Client
 	processVotes *usecases.ProcessVote
 }
 
 type SubscriberConfig struct {
+	Group            string
+	Consumer         string
 	ConnectionString string
 	DialTimeout      time.Duration
 	MinIdleConns     int
@@ -33,12 +34,10 @@ type SubscriberConfig struct {
 
 func NewSubscriber(
 	logger common.Logger,
-	settings common.Settings,
 	processVotes *usecases.ProcessVote,
 ) Subscriber {
 	return &subscriber{
 		logger:       logger,
-		settings:     settings,
 		client:       nil,
 		processVotes: processVotes,
 	}
@@ -61,10 +60,7 @@ func (s *subscriber) Start(ctx context.Context, config SubscriberConfig) {
 
 	s.client = redis.NewClient(opt)
 
-	group := s.settings.Appname()
-	consumer := s.settings.Hostname()
-
-	_ = s.client.XGroupCreateMkStream(ctx, common.VoteStream, group, "$").Err()
+	_ = s.client.XGroupCreateMkStream(ctx, common.VoteStream, config.Group, "$").Err()
 
 	for {
 		select {
@@ -72,7 +68,7 @@ func (s *subscriber) Start(ctx context.Context, config SubscriberConfig) {
 			s.logger.Info(ctx).Msg("subscriber stopped")
 			return
 		default:
-			s.execute(ctx, group, consumer)
+			s.execute(ctx, config.Group, config.Consumer)
 		}
 	}
 }

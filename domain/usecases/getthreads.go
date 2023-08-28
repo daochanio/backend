@@ -9,14 +9,16 @@ import (
 )
 
 type GetThreads struct {
-	database gateways.Database
-	logger   common.Logger
+	logger    common.Logger
+	validator common.Validator
+	database  gateways.Database
 }
 
-func NewGetThreadsUseCase(database gateways.Database, logger common.Logger) *GetThreads {
+func NewGetThreadsUseCase(logger common.Logger, validator common.Validator, database gateways.Database) *GetThreads {
 	return &GetThreads{
-		database,
 		logger,
+		validator,
+		database,
 	}
 }
 
@@ -26,7 +28,7 @@ type GetThreadsInput struct {
 
 // Threads returned are random and thus the concept of pages/offset/count is not relevant
 func (u *GetThreads) Execute(ctx context.Context, input GetThreadsInput) ([]entities.Thread, error) {
-	if err := common.ValidateStruct(input); err != nil {
+	if err := u.validator.ValidateStruct(input); err != nil {
 		return nil, err
 	}
 

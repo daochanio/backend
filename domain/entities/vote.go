@@ -1,16 +1,29 @@
 package entities
 
-import "github.com/daochanio/backend/common"
-
 type Vote struct {
 	id        int64
 	address   string
-	value     common.VoteValue
-	voteType  common.VoteType
+	value     VoteValue
+	voteType  VoteType
 	updatedAt int64
 }
 
-func NewVote(id int64, address string, value common.VoteValue, voteType common.VoteType, updatedAt int64) Vote {
+type VoteValue string
+
+const (
+	Upvote   VoteValue = "upvote"
+	Downvote VoteValue = "downvote"
+	Unvote   VoteValue = "unvote"
+)
+
+type VoteType string
+
+const (
+	ThreadVote  VoteType = "thread"
+	CommentVote VoteType = "comment"
+)
+
+func NewVote(id int64, address string, value VoteValue, voteType VoteType, updatedAt int64) Vote {
 	return Vote{
 		id:        id,
 		address:   address,
@@ -28,11 +41,11 @@ func (v *Vote) Address() string {
 	return v.address
 }
 
-func (v *Vote) Value() common.VoteValue {
+func (v *Vote) Value() VoteValue {
 	return v.value
 }
 
-func (v *Vote) Type() common.VoteType {
+func (v *Vote) Type() VoteType {
 	return v.voteType
 }
 

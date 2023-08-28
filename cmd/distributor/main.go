@@ -25,11 +25,12 @@ func main() {
 func start(
 	ctx context.Context,
 	logger common.Logger,
-	commonSettings common.Settings,
 	settings Settings,
 	distributor distribute.Distributor,
 	subscriber subscribe.Subscriber,
 ) {
+	logger.Start(ctx, settings.LoggerConfig())
+
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {

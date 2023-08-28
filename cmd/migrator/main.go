@@ -23,11 +23,12 @@ func main() {
 
 func start(
 	ctx context.Context,
-	commonSettings common.Settings,
 	settings Settings,
 	logger common.Logger,
 	migrateDatabase *usecases.MigrateDatabase,
 ) {
+	logger.Start(ctx, settings.LoggerConfig())
+
 	logger.Info(ctx).Msg("starting migrator")
 
 	databaseConfig := settings.DatabaseConfig()

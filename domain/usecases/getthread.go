@@ -11,11 +11,13 @@ import (
 )
 
 type GetThread struct {
-	database gateways.Database
+	validator common.Validator
+	database  gateways.Database
 }
 
-func NewGetThreadUseCase(database gateways.Database) *GetThread {
+func NewGetThreadUseCase(validator common.Validator, database gateways.Database) *GetThread {
 	return &GetThread{
+		validator,
 		database,
 	}
 }
@@ -27,7 +29,7 @@ type GetThreadInput struct {
 }
 
 func (u *GetThread) Execute(ctx context.Context, input GetThreadInput) (entities.Thread, int64, error) {
-	if err := common.ValidateStruct(input); err != nil {
+	if err := u.validator.ValidateStruct(input); err != nil {
 		return entities.Thread{}, -1, fmt.Errorf("invalid input: %w", err)
 	}
 

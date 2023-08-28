@@ -152,8 +152,8 @@ func (h *httpServer) createThreadVoteRoute(w http.ResponseWriter, r *http.Reques
 	err = h.createVote.Execute(ctx, usecases.CreateVoteInput{
 		Id:      id,
 		Address: user.Address(),
-		Value:   common.VoteValue(value),
-		Type:    common.ThreadVote,
+		Value:   entities.VoteValue(value),
+		Type:    entities.ThreadVote,
 	})
 
 	if err != nil {
