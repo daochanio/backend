@@ -11,17 +11,20 @@ import (
 
 func NewVerifyRateLimitUseCase(
 	logger common.Logger,
+	validator common.Validator,
 	cache gateways.Cache,
 ) *RateLimit {
 	return &RateLimit{
 		logger,
+		validator,
 		cache,
 	}
 }
 
 type RateLimit struct {
-	logger common.Logger
-	cache  gateways.Cache
+	logger    common.Logger
+	validator common.Validator
+	cache     gateways.Cache
 }
 
 type RateLimitInput struct {
@@ -32,7 +35,7 @@ type RateLimitInput struct {
 }
 
 func (u *RateLimit) Execute(ctx context.Context, input *RateLimitInput) error {
-	if err := common.ValidateStruct(input); err != nil {
+	if err := u.validator.ValidateStruct(input); err != nil {
 		return err
 	}
 

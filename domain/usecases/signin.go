@@ -12,6 +12,7 @@ import (
 
 type Signin struct {
 	logger     common.Logger
+	validator  common.Validator
 	database   gateways.Database
 	stream     gateways.Stream
 	blockchain gateways.Blockchain
@@ -23,9 +24,16 @@ type SigninInput struct {
 	JWTSecret string `validate:"required"`
 }
 
-func NewSigninUseCase(logger common.Logger, database gateways.Database, stream gateways.Stream, blockchain gateways.Blockchain) *Signin {
+func NewSigninUseCase(
+	logger common.Logger,
+	validator common.Validator,
+	database gateways.Database,
+	stream gateways.Stream,
+	blockchain gateways.Blockchain,
+) *Signin {
 	return &Signin{
 		logger,
+		validator,
 		database,
 		stream,
 		blockchain,
@@ -33,7 +41,7 @@ func NewSigninUseCase(logger common.Logger, database gateways.Database, stream g
 }
 
 func (u *Signin) Execute(ctx context.Context, input SigninInput) (string, error) {
-	if err := common.ValidateStruct(input); err != nil {
+	if err := u.validator.ValidateStruct(input); err != nil {
 		return "", err
 	}
 

@@ -9,11 +9,13 @@ import (
 )
 
 type DeleteThread struct {
-	database gateways.Database
+	validator common.Validator
+	database  gateways.Database
 }
 
-func NewDeleteThreadUseCase(database gateways.Database) *DeleteThread {
+func NewDeleteThreadUseCase(validator common.Validator, database gateways.Database) *DeleteThread {
 	return &DeleteThread{
+		validator,
 		database,
 	}
 }
@@ -24,7 +26,7 @@ type DeleteThreadInput struct {
 }
 
 func (u *DeleteThread) Execute(ctx context.Context, input DeleteThreadInput) error {
-	if err := common.ValidateStruct(input); err != nil {
+	if err := u.validator.ValidateStruct(input); err != nil {
 		return err
 	}
 

@@ -10,13 +10,15 @@ import (
 )
 
 type UploadImage struct {
-	logger common.Logger
-	images gateways.Images
+	logger    common.Logger
+	validator common.Validator
+	images    gateways.Images
 }
 
-func NewUploadImageUsecase(logger common.Logger, images gateways.Images) *UploadImage {
+func NewUploadImageUsecase(logger common.Logger, validator common.Validator, images gateways.Images) *UploadImage {
 	return &UploadImage{
 		logger,
+		validator,
 		images,
 	}
 }
@@ -26,7 +28,7 @@ type UploadImageInput struct {
 }
 
 func (u *UploadImage) Execute(ctx context.Context, input UploadImageInput) (*entities.Image, error) {
-	if err := common.ValidateStruct(input); err != nil {
+	if err := u.validator.ValidateStruct(input); err != nil {
 		return &entities.Image{}, err
 	}
 

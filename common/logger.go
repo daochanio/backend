@@ -8,6 +8,7 @@ import (
 )
 
 type Logger interface {
+	Start(ctx context.Context, config LoggerConfig)
 	Debug(ctx context.Context) LogEvent
 	Info(ctx context.Context) LogEvent
 	Warn(ctx context.Context) LogEvent
@@ -26,25 +27,39 @@ type LogEvent interface {
 }
 
 type logger struct {
-	settings Settings
-	logger   zerolog.Logger
+	logger *zerolog.Logger
+	config *LoggerConfig
 }
 
-func NewLogger(settings Settings) Logger {
+func NewLogger() Logger {
+	return &logger{
+		logger: nil,
+		config: nil,
+	}
+}
+
+type LoggerConfig struct {
+	Env      string
+	Hostname string
+	Appname  string
+}
+
+func (l *logger) Start(ctx context.Context, config LoggerConfig) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
 
 	var zLogger zerolog.Logger
 
-	if settings.IsDev() {
+	if config.Env == "dev" {
 		zLogger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).Level(zerolog.DebugLevel)
 	} else {
 		zLogger = zerolog.New(os.Stderr).Level(zerolog.InfoLevel)
 	}
 
-	return &logger{
-		settings: settings,
-		logger:   zLogger.With().Timestamp().Logger(),
-	}
+	zLogger = zLogger.With().Timestamp().Logger()
+
+	l.logger = &zLogger
+
+	l.config = &config
 }
 
 func (l *logger) Debug(ctx context.Context) LogEvent {
@@ -69,8 +84,8 @@ type logEvent struct {
 
 // add additional context to the event log
 func (l *logger) newEvent(ctx context.Context, event *zerolog.Event) LogEvent {
-	event.Str("hostname", l.settings.Hostname())
-	event.Str("appname", l.settings.Appname())
+	event.Str("hostname", l.config.Hostname)
+	event.Str("appname", l.config.Appname)
 
 	traceID := ctx.Value(ContextKeyTraceID)
 	if traceID != nil {

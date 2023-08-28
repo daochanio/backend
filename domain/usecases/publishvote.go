@@ -10,26 +10,28 @@ import (
 )
 
 type CreateVote struct {
-	stream gateways.Stream
-	logger common.Logger
+	logger    common.Logger
+	validator common.Validator
+	stream    gateways.Stream
 }
 
-func NewCreateVoteUseCase(stream gateways.Stream, logger common.Logger) *CreateVote {
+func NewCreateVoteUseCase(logger common.Logger, validator common.Validator, stream gateways.Stream) *CreateVote {
 	return &CreateVote{
-		stream,
 		logger,
+		validator,
+		stream,
 	}
 }
 
 type CreateVoteInput struct {
-	Id      int64            `validate:"gt=0"`
-	Address string           `validate:"eth_addr"`
-	Value   common.VoteValue `validate:"oneof=upvote downvote unvote"`
-	Type    common.VoteType  `validate:"oneof=thread comment"`
+	Id      int64              `validate:"gt=0"`
+	Address string             `validate:"eth_addr"`
+	Value   entities.VoteValue `validate:"oneof=upvote downvote unvote"`
+	Type    entities.VoteType  `validate:"oneof=thread comment"`
 }
 
 func (u *CreateVote) Execute(ctx context.Context, input CreateVoteInput) error {
-	if err := common.ValidateStruct(input); err != nil {
+	if err := u.validator.ValidateStruct(input); err != nil {
 		return err
 	}
 

@@ -151,8 +151,8 @@ func (h *httpServer) createCommentVoteRoute(w http.ResponseWriter, r *http.Reque
 	err = h.createVote.Execute(ctx, usecases.CreateVoteInput{
 		Id:      id,
 		Address: user.Address(),
-		Value:   common.VoteValue(value),
-		Type:    common.CommentVote,
+		Value:   entities.VoteValue(value),
+		Type:    entities.CommentVote,
 	})
 
 	if err != nil {

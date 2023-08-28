@@ -8,14 +8,16 @@ import (
 	"github.com/daochanio/backend/domain/gateways"
 )
 
-func NewGetChallengeUseCase(database gateways.Database) *GetChallenge {
+func NewGetChallengeUseCase(validator common.Validator, database gateways.Database) *GetChallenge {
 	return &GetChallenge{
+		validator,
 		database,
 	}
 }
 
 type GetChallenge struct {
-	database gateways.Database
+	validator common.Validator
+	database  gateways.Database
 }
 
 type GetChallengeInput struct {
@@ -23,7 +25,7 @@ type GetChallengeInput struct {
 }
 
 func (u *GetChallenge) Execute(ctx context.Context, input *GetChallengeInput) (entities.Challenge, error) {
-	if err := common.ValidateStruct(input); err != nil {
+	if err := u.validator.ValidateStruct(input); err != nil {
 		return entities.Challenge{}, err
 	}
 

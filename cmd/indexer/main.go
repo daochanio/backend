@@ -25,12 +25,12 @@ func main() {
 func start(
 	ctx context.Context,
 	logger common.Logger,
-	commonSettings common.Settings,
 	indexer index.Indexer,
 	settings Settings,
 	database gateways.Database,
 	blockchain gateways.Blockchain,
 ) {
+	logger.Start(ctx, settings.LoggerConfig())
 	database.Start(ctx, settings.DatabaseConfig())
 	blockchain.Start(ctx, settings.BlockchainConfig())
 

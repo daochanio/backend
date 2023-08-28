@@ -43,9 +43,9 @@ func (u *AggregateVotes) Execute(ctx context.Context, input AggregateVotesInput)
 			latestVotes[voteKey] = vote
 		}
 		switch vote.Type() {
-		case common.ThreadVote:
+		case entities.ThreadVote:
 			dirtyThreads[vote.Id()] = true
-		case common.CommentVote:
+		case entities.CommentVote:
 			dirtyComments[vote.Id()] = true
 		default:
 			u.logger.Error(ctx).Msgf("error aggregating invalid vote type %v", vote.Type())
@@ -65,7 +65,7 @@ func (u *AggregateVotes) Execute(ctx context.Context, input AggregateVotesInput)
 		u.logger.Info(ctx).Msgf("updating %v thread votes", len(dirtyThreads))
 	}
 	for id := range dirtyThreads {
-		if err := u.database.AggregateVotes(ctx, id, common.ThreadVote); err != nil {
+		if err := u.database.AggregateVotes(ctx, id, entities.ThreadVote); err != nil {
 			u.logger.Error(ctx).Err(err).Msgf("error aggregating thread votes for %v", id)
 		}
 	}
@@ -74,7 +74,7 @@ func (u *AggregateVotes) Execute(ctx context.Context, input AggregateVotesInput)
 		u.logger.Info(ctx).Msgf("updating %v comment votes", len(dirtyComments))
 	}
 	for id := range dirtyComments {
-		if err := u.database.AggregateVotes(ctx, id, common.CommentVote); err != nil {
+		if err := u.database.AggregateVotes(ctx, id, entities.CommentVote); err != nil {
 			u.logger.Error(ctx).Err(err).Msgf("error aggregating comment votes for %v", id)
 		}
 	}

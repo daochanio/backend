@@ -18,10 +18,10 @@ func newContainer(ctx context.Context) *dig.Container {
 	}); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(common.NewSettings); err != nil {
+	if err := container.Provide(common.NewLogger); err != nil {
 		panic(err)
 	}
-	if err := container.Provide(common.NewLogger); err != nil {
+	if err := container.Provide(common.NewValidator); err != nil {
 		panic(err)
 	}
 	if err := container.Provide(NewSettings); err != nil {

@@ -25,7 +25,6 @@ func main() {
 
 func start(
 	ctx context.Context,
-	commonSettings common.Settings,
 	settings Settings,
 	logger common.Logger,
 	httpServer http.HttpServer,
@@ -36,6 +35,7 @@ func start(
 	blockchain gateways.Blockchain,
 	images gateways.Images,
 ) {
+	logger.Start(ctx, settings.LoggerConfig())
 	database.Start(ctx, settings.DatabaseConfig())
 	cache.Start(ctx, settings.CacheConfig())
 	stream.Start(ctx, settings.StreamConfig())

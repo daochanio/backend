@@ -10,14 +10,16 @@ import (
 )
 
 type CreateThread struct {
-	logger   common.Logger
-	images   gateways.Images
-	database gateways.Database
+	logger    common.Logger
+	validator common.Validator
+	images    gateways.Images
+	database  gateways.Database
 }
 
-func NewCreateThreadUseCase(logger common.Logger, images gateways.Images, database gateways.Database) *CreateThread {
+func NewCreateThreadUseCase(logger common.Logger, validator common.Validator, images gateways.Images, database gateways.Database) *CreateThread {
 	return &CreateThread{
 		logger,
+		validator,
 		images,
 		database,
 	}
@@ -31,7 +33,7 @@ type CreateThreadInput struct {
 }
 
 func (u *CreateThread) Execute(ctx context.Context, input CreateThreadInput) (entities.Thread, error) {
-	if err := common.ValidateStruct(input); err != nil {
+	if err := u.validator.ValidateStruct(input); err != nil {
 		return entities.Thread{}, err
 	}
 

@@ -19,7 +19,6 @@ type Subscriber interface {
 
 type subscriber struct {
 	logger                common.Logger
-	settings              common.Settings
 	client                *redis.Client
 	aggregateVotesUseCase *usecases.AggregateVotes
 	hydrateUsersUseCase   *usecases.HydrateUsers
@@ -33,6 +32,8 @@ type bufferMessage struct {
 }
 
 type SubscriberConfig struct {
+	Group            string
+	Consumer         string
 	ConnectionString string
 	DialTimeout      time.Duration
 	MinIdleConns     int
@@ -43,13 +44,11 @@ type SubscriberConfig struct {
 
 func NewSubscriber(
 	logger common.Logger,
-	settings common.Settings,
 	aggregateVotesUseCase *usecases.AggregateVotes,
 	hydrateUsersUseCase *usecases.HydrateUsers,
 ) Subscriber {
 	return &subscriber{
 		logger:                logger,
-		settings:              settings,
 		client:                nil,
 		aggregateVotesUseCase: aggregateVotesUseCase,
 		hydrateUsersUseCase:   hydrateUsersUseCase,
@@ -85,11 +84,8 @@ func (s *subscriber) Start(ctx context.Context, config SubscriberConfig) {
 	s.messageBuffer = &[]bufferMessage{}
 	s.lastFlush = time.Now()
 
-	group := s.settings.Appname()
-	consumer := s.settings.Hostname()
-
-	_ = s.client.XGroupCreateMkStream(ctx, common.SigninStream, group, "$").Err()
-	_ = s.client.XGroupCreateMkStream(ctx, common.VoteStream, group, "$").Err()
+	_ = s.client.XGroupCreateMkStream(ctx, common.SigninStream, config.Group, "$").Err()
+	_ = s.client.XGroupCreateMkStream(ctx, common.VoteStream, config.Group, "$").Err()
 
 	for {
 		select {
@@ -97,7 +93,7 @@ func (s *subscriber) Start(ctx context.Context, config SubscriberConfig) {
 			s.logger.Info(ctx).Msg("subscriber stopped")
 			return
 		default:
-			s.execute(ctx, group, consumer)
+			s.execute(ctx, config.Group, config.Consumer)
 		}
 	}
 }
